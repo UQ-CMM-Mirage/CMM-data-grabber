@@ -11,16 +11,14 @@ import au.edu.uq.cmm.mirage.status.FacilityStatusManager;
 public class Grabber extends CompositeServiceBase {
     
     private static final Logger LOG = Logger.getLogger(Grabber.class);
-    private Configuration config;
     private FileWatcher fileWatcher;
     private FacilityStatusManager statusManager;
     private AclsProxy proxy;
     
-    public Grabber(Configuration config, AclsProxy proxy,
-            FacilityStatusManager statusManager) {
-        this.config = config;
-        this.statusManager = statusManager;
-        this.proxy = proxy;
+    public Grabber(Configuration config) {
+        this.proxy = new AclsProxy(config);
+        this.statusManager = new FacilityStatusManager(proxy);
+        this.fileWatcher = new FileWatcher();
     }
 
     public static void main(String[] args) {
@@ -34,9 +32,7 @@ public class Grabber extends CompositeServiceBase {
                 LOG.info("Can't read/load configuration file");
                 System.exit(2);
             }
-            AclsProxy proxy = new AclsProxy(config);
-            FacilityStatusManager statusManager = new FacilityStatusManager(proxy);
-            Grabber grabber = new Grabber(config, proxy, statusManager);
+            Grabber grabber = new Grabber(config);
             grabber.startup();
             grabber.awaitShutdown();
             LOG.info("Exitting normally");
