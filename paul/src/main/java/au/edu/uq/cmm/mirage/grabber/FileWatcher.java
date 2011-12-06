@@ -46,19 +46,20 @@ public class FileWatcher extends MonitoredThreadServiceBase {
                     WatchEvent<Path> ev = cast(event);
                     Path file = dir.resolve(ev.context());
                     if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
-                        System.err.println("Created - " + file);
+                        LOG.debug("Created - " + file);
                     } else if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
-                        System.err.println("Modified - " + file);
+                        LOG.debug("Modified - " + file);
                     } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
-                        System.err.println("Deleted - " + file);
+                        LOG.debug("Deleted - " + file);
                     }
                 }
+                key.reset();
             }
         } catch (IOException ex) {
             throw new GrabberException("Unexpected IO error", ex);
         } catch (InterruptedException ex) {
             LOG.debug("Interrupted ... we're done");
-        }
+        } 
     }
 
 }
