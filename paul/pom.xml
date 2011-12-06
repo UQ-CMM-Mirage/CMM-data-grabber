@@ -4,7 +4,7 @@
   <groupId>au.edu.uq.cmm</groupId>
   <packaging>war</packaging>
   <version>0.0.1-SNAPSHOT</version>
-  <name>dataGrabber Maven Webapp</name>
+  <name>The Paul Maven Webapp</name>
   <url>http://maven.apache.org</url>
   <dependencies>
     <dependency>
@@ -20,7 +20,7 @@
     </dependency>
   </dependencies>
   <build>
-    <finalName>dataGrabber</finalName>
+    <finalName>paul</finalName>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -34,5 +34,9 @@
     </plugins>
   </build>
   <artifactId>paul</artifactId>
-  <description>The primary function of Paul is to Grab data Off(ski) a CMM instrument's shared drive.</description>
+  <description>
+    The primary function of Paul is to grab data off(ski) a CMM 
+    instrument's shared drive, and prepare and submit it for 
+    ingestion into the Mirage repository.
+  </description>
 </project>
