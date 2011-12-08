@@ -1,2 +1,3 @@
 Paul is the "data grabber" application that prepares data and metadata
-files into the CMM MIRAGE repository.
+files into the CMM MIRAGE repository.  Benny is simple HTTP service for 
+authenticating against a backend ACLS instance.
