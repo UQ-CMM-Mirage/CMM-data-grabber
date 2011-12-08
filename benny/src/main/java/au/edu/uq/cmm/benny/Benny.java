@@ -19,6 +19,27 @@ import org.apache.log4j.Logger;
 
 import au.edu.uq.cmm.acslib.authenticator.Authenticator;
 
+/**
+ * The Benny servlet provides a simple HTTP-based service for checking a
+ * username and password against an ACLS service ... using the ACLS login
+ * protocol and a dummy ACLS facility.
+ * <p>
+ * The credentials can be supplied as URL parameters (e.g. 
+ * {@literal "...?user=fred&password=secret"} or as a Authorization
+ * header using the Basic authentication scheme.  If neither forms is
+ * used, the servlet responds with a WWW-Authenticate challenge.  The
+ * response codes are:
+ * <li>
+ *   <li>200 OK - the credentials were accepted</li>
+ *   <li>403 Forbidden - the credentials were rejected</li>
+ *   <li>401 Unauthorized - no credentials were supplied</li>
+ *   <li>500 Internal Service Error - something went wrong: check the logs.</li>
+ * </li>
+ * There may be a text or HTML response body, but a client should rely on the
+ * response status code when determining the request's outcome.
+ * 
+ * @author scrawley
+ */
 @SuppressWarnings("serial")
 public class Benny extends HttpServlet {
     private static final Logger LOG = Logger.getLogger(Authenticator.class);
@@ -76,7 +97,7 @@ public class Benny extends HttpServlet {
             if (ok) {
                 respond(resp, HttpServletResponse.SC_OK, "Credentials accepted");
             } else {
-                respond(resp, HttpServletResponse.SC_BAD_REQUEST, "Credentials rejected");
+                respond(resp, HttpServletResponse.SC_FORBIDDEN, "Credentials rejected");
             }
         } catch (IOException ex) {
             throw ex;
