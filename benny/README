@@ -1,0 +1,66 @@
+Installation / Configuration instructions.
+==========================================
+
+Benny uses an ACLS server to check user name / password pairs for it.  
+For this to work, Benny needs to be configured with the hostname and
+port of the ACLS server, and the server needs to be configured to 
+recognize the Benny instance as a "facility".
+
+Benny's configuration parameters are in the "benny.properties" file
+in the ".../WEB-INF/classes" directory.  There are properties for
+the ACLS server's hostname / ip address, its port number and a 
+"facility" name.
+
+ACLS configuration is ... more difficult.  First, you need the IP
+address of the host on which Benny will run.  Then you need to
+tell ACLS that there is a "facility" with that IP address, that
+Benny will attempt to log into using the supplied user name and 
+password.
+
+ACLS supports "regular" facilities which have a 1-to-1 mapping 
+to IP addresses, and "virtual" facilities where one IP address 
+stands for multiple facilities, or a proxy for multiple facilities. 
+If you setup the Benny dummy facility as a "regular" Facility,
+then you can't run a real facility, or the ACLS proxy on the same
+IO address as your Benny instance.  If you set up Benny dummy 
+facility as a "vMLF" Facility, then you likewise can't run a
+real facility, but you CAN run an ACLS "vMFL" client or a proxy
+using the IP address.  If you take this approach, Benny needs 
+to be configured with the Facility Id of the "vMFL" Facility by 
+setting the "benny.dummyFacility" property.
+
+To summarize, the recommended configuration/installation procedure 
+is:
+
+  - Based on your local conditions, decide if you want to use a
+    "regular" or "vMLF" dummy facility.
+    
+  - Configure the facility in ACLS.  (Good luck with that!)
+    
+  - Either build a benny.war file with the relevant settings
+    in the "benny.properties" file.
+    
+  - Deploy the WAR file to a servlet container.  (I use Tomcat
+    but Benny is so simple that others should work with no hassles.)
+    
+Using Benny
+===========
+
+Benny (using the supplied "web.xml" on Tomcat) responds to requests
+with the URL path rooted at "/benny/".  You can send GET queries with
+parameters "user" and "password", or you can send a simple GET request
+with an "Authorization" header that uses the "Basic" authorization scheme.
+If send a GET request with neither, Benny will respond with a 401 and 
+a "Basic" authorization channel.
+
+Once Benny has gotten a user name and password (from the URL parameters
+or the header), Benny will attempt to check the credentials with ACLS
+by attempting to login to the dummy Facility. 
+
+  - If the credentials are accepted, Benny gives a HTTP 200 response.  
+  - If the credentials are rejected, Benny gives a HTTP 403 response.
+  - If there is a problem talking to ACLS, Benny gives a HTTP 500 response.
+  
+There will typically be a "text/plain" response, but a client should
+rely on the HTTP status codes in the response.
+  
