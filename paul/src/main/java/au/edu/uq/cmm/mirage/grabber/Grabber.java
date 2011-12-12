@@ -1,5 +1,7 @@
 package au.edu.uq.cmm.mirage.grabber;
 
+import java.io.IOException;
+
 import org.apache.log4j.Logger;
 
 import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
@@ -9,16 +11,19 @@ import au.edu.uq.cmm.aclslib.service.ServiceException;
 import au.edu.uq.cmm.mirage.status.FacilityStatusManager;
 
 public class Grabber extends CompositeServiceBase {
-    
+    private static final String SMB_CONF_PATHNAME = "/etc/samba/smb.conf";
     private static final Logger LOG = Logger.getLogger(Grabber.class);
     private FileWatcher fileWatcher;
     private FacilityStatusManager statusManager;
     private AclsProxy proxy;
+    private UncPathnameMapper uncNameMapper;
     
-    public Grabber(Configuration config) {
+    public Grabber(Configuration config) throws IOException {
         this.proxy = new AclsProxy(config);
         this.statusManager = new FacilityStatusManager(proxy);
-        this.fileWatcher = new FileWatcher();
+        // FIXME ... this should be pluggable.
+        uncNameMapper = new SambaUncPathameMapper(SMB_CONF_PATHNAME);
+        this.fileWatcher = new FileWatcher(config, uncNameMapper);
     }
 
     public static void main(String[] args) {
