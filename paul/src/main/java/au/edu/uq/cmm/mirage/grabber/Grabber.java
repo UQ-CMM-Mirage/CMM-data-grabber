@@ -1,12 +1,8 @@
 package au.edu.uq.cmm.mirage.grabber;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.ini4j.Ini;
 
 import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
 import au.edu.uq.cmm.aclslib.server.Configuration;
@@ -20,33 +16,14 @@ public class Grabber extends CompositeServiceBase {
     private FileWatcher fileWatcher;
     private FacilityStatusManager statusManager;
     private AclsProxy proxy;
+    private UncPathnameMapper uncNameMapper;
     
     public Grabber(Configuration config) throws IOException {
         this.proxy = new AclsProxy(config);
         this.statusManager = new FacilityStatusManager(proxy);
-        Map<String, String> shareMap = loadSambaShareMap(SMB_CONF_PATHNAME);
-        this.fileWatcher = new FileWatcher(config, shareMap);
-    }
-
-    private Map<String, String> loadSambaShareMap(String smbConfFileName) throws IOException {
-        HashMap<String, String> map = new HashMap<String, String>();
-        FileInputStream is = new FileInputStream(smbConfFileName);
-        try {
-            Ini ini = new Ini();
-            ini.load(is);
-            for (String section : ini.keySet()) {
-                if (section.equals("global")) {
-                    continue;
-                }
-                String path = ini.get(section, "path");
-                if (path != null) {
-                    map.put(section, path);
-                }
-            }
-            return map;
-        } finally {
-            is.close();
-        }
+        // FIXME ... this should be pluggable.
+        uncNameMapper = new SambaUncPathameMapper(SMB_CONF_PATHNAME);
+        this.fileWatcher = new FileWatcher(config, uncNameMapper);
     }
 
     public static void main(String[] args) {

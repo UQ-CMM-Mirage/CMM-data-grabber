@@ -2,7 +2,6 @@ package au.edu.uq.cmm.mirage.grabber;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -14,11 +13,7 @@ import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
@@ -41,34 +36,15 @@ public class FileWatcher extends MonitoredThreadServiceBase {
     }
     
     private static final Logger LOG = Logger.getLogger(FileWatcher.class);
-    private final Set<String> hostNames;
     
     private Configuration config;
     private Map<WatchKey, WatcherEntry> watchMap = new HashMap<WatchKey, WatcherEntry>();
-    private Map<String, String> shareMap;
+    private UncPathnameMapper uncNameMapper;
     
-    public FileWatcher(Configuration config, Map<String, String> shareMap) 
+    public FileWatcher(Configuration config, UncPathnameMapper uncNameMapper) 
             throws UnknownHostException {
         this.config = config;
-        hostNames = new HashSet<String>();
-        InetAddress host = InetAddress.getLocalHost();
-        String hostAddr = host.getHostAddress();
-        String hostName = host.getHostName();
-        String canonicalHostName = host.getCanonicalHostName();
-        hostNames.add(hostAddr);
-        if (hostNames.add(hostName)) {
-            int firstDot = hostName.indexOf(".");
-            if (firstDot > 0) {
-                hostNames.add(hostName.substring(0, firstDot));
-            }
-        }
-        if (hostNames.add(canonicalHostName)) {
-            int firstDot = canonicalHostName.indexOf(".");
-            if (firstDot > 0) {
-                hostNames.add(canonicalHostName.substring(0, firstDot));
-            }
-        }
-        this.shareMap = shareMap;
+        this.uncNameMapper = uncNameMapper;
     }
 
     @SuppressWarnings("unchecked")
@@ -114,6 +90,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
         } 
         WatchEvent<Path> ev = cast(event);
         Path file = entry.dir.resolve(ev.context());
+        LOG.debug("Event for facility " + entry.facility.getFacilityId());
         if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
             LOG.debug("Created - " + file);
         } else if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
@@ -131,7 +108,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
                 continue;
             }
             String name = facility.getFolderName();
-            File local = mapUncPathToLocalPath(name);
+            File local = uncNameMapper.mapUncPathname(name);
             if (local == null) {
                 LOG.info("Facility folder name '" + name + "' does not map to a local path");
                 continue;
@@ -151,24 +128,4 @@ public class FileWatcher extends MonitoredThreadServiceBase {
         }
         return watcher;
     }
-
-    private File mapUncPathToLocalPath(final String uncPath) {
-        String canonicalUncPath = uncPath.replace('\\', '/');
-        Matcher matcher = Pattern.compile("//([^/]+)/([^/]+)/(.+)").matcher(canonicalUncPath);
-        if (!matcher.matches()) {
-            LOG.info("Invalid UNC path: '" + canonicalUncPath + "'");
-            return null;
-        }
-        if (!hostNames.contains(matcher.group(1))) {
-            LOG.info("UNC path '" + canonicalUncPath + "'s hostname is not us");
-            return null;
-        }
-        String sharePath = shareMap.get(matcher.group(2));
-        if (sharePath == null) {
-            LOG.info("UNC path '" + canonicalUncPath + "'s share is not known");
-            return null;
-        }
-        return new File(sharePath, matcher.group(3));
-    }
-
 }
