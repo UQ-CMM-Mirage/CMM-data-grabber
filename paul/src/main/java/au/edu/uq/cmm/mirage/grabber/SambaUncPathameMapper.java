@@ -26,7 +26,7 @@ import org.ini4j.InvalidFileFormatException;
 public class SambaUncPathameMapper implements UncPathnameMapper {
     private static final Logger LOG = Logger.getLogger(SambaUncPathameMapper.class);
     private static final Pattern UNC_PATTERN = 
-            Pattern.compile("//([^/]+)/([^/]+)(?:/+(.*)?)");
+            Pattern.compile("//([^/]+)/([^/]+)(?:/+(.*))?");
     private Map<String, File> shareMap = new HashMap<String, File>();
     private Set<String> hostNames;
     
