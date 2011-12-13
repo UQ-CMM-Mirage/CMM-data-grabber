@@ -1,4 +1,4 @@
-package au.edu.uq.cmm.mirage.grabber;
+package au.edu.uq.cmm.paul.watcher;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
 import org.apache.log4j.Logger;
 import org.ini4j.Ini;
 import org.ini4j.InvalidFileFormatException;
+
 
 /**
  * An UNC path mapper for use on a Samba fileserver.  This reads the Samba

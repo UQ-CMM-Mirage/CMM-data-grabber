@@ -1,4 +1,4 @@
-package au.edu.uq.cmm.mirage.grabber;
+package au.edu.uq.cmm.paul.watcher;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,8 +12,10 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -22,6 +24,7 @@ import org.apache.log4j.Logger;
 import au.edu.uq.cmm.aclslib.server.Configuration;
 import au.edu.uq.cmm.aclslib.server.Facility;
 import au.edu.uq.cmm.aclslib.service.MonitoredThreadServiceBase;
+import au.edu.uq.cmm.paul.PaulException;
 
 public class FileWatcher extends MonitoredThreadServiceBase {
     private static class WatcherEntry {
@@ -31,7 +34,8 @@ public class FileWatcher extends MonitoredThreadServiceBase {
         private final WatcherEntry parent;
         private final Set<WatcherEntry> children;
         
-        public WatcherEntry(WatchKey key, WatcherEntry parent, Path dir, Facility facility) {
+        public WatcherEntry(WatchKey key, WatcherEntry parent, 
+                Path dir, Facility facility) {
             super();
             this.dir = dir;
             this.facility = facility;
@@ -56,17 +60,21 @@ public class FileWatcher extends MonitoredThreadServiceBase {
                 return false;
             if (getClass() != obj.getClass())
                 return false;
-            WatcherEntry other = (WatcherEntry) obj;
-            return key.equals(other.key);
+            return key.equals(((WatcherEntry) obj).key);
         }
     }
     
     private static final Logger LOG = Logger.getLogger(FileWatcher.class);
     
     private Configuration config;
-    private Map<WatchKey, WatcherEntry> watchMap = new HashMap<WatchKey, WatcherEntry>();
+    private Map<WatchKey, WatcherEntry> watchMap = 
+            new HashMap<WatchKey, WatcherEntry>();
     private UncPathnameMapper uncNameMapper;
     private WatchService watcher;
+
+    private List<FileWatcherEventListener> listeners = 
+            new ArrayList<FileWatcherEventListener>();
+    
     
     public FileWatcher(Configuration config, UncPathnameMapper uncNameMapper) 
             throws UnknownHostException {
@@ -95,7 +103,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
                 key.reset();
             }
         } catch (IOException ex) {
-            throw new GrabberException("Unexpected IO error", ex);
+            throw new PaulException("Unexpected IO error", ex);
         } catch (InterruptedException ex) {
             LOG.debug("Interrupted ... we're done");
         } finally {
@@ -124,12 +132,23 @@ public class FileWatcher extends MonitoredThreadServiceBase {
             LOG.debug("Created - " + path);
             if (file.isDirectory()) {
                 addKeys(entry.facility, file, entry);
+            } else {
+                notifyEvent(entry.facility, file, true);
             }
         } else if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
             LOG.debug("Modified - " + path);
+            if (!file.isDirectory()) {
+                notifyEvent(entry.facility, file, false);
+            }
         } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
             LOG.debug("Deleted - " + path);
             removeKeyForPath(entry, path, false);
+        }
+    }
+    
+    private void notifyEvent(Facility facility, File file, boolean create) {
+        for (FileWatcherEventListener listener : listeners) {
+            listener.eventOccurred(new FileWatcherEvent(facility, file, create));
         }
     }
 
@@ -206,5 +225,13 @@ public class FileWatcher extends MonitoredThreadServiceBase {
         for (WatcherEntry child : entry.children) {
             removeKey(child, true);
         }
+    }
+
+    public void addListener(FileWatcherEventListener listener) {
+        listeners.add(listener);
+    }
+
+    public void removeListener(FileWatcherEventListener listener) {
+        listeners.remove(listener);
     }
 }

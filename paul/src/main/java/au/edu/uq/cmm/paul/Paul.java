@@ -1,4 +1,4 @@
-package au.edu.uq.cmm.mirage.grabber;
+package au.edu.uq.cmm.paul;
 
 import java.io.IOException;
 
@@ -8,22 +8,28 @@ import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
 import au.edu.uq.cmm.aclslib.server.Configuration;
 import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
 import au.edu.uq.cmm.aclslib.service.ServiceException;
-import au.edu.uq.cmm.mirage.status.FacilityStatusManager;
+import au.edu.uq.cmm.paul.grabber.FileGrabber;
+import au.edu.uq.cmm.paul.status.FacilityStatusManager;
+import au.edu.uq.cmm.paul.watcher.FileWatcher;
+import au.edu.uq.cmm.paul.watcher.SambaUncPathameMapper;
+import au.edu.uq.cmm.paul.watcher.UncPathnameMapper;
 
-public class Grabber extends CompositeServiceBase {
+public class Paul extends CompositeServiceBase {
     private static final String SMB_CONF_PATHNAME = "/etc/samba/smb.conf";
-    private static final Logger LOG = Logger.getLogger(Grabber.class);
+    private static final Logger LOG = Logger.getLogger(Paul.class);
     private FileWatcher fileWatcher;
+    private FileGrabber fileGrabber;
     private FacilityStatusManager statusManager;
     private AclsProxy proxy;
     private UncPathnameMapper uncNameMapper;
     
-    public Grabber(Configuration config) throws IOException {
+    public Paul(Configuration config) throws IOException {
         this.proxy = new AclsProxy(config);
         this.statusManager = new FacilityStatusManager(proxy);
         // FIXME ... this should be pluggable.
-        uncNameMapper = new SambaUncPathameMapper(SMB_CONF_PATHNAME);
+        this.uncNameMapper = new SambaUncPathameMapper(SMB_CONF_PATHNAME);
         this.fileWatcher = new FileWatcher(config, uncNameMapper);
+        this.fileGrabber = new FileGrabber(fileWatcher);
     }
 
     public static void main(String[] args) {
@@ -37,7 +43,7 @@ public class Grabber extends CompositeServiceBase {
                 LOG.info("Can't read/load configuration file");
                 System.exit(2);
             }
-            Grabber grabber = new Grabber(config);
+            Paul grabber = new Paul(config);
             grabber.startup();
             grabber.awaitShutdown();
             LOG.info("Exitting normally");
@@ -49,6 +55,7 @@ public class Grabber extends CompositeServiceBase {
     }
     
     protected void doShutdown() {
+        fileGrabber.shutdown();
         fileWatcher.shutdown();
         proxy.shutdown();
     }
@@ -56,5 +63,6 @@ public class Grabber extends CompositeServiceBase {
     protected void doStartup() throws ServiceException {
         proxy.startup();
         fileWatcher.startup();
+        fileGrabber.startup();
     }
 }

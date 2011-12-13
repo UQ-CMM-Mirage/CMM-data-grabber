@@ -1,4 +1,4 @@
-package au.edu.uq.cmm.mirage.status;
+package au.edu.uq.cmm.paul.status;
 
 import java.util.Date;
 
