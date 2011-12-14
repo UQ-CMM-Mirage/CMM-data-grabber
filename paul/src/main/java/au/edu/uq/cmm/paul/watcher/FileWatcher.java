@@ -147,8 +147,9 @@ public class FileWatcher extends MonitoredThreadServiceBase {
     }
     
     private void notifyEvent(Facility facility, File file, boolean create) {
+        long now = System.currentTimeMillis();
         for (FileWatcherEventListener listener : listeners) {
-            listener.eventOccurred(new FileWatcherEvent(facility, file, create));
+            listener.eventOccurred(new FileWatcherEvent(facility, file, create, now));
         }
     }
 

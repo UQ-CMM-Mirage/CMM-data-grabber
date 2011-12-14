@@ -9,11 +9,13 @@ import au.edu.uq.cmm.aclslib.server.Facility;
 public class FileWatcherEvent extends EventObject {
     private final File file;
     private final boolean create;
+    private final long timestamp;
     
-    public FileWatcherEvent(Facility facility, File file, boolean create) {
+    public FileWatcherEvent(Facility facility, File file, boolean create, long timestamp) {
         super(facility);
         this.file = file;
         this.create = create;
+        this.timestamp = timestamp;
     }
     
     public Facility getFacility() {
@@ -26,5 +28,9 @@ public class FileWatcherEvent extends EventObject {
 
     public boolean isCreate() {
         return create;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
     }
 }
