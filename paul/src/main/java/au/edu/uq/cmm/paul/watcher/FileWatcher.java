@@ -1,4 +1,4 @@
-package au.edu.uq.cmm.mirage.grabber;
+package au.edu.uq.cmm.paul.watcher;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,34 +12,69 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
 import au.edu.uq.cmm.aclslib.server.Configuration;
 import au.edu.uq.cmm.aclslib.server.Facility;
 import au.edu.uq.cmm.aclslib.service.MonitoredThreadServiceBase;
-import au.edu.uq.cmm.aclslib.service.ThreadServiceBase;
+import au.edu.uq.cmm.paul.PaulException;
 
-public class FileWatcher extends ThreadServiceBase {
+public class FileWatcher extends MonitoredThreadServiceBase {
     private static class WatcherEntry {
         private final Path dir;
         private final Facility facility;
+        private final WatchKey key;
+        private final WatcherEntry parent;
+        private final Set<WatcherEntry> children;
         
-        public WatcherEntry(Path dir, Facility facility) {
+        public WatcherEntry(WatchKey key, WatcherEntry parent, 
+                Path dir, Facility facility) {
             super();
             this.dir = dir;
             this.facility = facility;
+            this.key = key;
+            this.parent = parent;
+            this.children = new HashSet<WatcherEntry>();
+            if (parent != null) {
+                parent.children.add(this);
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            return key.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            return key.equals(((WatcherEntry) obj).key);
         }
     }
     
     private static final Logger LOG = Logger.getLogger(FileWatcher.class);
     
     private Configuration config;
-    private Map<WatchKey, WatcherEntry> watchMap = new HashMap<WatchKey, WatcherEntry>();
+    private Map<WatchKey, WatcherEntry> watchMap = 
+            new HashMap<WatchKey, WatcherEntry>();
     private UncPathnameMapper uncNameMapper;
     private WatchService watcher;
+
+    private List<FileWatcherEventListener> listeners = 
+            new ArrayList<FileWatcherEventListener>();
+    
     
     public FileWatcher(Configuration config, UncPathnameMapper uncNameMapper) 
             throws UnknownHostException {
@@ -68,7 +103,7 @@ public class FileWatcher extends ThreadServiceBase {
                 key.reset();
             }
         } catch (IOException ex) {
-            throw new GrabberException("Unexpected IO error", ex);
+            throw new PaulException("Unexpected IO error", ex);
         } catch (InterruptedException ex) {
             LOG.debug("Interrupted ... we're done");
         } finally {
@@ -91,17 +126,30 @@ public class FileWatcher extends ThreadServiceBase {
         } 
         WatchEvent<Path> ev = cast(event);
         Path path = entry.dir.resolve(ev.context());
+        File file = path.toFile();
         LOG.debug("Event for facility " + entry.facility.getFacilityId());
         if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
             LOG.debug("Created - " + path);
-            File file = path.toFile();
             if (file.isDirectory()) {
-                addKeys(entry.facility, file);
+                addKeys(entry.facility, file, entry);
+            } else {
+                notifyEvent(entry.facility, file, true);
             }
         } else if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
             LOG.debug("Modified - " + path);
+            if (!file.isDirectory()) {
+                notifyEvent(entry.facility, file, false);
+            }
         } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
             LOG.debug("Deleted - " + path);
+            removeKeyForPath(entry, path, false);
+        }
+    }
+    
+    private void notifyEvent(Facility facility, File file, boolean create) {
+        long now = System.currentTimeMillis();
+        for (FileWatcherEventListener listener : listeners) {
+            listener.eventOccurred(new FileWatcherEvent(facility, file, create, now));
         }
     }
 
@@ -123,11 +171,11 @@ public class FileWatcher extends ThreadServiceBase {
                         "' maps to non-existent local path '" + local + "'");
                 continue;
             }
-            addKeys(facility, local);
+            addKeys(facility, local, null);
         }
     }
 
-    private void addKeys(Facility facility, File local) 
+    private void addKeys(Facility facility, File local, WatcherEntry parent) 
             throws IOException {
         // If a directory is created while we are recursively adding
         // watcher keys, we may possibly miss it.  However, I think 
@@ -140,13 +188,51 @@ public class FileWatcher extends ThreadServiceBase {
                 StandardWatchEventKinds.ENTRY_DELETE, 
                 StandardWatchEventKinds.OVERFLOW);
         LOG.debug("Added directory watcher for " + local + 
-                " for facility " + facility);
-        watchMap.put(key, new WatcherEntry(dir, facility));
+                " for facility " + facility.getFacilityId());
+        WatcherEntry entry = new WatcherEntry(key, parent, dir, facility);
+        watchMap.put(key, entry);
         // Recursively add keys for nested directories.
         for (File child : local.listFiles()) {
             if (child.isDirectory()) {
-                addKeys(facility, child);
+                addKeys(facility, child, entry);
             }
         }
+    }
+
+    private void removeKeyForPath(WatcherEntry entry, Path path, boolean force) {
+        // Potentially inefficient ... if directory corresponding to 'entry'
+        // has many subdirectories.
+        for (WatcherEntry child : entry.children) {
+            if (child.dir.equals(path)) {
+                removeKey(child, force);
+                break;
+            }
+        }
+    }
+    
+    private void removeKey(WatcherEntry entry, boolean force) {
+        // (We don't want to cancel the watch key for a facility's
+        // folder just because it has disappeared.  I don't think 
+        // we'll get an event for that ... but this is just in case.)
+        if (entry.parent != null || force) {
+            watchMap.remove(entry.key);
+            entry.key.cancel();
+            LOG.debug("Cancelled directory watcher for " + entry.dir + 
+                    " for facility " + entry.facility.getFacilityId());
+            if (entry.parent != null) {
+                entry.parent.children.remove(entry);
+            }
+        }
+        for (WatcherEntry child : entry.children) {
+            removeKey(child, true);
+        }
+    }
+
+    public void addListener(FileWatcherEventListener listener) {
+        listeners.add(listener);
+    }
+
+    public void removeListener(FileWatcherEventListener listener) {
+        listeners.remove(listener);
     }
 }
