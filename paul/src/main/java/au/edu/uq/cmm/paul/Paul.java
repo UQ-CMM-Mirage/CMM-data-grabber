@@ -56,12 +56,14 @@ public class Paul extends CompositeServiceBase {
         }
     }
     
-    protected void doShutdown() {
+    @Override
+    protected void doShutdown() throws InterruptedException {
         fileGrabber.shutdown();
         fileWatcher.shutdown();
         proxy.shutdown();
     }
 
+    @Override
     protected void doStartup() throws ServiceException {
         proxy.startup();
         fileWatcher.startup();
