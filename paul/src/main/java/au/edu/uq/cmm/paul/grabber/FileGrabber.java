@@ -1,8 +1,10 @@
 package au.edu.uq.cmm.paul.grabber;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.channels.FileLock;
 import java.util.HashMap;
@@ -11,9 +13,14 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import au.edu.uq.cmm.aclslib.server.Facility;
-import au.edu.uq.cmm.aclslib.service.ThreadServiceBase;
+import au.edu.uq.cmm.aclslib.service.MonitoredThreadServiceBase;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
 import au.edu.uq.cmm.paul.status.FacilitySession;
@@ -21,7 +28,26 @@ import au.edu.uq.cmm.paul.watcher.FileWatcher;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEventListener;
 
-public class FileGrabber extends ThreadServiceBase implements FileWatcherEventListener {
+/**
+ * The FileGrabber service is registered as a listener for FileWatcher events.
+ * The first event for a file generates WorkEntry object that is enqueued.  
+ * Subsequent events are added to the WorkEntry.
+ * <p>
+ * The FileGrabber's thread pulls WorkEntry objects from the queue and processed 
+ * them as follows:
+ * <ul>
+ * <li>It waits until the file events stop arriving.</li>
+ * <li>It optionally locks the file.</li>
+ * <li>It captures the user / account from the ACLS status manager.</li>
+ * <li>It copies the file to another directory.</li>
+ * <li>It records the file's administrative metadata.</li>
+ * <li>It releases the lock.</li>
+ * </ul>
+ * 
+ * @author scrawley
+ */
+public class FileGrabber extends MonitoredThreadServiceBase 
+        implements FileWatcherEventListener {
     private static final Logger LOG = Logger.getLogger(FileGrabber.class);
     private static final int DEFAULT_FILE_SETTLING_TIME = 2000;  // 2 seconds
     
@@ -125,24 +151,37 @@ public class FileGrabber extends ThreadServiceBase implements FileWatcherEventLi
 
     private void doGrabFile(WorkEntry workEntry, FileInputStream is) 
             throws InterruptedException, IOException {
-        LOG.debug("Grabbing");
+        LOG.debug("State grabbing");
         Facility facility = workEntry.facility;
         long now = System.currentTimeMillis();
         FacilitySession login = statusManager.getLoginDetails(facility, workEntry.timestamp);
         String userName = login != null ? login.getUserName() : "unknown";
         String account = login != null ? login.getAccount() : "unknown";
         File copiedFile = copyFile(is, workEntry.file);
+        File metadataFile = new File(copiedFile.getPath().replace(".data", ".admin"));
         AdminMetadata metadata = new AdminMetadata(
                 workEntry.file.getAbsolutePath(), copiedFile.getAbsolutePath(),
                 userName, workEntry.facility.getFacilityId(), 
                 account, now, workEntry.timestamp);
-        LOG.debug("Grabbed");
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(metadataFile))) {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonFactory jf = new JsonFactory();
+            JsonGenerator jg = jf.createJsonGenerator(bw);
+            jg.useDefaultPrettyPrinter();
+            mapper.writeValue(jg, metadata);
+            LOG.info("Saved admin metadata to " + metadataFile);
+        } catch (JsonParseException ex) {
+            throw new PaulException(ex);
+        } catch (JsonMappingException ex) {
+            throw new PaulException(ex);
+        }
+        LOG.debug("Done grabbing");
     }
 
     private File copyFile(FileInputStream is, File source) throws IOException {
         // TODO - if the time taken to copy files is a problem, we could 
         // potentially improve this by using NIO or memory mapped files.
-        File target = File.createTempFile("", ".data", safeDirectory);
+        File target = generateUniqueFile(".data");
         long size = source.length();
         try (FileOutputStream os = new FileOutputStream(target)) {
             byte[] buffer = new byte[(int)Math.min(size, 8192)];
@@ -162,5 +201,18 @@ public class FileGrabber extends ThreadServiceBase implements FileWatcherEventLi
             LOG.info("Copied " + totalRead + " bytes from " + source + " to " + target);
         }
         return target;
+    }
+
+    private File generateUniqueFile(String suffix) {
+        long now = System.currentTimeMillis();
+        for (int i = 0; i < 10; i++) {
+            String name = String.format("file-%d-%d-%d%s", 
+                    now, Thread.currentThread().getId(), i, suffix);
+            File file = new File(safeDirectory, name);
+            if (!file.exists()) {
+                return file;
+            }
+        }
+        throw new PaulException("Can't generate a unique filename!");
     }
 }

@@ -25,6 +25,7 @@ public class Paul extends CompositeServiceBase {
     
     public Paul(Configuration config) throws IOException {
         this.proxy = new AclsProxy(config);
+        // If the probe fails, we die ...
         proxy.probeServer();
         this.statusManager = new FacilityStatusManager(proxy);
         // FIXME ... this should be pluggable.
