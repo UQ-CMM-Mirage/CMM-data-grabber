@@ -2,6 +2,7 @@ package au.edu.uq.cmm.paul.grabber;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileLock;
 import java.util.HashMap;
@@ -13,6 +14,9 @@ import org.apache.log4j.Logger;
 
 import au.edu.uq.cmm.aclslib.server.Facility;
 import au.edu.uq.cmm.aclslib.service.ThreadServiceBase;
+import au.edu.uq.cmm.paul.PaulException;
+import au.edu.uq.cmm.paul.status.FacilityStatusManager;
+import au.edu.uq.cmm.paul.status.FacilitySession;
 import au.edu.uq.cmm.paul.watcher.FileWatcher;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEventListener;
@@ -43,9 +47,15 @@ public class FileGrabber extends ThreadServiceBase implements FileWatcherEventLi
     
     private final BlockingDeque<WorkEntry> work = new LinkedBlockingDeque<WorkEntry>();
     private final HashMap<File, WorkEntry> workMap = new HashMap<File, WorkEntry>();
+    private final FacilityStatusManager statusManager;
+    private File safeDirectory = new File("/tmp/safe");
     
-    public FileGrabber(FileWatcher watcher) {
+    public FileGrabber(FileWatcher watcher, FacilityStatusManager statusManager) {
         watcher.addListener(this);
+        this.statusManager = statusManager;
+        if (!safeDirectory.exists() || !safeDirectory.isDirectory()) {
+            throw new PaulException("The grabber's safe directory doesn't exist");
+        }
     }
 
     @Override
@@ -114,10 +124,43 @@ public class FileGrabber extends ThreadServiceBase implements FileWatcherEventLi
     }
 
     private void doGrabFile(WorkEntry workEntry, FileInputStream is) 
-            throws InterruptedException {
+            throws InterruptedException, IOException {
         LOG.debug("Grabbing");
-        Thread.sleep(10000);
+        Facility facility = workEntry.facility;
+        long now = System.currentTimeMillis();
+        FacilitySession login = statusManager.getLoginDetails(facility, workEntry.timestamp);
+        String userName = login != null ? login.getUserName() : "unknown";
+        String account = login != null ? login.getAccount() : "unknown";
+        File copiedFile = copyFile(is, workEntry.file);
+        AdminMetadata metadata = new AdminMetadata(
+                workEntry.file.getAbsolutePath(), copiedFile.getAbsolutePath(),
+                userName, workEntry.facility.getFacilityId(), 
+                account, now, workEntry.timestamp);
         LOG.debug("Grabbed");
     }
 
+    private File copyFile(FileInputStream is, File source) throws IOException {
+        // TODO - if the time taken to copy files is a problem, we could 
+        // potentially improve this by using NIO or memory mapped files.
+        File target = File.createTempFile("", ".data", safeDirectory);
+        long size = source.length();
+        try (FileOutputStream os = new FileOutputStream(target)) {
+            byte[] buffer = new byte[(int)Math.min(size, 8192)];
+            int nosRead;
+            long totalRead = 0;
+            while ((nosRead = is.read(buffer, 0, buffer.length)) > 0) {
+                os.write(buffer, 0, nosRead);
+                totalRead += nosRead;
+            }
+            if (totalRead != size) {
+                // If this happen's there is something wrong with our locking
+                // and / or file settling heuristics.
+                LOG.error("Copied file size discrepancy - initial file size was " + size +
+                        "bytes but we copied " + totalRead + " bytes");
+                        
+            }
+            LOG.info("Copied " + totalRead + " bytes from " + source + " to " + target);
+        }
+        return target;
+    }
 }

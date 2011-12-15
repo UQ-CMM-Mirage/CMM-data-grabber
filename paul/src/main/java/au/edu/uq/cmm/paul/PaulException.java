@@ -7,4 +7,8 @@ public class PaulException extends RuntimeException {
         super(msg, ex);
     }
 
+    public PaulException(String msg) {
+        super(msg);
+    }
+
 }
