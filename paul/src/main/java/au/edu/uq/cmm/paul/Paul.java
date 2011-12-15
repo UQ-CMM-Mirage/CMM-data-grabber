@@ -25,11 +25,12 @@ public class Paul extends CompositeServiceBase {
     
     public Paul(Configuration config) throws IOException {
         this.proxy = new AclsProxy(config);
+        proxy.probeServer();
         this.statusManager = new FacilityStatusManager(proxy);
         // FIXME ... this should be pluggable.
         this.uncNameMapper = new SambaUncPathameMapper(SMB_CONF_PATHNAME);
         this.fileWatcher = new FileWatcher(config, uncNameMapper);
-        this.fileGrabber = new FileGrabber(fileWatcher);
+        this.fileGrabber = new FileGrabber(fileWatcher, statusManager);
     }
 
     public static void main(String[] args) {

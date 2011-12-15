@@ -1,63 +1,44 @@
 package au.edu.uq.cmm.paul.status;
 
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
 
 import au.edu.uq.cmm.aclslib.server.Facility;
 
 public class FacilityStatus {
     private Facility facility;
-    private String user;
-    private String account;
-    private Date lastLogin;
-    private Date lastLogout;
-    private boolean inUse;
+    private List<FacilitySession> sessions = new ArrayList<FacilitySession>();
     
     public FacilityStatus(Facility facility) {
         super();
         this.facility = facility;
     }
     
-    public String getUser() {
-        return user;
-    }
-    
-    public void setUser(String user) {
-        this.user = user;
-    }
-    
-    public String getAccount() {
-        return account;
-    }
-    
-    public void setAccount(String account) {
-        this.account = account;
-    }
-    
     public Facility getFacility() {
         return facility;
     }
 
-    public Date getLastLogin() {
-        return lastLogin;
+    public void addSession(FacilitySession session) {
+        sessions.add(session);
     }
 
-    public void setLastLogin(Date lastLogin) {
-        this.lastLogin = lastLogin;
+    public FacilitySession currentSession() {
+        return sessions.get(sessions.size() - 1);
+    }
+    
+    public boolean isInuse() {
+        return sessions.size() > 0 && currentSession().getLoginTime() != 0L;
     }
 
-    public Date getLastLogout() {
-        return lastLogout;
-    }
-
-    public void setLastLogout(Date lastLogout) {
-        this.lastLogout = lastLogout;
-    }
-
-    public boolean isInUse() {
-        return inUse;
-    }
-
-    public void setInUse(boolean inUse) {
-        this.inUse = inUse;
+    public FacilitySession getLoginDetails(long timestamp) {
+        for (int i = sessions.size() - 1; i >= 0; i++) {
+            FacilitySession session = sessions.get(i);
+            if (session.getLoginTime() <= timestamp && 
+                    (session.getLogoutTime() == 0L || 
+                     session.getLogoutTime() >= timestamp)) {
+                return session;
+            }
+        }
+        return null;
     }
 }
