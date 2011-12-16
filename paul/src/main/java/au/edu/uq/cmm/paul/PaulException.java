@@ -11,4 +11,8 @@ public class PaulException extends RuntimeException {
         super(msg);
     }
 
+    public PaulException(Throwable ex) {
+        super(ex);
+    }
+
 }
