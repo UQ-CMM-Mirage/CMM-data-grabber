@@ -15,7 +15,7 @@ public class FacilityStatusController {
 
     @RequestMapping(value="/status")
     public String status(Model model) {
-        model.addAttribute("sessions", services.getFacilitySessionManager());
+        model.addAttribute("sessions", services.getFacilitySessionManager().getSnapshot());
         return "status";
     }
 }
