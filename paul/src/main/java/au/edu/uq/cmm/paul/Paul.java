@@ -69,4 +69,8 @@ public class Paul extends CompositeServiceBase {
         fileWatcher.startup();
         fileGrabber.startup();
     }
+
+    public FacilityStatusManager getFacilitySessionManager() {
+        return statusManager;
+    }
 }

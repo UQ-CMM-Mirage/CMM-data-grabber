@@ -5,6 +5,11 @@
         <title>Facility Status</title>
     </head>
     <body>
-        <h1>Hello world!</h1>
+        <h1>ACLS Facility Status</h1>
+        <ul>
+          <c:forEach items="${sessions}" var="session">
+            <li>${session.facility.facilityId} is ${session.inUse ? 'in use' : 'idle'}</li>
+          </c:forEach>
+        </ul>
     </body>
 </html>
