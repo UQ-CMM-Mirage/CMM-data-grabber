@@ -1,5 +1,11 @@
 package au.edu.uq.cmm.paul.grabber;
 
+/**
+ * This class represents the administrative metadata for a file captured
+ * by the FileGrabber.
+ * 
+ * @author scrawley
+ */
 public class AdminMetadata {
     private final String userName;
     private final String facilityId;
