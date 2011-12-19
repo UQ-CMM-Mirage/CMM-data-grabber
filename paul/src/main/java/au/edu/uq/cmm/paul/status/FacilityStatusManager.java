@@ -1,7 +1,9 @@
 package au.edu.uq.cmm.paul.status;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.log4j.Logger;
 
@@ -13,12 +15,18 @@ import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
 import au.edu.uq.cmm.aclslib.server.Facility;
 import au.edu.uq.cmm.paul.grabber.FileGrabber;
 
+/**
+ * This class represents the session state of the facilities as 
+ * captured by the ACLS proxy.
+ * 
+ * @author scrawley
+ */
 public class FacilityStatusManager implements AclsFacilityEventListener {
     private static final Logger LOG = Logger.getLogger(FileGrabber.class);
     // FIXME - the facility statuses need to be persisted.
     private AclsProxy proxy;
     private Map<String, FacilityStatus> statuses = 
-            new HashMap<String, FacilityStatus>();
+            new TreeMap<String, FacilityStatus>();
 
     public FacilityStatusManager(AclsProxy proxy) {
         this.proxy = proxy;
@@ -60,5 +68,9 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
             return null;
         }
         return status.getLoginDetails(timestamp);
+    }
+    
+    public Set<Map.Entry<String, FacilityStatus>> getSnapshot() {
+        return Collections.unmodifiableSet(statuses.entrySet());
     }
 }
