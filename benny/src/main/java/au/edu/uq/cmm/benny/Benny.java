@@ -17,7 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
-import au.edu.uq.cmm.acslib.authenticator.Authenticator;
+import au.edu.uq.cmm.aclslib.authenticator.Authenticator;
 
 /**
  * The Benny servlet provides a simple HTTP-based service for checking a
