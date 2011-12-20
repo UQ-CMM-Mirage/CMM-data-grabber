@@ -24,7 +24,8 @@
         <property name="suffix" value=".jsp" />
     </bean>
     
-    <bean class="au.edu.uq.cmm.paul.Paul" name="services">
+    <bean class="au.edu.uq.cmm.paul.Paul" name="services" 
+    	init-method="startup" destroy-method="shutdown">
     	<constructor-arg ref="config"></constructor-arg>
     </bean>
     

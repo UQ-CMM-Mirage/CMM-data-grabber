@@ -1,5 +1,6 @@
 package au.edu.uq.cmm.paul.status;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -70,7 +71,7 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
         return status.getLoginDetails(timestamp);
     }
     
-    public Set<Map.Entry<String, FacilityStatus>> getSnapshot() {
-        return Collections.unmodifiableSet(statuses.entrySet());
+    public Collection<FacilityStatus> getSnapshot() {
+        return Collections.unmodifiableCollection(statuses.values());
     }
 }
