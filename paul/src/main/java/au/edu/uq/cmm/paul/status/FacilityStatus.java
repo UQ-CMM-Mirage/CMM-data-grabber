@@ -27,7 +27,7 @@ public class FacilityStatus {
     }
     
     public boolean isInUse() {
-        return sessions.size() > 0 && currentSession().getLoginTime() != 0L;
+        return sessions.size() > 0 && currentSession().getLogoutTime() == 0L;
     }
 
     public FacilitySession getLoginDetails(long timestamp) {
