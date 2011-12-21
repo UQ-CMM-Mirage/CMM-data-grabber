@@ -3,7 +3,6 @@ package au.edu.uq.cmm.paul.status;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.log4j.Logger;
@@ -50,11 +49,11 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
                 status.addSession(details);
             } else if (event instanceof AclsLogoutEvent) {
                 FacilitySession details = status.currentSession();
-                if (!details.getUserName().equals(event.getUserName()) ||
+                if (details == null ||
+                        !details.getUserName().equals(event.getUserName()) ||
                         !details.getAccount().equals(event.getAccount())) {
                     details = new FacilitySession(
-                            event.getUserName(), event.getAccount(), facility, 
-                            System.currentTimeMillis());
+                            event.getUserName(), event.getAccount(), facility, 0L);
                     status.addSession(details);
                 }
                 details.setLogoutTime(System.currentTimeMillis());
