@@ -1,28 +1,36 @@
 package au.edu.uq.cmm.paul.status;
 
+import java.util.Date;
+import java.util.concurrent.atomic.AtomicLong;
+
 import au.edu.uq.cmm.aclslib.server.Facility;
 
 public class FacilitySession {
     private final String userName;
     private final String account;
     private final Facility facility;
-    private final long loginTime;
-    private long logoutTime;
+    private final Date loginTime;
+    private Date logoutTime;
+    private final long sessionId;
+    
+    private static final AtomicLong sessionIdGenerator = new AtomicLong();
     
     public FacilitySession(String userName, String account, Facility facility,
-            long loginTime) {
+            Date loginTime) {
         super();
         this.userName = userName;
         this.account = account;
         this.facility = facility;
         this.loginTime = loginTime;
+        // FIXME - the sessionId should be allocated by the persistence layer.
+        this.sessionId = sessionIdGenerator.incrementAndGet();
     }
 
-    public long getLogoutTime() {
+    public Date getLogoutTime() {
         return logoutTime;
     }
 
-    public void setLogoutTime(long logoutTime) {
+    public void setLogoutTime(Date logoutTime) {
         this.logoutTime = logoutTime;
     }
 
@@ -38,7 +46,11 @@ public class FacilitySession {
         return facility;
     }
 
-    public long getLoginTime() {
+    public Date getLoginTime() {
         return loginTime;
+    }
+
+    public long getSessionId() {
+        return sessionId;
     }
 }

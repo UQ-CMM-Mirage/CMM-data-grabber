@@ -2,6 +2,7 @@ package au.edu.uq.cmm.paul.status;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -45,7 +46,7 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
             if (event instanceof AclsLoginEvent) {
                 FacilitySession details = new FacilitySession(
                         event.getUserName(), event.getAccount(), facility, 
-                        System.currentTimeMillis());
+                        new Date());
                 status.addSession(details);
             } else if (event instanceof AclsLogoutEvent) {
                 FacilitySession details = status.currentSession();
@@ -53,10 +54,11 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
                         !details.getUserName().equals(event.getUserName()) ||
                         !details.getAccount().equals(event.getAccount())) {
                     details = new FacilitySession(
-                            event.getUserName(), event.getAccount(), facility, 0L);
+                            event.getUserName(), event.getAccount(), facility, 
+                            new Date(0L));
                     status.addSession(details);
                 }
-                details.setLogoutTime(System.currentTimeMillis());
+                details.setLogoutTime(new Date());
             }
         }
     }

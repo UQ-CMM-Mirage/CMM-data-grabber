@@ -7,9 +7,12 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.channels.FileLock;
+import java.util.Date;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
+
+import javax.persistence.EntityManager;
 
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonFactory;
@@ -37,11 +40,11 @@ class WorkEntry implements Runnable {
     private final BlockingDeque<FileWatcherEvent> events;
     private final File file;
     private final Facility facility;
-    private final long timestamp;
+    private final Date timestamp;
     
     public WorkEntry(FileGrabber fileGrabber, FileWatcherEvent event, File file) {
         this.facility = event.getFacility();
-        this.timestamp = event.getTimestamp();
+        this.timestamp = new Date(event.getTimestamp());
         this.fileGrabber = fileGrabber;
         this.file = file;
         this.events = new LinkedBlockingDeque<FileWatcherEvent>();
@@ -98,24 +101,43 @@ class WorkEntry implements Runnable {
     private void doGrabFile(FileInputStream is) 
             throws InterruptedException, IOException {
         LOG.debug("Start file grabbing");
-        long now = System.currentTimeMillis();
+        Date now = new Date();
         FacilitySession session = fileGrabber.getStatusManager().
-                getLoginDetails(facility, timestamp);
+                getLoginDetails(facility, timestamp.getTime());
         File copiedFile = copyFile(is, file);
         saveMetadata(now, session, copiedFile);
         LOG.debug("Done grabbing");
     }
 
-    private void saveMetadata(long now,
+    private void saveMetadata(Date now,
             FacilitySession session, File copiedFile)
             throws IOException, JsonGenerationException {
         String userName = session != null ? session.getUserName() : "unknown";
         String account = session != null ? session.getAccount() : "unknown";
+        long sessionId = session != null ? session.getSessionId() : -1L;
+        Date sessionTimestamp = session != null ? session.getLoginTime() : new Date(0L);
         File metadataFile = new File(copiedFile.getPath().replace(".data", ".admin"));
         AdminMetadata metadata = new AdminMetadata(
                 file.getAbsolutePath(), copiedFile.getAbsolutePath(),
                 userName, facility.getFacilityId(), 
-                account, now, timestamp);
+                account, now, timestamp, sessionId, sessionTimestamp);
+        saveToFileSystem(metadataFile, metadata);
+        saveToDatabase(metadata);
+    }
+
+    private void saveToDatabase(AdminMetadata metadata) {
+        EntityManager entityManager = fileGrabber.getEntityManager();
+        try {
+            entityManager.getTransaction().begin();
+            entityManager.persist(metadata);
+            entityManager.getTransaction().commit();
+        } finally {
+            entityManager.close();
+        }
+    }
+
+    private void saveToFileSystem(File metadataFile, AdminMetadata metadata)
+            throws IOException, JsonGenerationException {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(metadataFile))) {
             ObjectMapper mapper = new ObjectMapper();
             JsonFactory jf = new JsonFactory();
@@ -148,7 +170,6 @@ class WorkEntry implements Runnable {
                 // and / or file settling heuristics.
                 LOG.error("Copied file size discrepancy - initial file size was " + size +
                         "bytes but we copied " + totalRead + " bytes");
-                        
             }
             LOG.info("Copied " + totalRead + " bytes from " + source + " to " + target);
         }

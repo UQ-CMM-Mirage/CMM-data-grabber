@@ -8,6 +8,10 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
+
 import org.apache.log4j.Logger;
 
 import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
@@ -46,7 +50,8 @@ public class FileGrabber extends CompositeServiceBase
     private final HashMap<File, WorkEntry> workMap = new HashMap<File, WorkEntry>();
     private final FacilityStatusManager statusManager;
     private File safeDirectory = new File("/tmp/safe");
-    private ExecutorService executor; 
+    private ExecutorService executor;
+    private EntityManagerFactory entityManagerFactory;
     
     public FileGrabber(FileWatcher watcher, FacilityStatusManager statusManager) {
         watcher.addListener(this);
@@ -54,6 +59,8 @@ public class FileGrabber extends CompositeServiceBase
         if (!safeDirectory.exists() || !safeDirectory.isDirectory()) {
             throw new PaulException("The grabber's safe directory doesn't exist");
         }
+        entityManagerFactory = Persistence.createEntityManagerFactory(
+                "au.edu.uq.cmm.paul");
     }
 
     public File getSafeDirectory() {
@@ -98,5 +105,9 @@ public class FileGrabber extends CompositeServiceBase
                workEntry.addEvent(event);
            }
         }
+    }
+
+    public EntityManager getEntityManager() {
+        return entityManagerFactory.createEntityManager();
     }
 }

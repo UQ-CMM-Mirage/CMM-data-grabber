@@ -27,15 +27,16 @@ public class FacilityStatus {
     }
     
     public synchronized boolean isInUse() {
-        return sessions.size() > 0 && currentSession().getLogoutTime() == 0L;
+        return sessions.size() > 0 && 
+                currentSession().getLogoutTime().getTime() == 0L;
     }
 
     public synchronized FacilitySession getLoginDetails(long timestamp) {
         for (int i = sessions.size() - 1; i >= 0; i++) {
             FacilitySession session = sessions.get(i);
-            if (session.getLoginTime() <= timestamp && 
-                    (session.getLogoutTime() == 0L || 
-                     session.getLogoutTime() >= timestamp)) {
+            if (session.getLoginTime().getTime() <= timestamp && 
+                    (session.getLogoutTime().getTime() == 0L || 
+                     session.getLogoutTime().getTime() >= timestamp)) {
                 return session;
             }
         }
