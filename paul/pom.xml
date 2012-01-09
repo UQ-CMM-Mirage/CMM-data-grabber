@@ -62,6 +62,17 @@
 			<artifactId>standard</artifactId>
 			<version>1.1.2</version>
 		</dependency>
+		<dependency>
+		    <groupId>org.hibernate</groupId>
+			<artifactId>hibernate-entitymanager</artifactId>
+			<version>3.6.8.Final</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.abdera</groupId>
+			<artifactId>abdera-server</artifactId>
+			<version>1.1.2</version>
+			<type>pom</type>
+		</dependency>
 	</dependencies>
 	<build>
 		<finalName>paul</finalName>
@@ -79,8 +90,20 @@
 	</build>
 	<artifactId>paul</artifactId>
 	<description>
-    The primary function of Paul is to grab data off(ski) a CMM 
-    instrument's shared drive, and prepare and submit it for 
-    ingestion into the Mirage repository.
-  </description>
+        The primary function of Paul is to grab data off(ski) a CMM 
+        instrument's shared drive, and prepare and submit it for 
+        ingestion into the Mirage repository.
+    </description>
+  
+	<distributionManagement>
+		<repository>
+			<id>metadata-net-releases</id>
+			<url>http://maven.metadata.net/artifactory/libs-releases-local</url>
+		</repository>
+		<snapshotRepository>
+			<id>metadata-net-snapshots</id>
+			<url>http://maven.metadata.net/artifactory/libs-snapshots-local</url>
+		</snapshotRepository>
+		<downloadUrl>http://maven.metadata.net/artifactory/repo/</downloadUrl>
+	</distributionManagement>
 </project>

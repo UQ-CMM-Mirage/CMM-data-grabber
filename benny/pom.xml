@@ -37,14 +37,15 @@
 	<build>
 		<finalName>benny</finalName>
 	</build>
+  
 	<distributionManagement>
 		<repository>
 			<id>metadata-net-releases</id>
-			<url>http://maven.metadata.net/artifactory/libs-releases-public</url>
+			<url>http://maven.metadata.net/artifactory/libs-releases-local</url>
 		</repository>
 		<snapshotRepository>
 			<id>metadata-net-snapshots</id>
-			<url>http://maven.metadata.net/artifactory/libs-snapshots-public</url>
+			<url>http://maven.metadata.net/artifactory/libs-snapshots-local</url>
 		</snapshotRepository>
 		<downloadUrl>http://maven.metadata.net/artifactory/repo/</downloadUrl>
 	</distributionManagement>
