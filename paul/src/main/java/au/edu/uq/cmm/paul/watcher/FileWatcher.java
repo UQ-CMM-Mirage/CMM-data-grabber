@@ -22,20 +22,20 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import au.edu.uq.cmm.aclslib.server.Configuration;
-import au.edu.uq.cmm.aclslib.server.Facility;
+import au.edu.uq.cmm.aclslib.server.FacilityConfig;
 import au.edu.uq.cmm.aclslib.service.MonitoredThreadServiceBase;
 import au.edu.uq.cmm.paul.PaulException;
 
 public class FileWatcher extends MonitoredThreadServiceBase {
     private static class WatcherEntry {
         private final Path dir;
-        private final Facility facility;
+        private final FacilityConfig facility;
         private final WatchKey key;
         private final WatcherEntry parent;
         private final Set<WatcherEntry> children;
         
         public WatcherEntry(WatchKey key, WatcherEntry parent, 
-                Path dir, Facility facility) {
+                Path dir, FacilityConfig facility) {
             super();
             this.dir = dir;
             this.facility = facility;
@@ -146,7 +146,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
         }
     }
     
-    private void notifyEvent(Facility facility, File file, boolean create) {
+    private void notifyEvent(FacilityConfig facility, File file, boolean create) {
         long now = System.currentTimeMillis();
         for (FileWatcherEventListener listener : listeners) {
             listener.eventOccurred(new FileWatcherEvent(facility, file, create, now));
@@ -156,7 +156,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
     private void configureWatcher() throws IOException {
         FileSystem fs = FileSystems.getDefault();
         watcher = fs.newWatchService();
-        for (Facility facility : config.getFacilities().values()) {
+        for (FacilityConfig facility : config.getFacilities().values()) {
             if (facility.getDriveName() == null) {
                 continue;
             }
@@ -175,7 +175,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
         }
     }
 
-    private void addKeys(Facility facility, File local, WatcherEntry parent) 
+    private void addKeys(FacilityConfig facility, File local, WatcherEntry parent) 
             throws IOException {
         // If a directory is created while we are recursively adding
         // watcher keys, we may possibly miss it.  However, I think 
