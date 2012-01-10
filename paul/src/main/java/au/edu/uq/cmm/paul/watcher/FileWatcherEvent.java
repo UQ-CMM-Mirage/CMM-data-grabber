@@ -3,7 +3,7 @@ package au.edu.uq.cmm.paul.watcher;
 import java.io.File;
 import java.util.EventObject;
 
-import au.edu.uq.cmm.aclslib.server.Facility;
+import au.edu.uq.cmm.aclslib.server.FacilityConfig;
 
 @SuppressWarnings("serial")
 public class FileWatcherEvent extends EventObject {
@@ -11,15 +11,15 @@ public class FileWatcherEvent extends EventObject {
     private final boolean create;
     private final long timestamp;
     
-    public FileWatcherEvent(Facility facility, File file, boolean create, long timestamp) {
+    public FileWatcherEvent(FacilityConfig facility, File file, boolean create, long timestamp) {
         super(facility);
         this.file = file;
         this.create = create;
         this.timestamp = timestamp;
     }
     
-    public Facility getFacility() {
-        return (Facility) getSource();
+    public FacilityConfig getFacility() {
+        return (FacilityConfig) getSource();
     }
 
     public File getFile() {
