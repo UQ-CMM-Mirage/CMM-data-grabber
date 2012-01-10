@@ -81,10 +81,6 @@ public class AdminMetadata {
     public Date getFileWriteTimestamp() {
         return fileWriteTimestamp;
     }
-    
-    public String getFilePathname() {
-        return sourceFilePathname;
-    }
 
     public String getSourceFilePathname() {
         return sourceFilePathname;
@@ -101,5 +97,45 @@ public class AdminMetadata {
 
     public long getSessionId() {
         return sessionId;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public void setFacilityId(String facilityId) {
+        this.facilityId = facilityId;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public void setSourceFilePathname(String sourceFilePathname) {
+        this.sourceFilePathname = sourceFilePathname;
+    }
+
+    public void setCaptureTimestamp(Date captureTimestamp) {
+        this.captureTimestamp = captureTimestamp;
+    }
+
+    public void setFileWriteTimestamp(Date fileWriteTimestamp) {
+        this.fileWriteTimestamp = fileWriteTimestamp;
+    }
+
+    public void setSessionStartTimestamp(Date sessionStartTimestamp) {
+        this.sessionStartTimestamp = sessionStartTimestamp;
+    }
+
+    public void setSessionId(long sessionId) {
+        this.sessionId = sessionId;
+    }
+
+    public void setCapturedFilePathname(String capturedFilePathname) {
+        this.capturedFilePathname = capturedFilePathname;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 }

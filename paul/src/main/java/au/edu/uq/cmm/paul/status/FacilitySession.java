@@ -1,19 +1,31 @@
 package au.edu.uq.cmm.paul.status;
 
 import java.util.Date;
-import java.util.concurrent.atomic.AtomicLong;
 
-import au.edu.uq.cmm.aclslib.server.Facility;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 
+import org.hibernate.annotations.GenericGenerator;
+
+
+@Entity
+@Table(name = "SESSIONS")
 public class FacilitySession {
-    private final String userName;
-    private final String account;
-    private final Facility facility;
-    private final Date loginTime;
+    private String userName;
+    private String account;
+    private Facility facility;
+    private Date loginTime;
     private Date logoutTime;
-    private final long sessionId;
+    private Long sessionId;
     
-    private static final AtomicLong sessionIdGenerator = new AtomicLong();
+    public FacilitySession() {
+        super();
+    }
     
     public FacilitySession(String userName, String account, Facility facility,
             Date loginTime) {
@@ -22,8 +34,6 @@ public class FacilitySession {
         this.account = account;
         this.facility = facility;
         this.loginTime = loginTime;
-        // FIXME - the sessionId should be allocated by the persistence layer.
-        this.sessionId = sessionIdGenerator.incrementAndGet();
     }
 
     public Date getLogoutTime() {
@@ -42,6 +52,8 @@ public class FacilitySession {
         return account;
     }
 
+    @ManyToOne(cascade={CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinColumn(name="facility_id")
     public Facility getFacility() {
         return facility;
     }
@@ -50,7 +62,30 @@ public class FacilitySession {
         return loginTime;
     }
 
-    public long getSessionId() {
+    @Id
+    @GeneratedValue(generator="increment")
+    @GenericGenerator(name="increment", strategy = "increment")
+    public Long getSessionId() {
         return sessionId;
+    }
+
+    public void setSessionId(Long sessionId) {
+        this.sessionId = sessionId;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public void setAccount(String account) {
+        this.account = account;
+    }
+
+    public void setFacility(Facility facility) {
+        this.facility = facility;
+    }
+
+    public void setLoginTime(Date loginTime) {
+        this.loginTime = loginTime;
     }
 }

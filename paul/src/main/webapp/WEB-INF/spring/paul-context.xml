@@ -39,7 +39,9 @@
 		</property>
 	</bean>
 	
+	<!-- 
 	<bean id="ingestionFeed" class="au.edu.uq.cmm.paul.servlet.IngestionAtomView"/>
+	 -->
     
     <bean class="au.edu.uq.cmm.paul.Paul" name="services" 
     	init-method="startup" destroy-method="shutdown">

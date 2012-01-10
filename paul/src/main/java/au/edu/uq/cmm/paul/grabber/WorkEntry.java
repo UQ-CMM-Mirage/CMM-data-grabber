@@ -22,7 +22,7 @@ import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
-import au.edu.uq.cmm.aclslib.server.Facility;
+import au.edu.uq.cmm.aclslib.server.FacilityConfig;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.status.FacilitySession;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
@@ -39,7 +39,7 @@ class WorkEntry implements Runnable {
     private final FileGrabber fileGrabber;
     private final BlockingDeque<FileWatcherEvent> events;
     private final File file;
-    private final Facility facility;
+    private final FacilityConfig facility;
     private final Date timestamp;
     
     public WorkEntry(FileGrabber fileGrabber, FileWatcherEvent event, File file) {
