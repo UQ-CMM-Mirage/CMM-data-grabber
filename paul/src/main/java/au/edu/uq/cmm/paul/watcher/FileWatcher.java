@@ -21,9 +21,9 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
-import au.edu.uq.cmm.aclslib.server.Configuration;
 import au.edu.uq.cmm.aclslib.server.FacilityConfig;
 import au.edu.uq.cmm.aclslib.service.MonitoredThreadServiceBase;
+import au.edu.uq.cmm.paul.DynamicConfiguration;
 import au.edu.uq.cmm.paul.PaulException;
 
 public class FileWatcher extends MonitoredThreadServiceBase {
@@ -66,7 +66,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
     
     private static final Logger LOG = Logger.getLogger(FileWatcher.class);
     
-    private Configuration config;
+    private DynamicConfiguration config;
     private Map<WatchKey, WatcherEntry> watchMap = 
             new HashMap<WatchKey, WatcherEntry>();
     private UncPathnameMapper uncNameMapper;
@@ -76,7 +76,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
             new ArrayList<FileWatcherEventListener>();
     
     
-    public FileWatcher(Configuration config, UncPathnameMapper uncNameMapper) 
+    public FileWatcher(DynamicConfiguration config, UncPathnameMapper uncNameMapper) 
             throws UnknownHostException {
         this.config = config;
         this.uncNameMapper = uncNameMapper;
@@ -156,7 +156,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
     private void configureWatcher() throws IOException {
         FileSystem fs = FileSystems.getDefault();
         watcher = fs.newWatchService();
-        for (FacilityConfig facility : config.getFacilities().values()) {
+        for (FacilityConfig facility : config.getFacilities()) {
             if (facility.getDriveName() == null) {
                 continue;
             }

@@ -103,7 +103,7 @@ class WorkEntry implements Runnable {
         LOG.debug("Start file grabbing");
         Date now = new Date();
         FacilitySession session = fileGrabber.getStatusManager().
-                getLoginDetails(facility, timestamp.getTime());
+                getLoginDetails(facility.getFacilityId(), timestamp.getTime());
         File copiedFile = copyFile(is, file);
         saveMetadata(now, session, copiedFile);
         LOG.debug("Done grabbing");

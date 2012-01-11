@@ -2,10 +2,13 @@ package au.edu.uq.cmm.paul;
 
 import java.io.IOException;
 
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
+
 import org.apache.log4j.Logger;
 
 import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
-import au.edu.uq.cmm.aclslib.server.Configuration;
+import au.edu.uq.cmm.aclslib.server.StaticConfiguration;
 import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
 import au.edu.uq.cmm.aclslib.service.ServiceException;
 import au.edu.uq.cmm.paul.grabber.FileGrabber;
@@ -22,16 +25,30 @@ public class Paul extends CompositeServiceBase {
     private FacilityStatusManager statusManager;
     private AclsProxy proxy;
     private UncPathnameMapper uncNameMapper;
+    private EntityManagerFactory entityManagerFactory;
     
-    public Paul(Configuration config) throws IOException {
-        this.proxy = new AclsProxy(config);
+    
+    public Paul() throws IOException {
+        this(null);
+    }
+    
+    public Paul(StaticConfiguration staticConfig) throws IOException {
+        // FIXME ... should we wire this with Spring?
+        entityManagerFactory = 
+                Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul");
+        
+        DynamicConfiguration config = new DynamicConfiguration();
+        if (config.isEmpty() && staticConfig != null) {
+            config.merge(entityManagerFactory, staticConfig);
+        }
+        proxy = new AclsProxy(config);
         // If the probe fails, we die ...
         proxy.probeServer();
-        this.statusManager = new FacilityStatusManager(proxy);
+        statusManager = new FacilityStatusManager(entityManagerFactory, proxy);
         // FIXME ... this should be pluggable.
-        this.uncNameMapper = new SambaUncPathameMapper(SMB_CONF_PATHNAME);
-        this.fileWatcher = new FileWatcher(config, uncNameMapper);
-        this.fileGrabber = new FileGrabber(fileWatcher, statusManager);
+        uncNameMapper = new SambaUncPathameMapper(SMB_CONF_PATHNAME);
+        fileWatcher = new FileWatcher(config, uncNameMapper);
+        fileGrabber = new FileGrabber(entityManagerFactory, fileWatcher, statusManager);
     }
 
     public static void main(String[] args) {
@@ -40,12 +57,15 @@ public class Paul extends CompositeServiceBase {
             configFile = args[0];
         }
         try {
-            Configuration config = Configuration.loadConfiguration(configFile);
-            if (config == null) {
-                LOG.info("Can't read/load configuration file");
-                System.exit(2);
+            StaticConfiguration staticConfig = null;
+            if (configFile != null) {
+                staticConfig = StaticConfiguration.loadConfiguration(configFile);
+                if (staticConfig == null) {
+                    LOG.info("Can't read/load initial configuration file");
+                    System.exit(2);
+                }
             }
-            Paul grabber = new Paul(config);
+            Paul grabber = new Paul(staticConfig);
             grabber.startup();
             grabber.awaitShutdown();
             LOG.info("Exitting normally");

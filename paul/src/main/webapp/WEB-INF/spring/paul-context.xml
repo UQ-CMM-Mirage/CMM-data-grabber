@@ -45,11 +45,13 @@
     
     <bean class="au.edu.uq.cmm.paul.Paul" name="services" 
     	init-method="startup" destroy-method="shutdown">
-    	<constructor-arg ref="config"></constructor-arg>
+    	<!-- Note that the static config is only used if the dynamic
+    	     config loaded from the database is empty / uninitialized -->
+    	<constructor-arg ref="staticConfig"></constructor-arg>
     </bean>
     
-    <bean class="au.edu.uq.cmm.aclslib.server.Configuration" 
-          factory-method="loadConfiguration" name="config">
+    <bean class="au.edu.uq.cmm.aclslib.server.StaticConfiguration" 
+          factory-method="loadConfiguration" name="staticConfig">
           <constructor-arg><value>/home/scrawley/config.json</value></constructor-arg>
     </bean>
  

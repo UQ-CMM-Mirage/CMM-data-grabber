@@ -10,7 +10,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 
 import org.apache.log4j.Logger;
 
@@ -53,14 +52,14 @@ public class FileGrabber extends CompositeServiceBase
     private ExecutorService executor;
     private EntityManagerFactory entityManagerFactory;
     
-    public FileGrabber(FileWatcher watcher, FacilityStatusManager statusManager) {
+    public FileGrabber(EntityManagerFactory entityManagerFactory, 
+            FileWatcher watcher, FacilityStatusManager statusManager) {
         watcher.addListener(this);
         this.statusManager = statusManager;
         if (!safeDirectory.exists() || !safeDirectory.isDirectory()) {
             throw new PaulException("The grabber's safe directory doesn't exist");
         }
-        entityManagerFactory = Persistence.createEntityManagerFactory(
-                "au.edu.uq.cmm.paul");
+        this.entityManagerFactory = entityManagerFactory;
     }
 
     public File getSafeDirectory() {
