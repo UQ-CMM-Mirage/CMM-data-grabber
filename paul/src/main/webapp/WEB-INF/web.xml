@@ -4,7 +4,7 @@
     xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
 
 	<servlet>
-		<servlet-name>facilityStatus</servlet-name>
+		<servlet-name>paul</servlet-name>
 		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
 		<init-param>
 			<param-name>contextConfigLocation</param-name>
@@ -14,7 +14,7 @@
 	</servlet>
 
 	<servlet-mapping>
-		<servlet-name>facilityStatus</servlet-name>
+		<servlet-name>paul</servlet-name>
 		<url-pattern>/</url-pattern>
 	</servlet-mapping>
 	<display-name>Paul the file grabber</display-name>

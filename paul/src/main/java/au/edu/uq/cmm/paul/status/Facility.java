@@ -16,12 +16,16 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
 import org.hibernate.annotations.GenericGenerator;
 
 import au.edu.uq.cmm.aclslib.server.FacilityConfig;
 import au.edu.uq.cmm.paul.DynamicConfiguration;
 
+/**
+ * The persistable implementation of FacilityConfig
+ * 
+ * @author scrawley
+ */
 @Entity
 @Table(name = "facilities")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
@@ -100,7 +104,6 @@ public class Facility implements FacilityConfig {
         return useFullScreen;
     }
 
-    @JsonIgnore
     @Transient
     public boolean isUseNetDrive() {
         return driveName != null;
@@ -181,18 +184,17 @@ public class Facility implements FacilityConfig {
         return (sessions.size() == 0) ? null : sessions.get(sessions.size() - 1);
     }
     
-    @JsonIgnore
     @Transient
     public synchronized boolean isInUse() {
         return sessions.size() > 0 && 
-                currentSession().getLogoutTime().getTime() == 0L;
+                currentSession().getLogoutTime() == null;
     }
 
     public synchronized FacilitySession getLoginDetails(long timestamp) {
         for (int i = sessions.size() - 1; i >= 0; i++) {
             FacilitySession session = sessions.get(i);
             if (session.getLoginTime().getTime() <= timestamp && 
-                    (session.getLogoutTime().getTime() == 0L || 
+                    (session.getLogoutTime() == null || 
                      session.getLogoutTime().getTime() >= timestamp)) {
                 return session;
             }

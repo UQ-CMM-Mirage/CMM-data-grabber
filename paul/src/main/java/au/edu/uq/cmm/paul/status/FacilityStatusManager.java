@@ -15,6 +15,7 @@ import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEventListener;
 import au.edu.uq.cmm.aclslib.proxy.AclsLoginEvent;
 import au.edu.uq.cmm.aclslib.proxy.AclsLogoutEvent;
 import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
+import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.grabber.FileGrabber;
 
@@ -30,10 +31,10 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
     private AclsProxy proxy;
     private EntityManagerFactory entityManagerFactory;
 
-    public FacilityStatusManager(EntityManagerFactory entityManagerFactory, AclsProxy proxy) {
-        this.proxy = proxy;
+    public FacilityStatusManager(Paul services) {
+        this.proxy = services.getProxy();
         this.proxy.addListener(this);
-        this.entityManagerFactory = entityManagerFactory;
+        this.entityManagerFactory = services.getEntityManagerFactory();
     }
 
     public void eventOccurred(AclsFacilityEvent event) {

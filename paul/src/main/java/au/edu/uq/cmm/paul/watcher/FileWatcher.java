@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import au.edu.uq.cmm.aclslib.server.FacilityConfig;
 import au.edu.uq.cmm.aclslib.service.MonitoredThreadServiceBase;
 import au.edu.uq.cmm.paul.DynamicConfiguration;
+import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 
 public class FileWatcher extends MonitoredThreadServiceBase {
@@ -76,10 +77,10 @@ public class FileWatcher extends MonitoredThreadServiceBase {
             new ArrayList<FileWatcherEventListener>();
     
     
-    public FileWatcher(DynamicConfiguration config, UncPathnameMapper uncNameMapper) 
+    public FileWatcher(Paul services) 
             throws UnknownHostException {
-        this.config = config;
-        this.uncNameMapper = uncNameMapper;
+        this.config = services.getConfiguration();
+        this.uncNameMapper = services.getUncNameMapper();
     }
 
     @SuppressWarnings("unchecked")

@@ -12,7 +12,7 @@ public class WebUIController {
     
     @Autowired
     Paul services;
-
+    
     @RequestMapping(value="/status")
     public String status(Model model) {
         model.addAttribute("facilities", services.getFacilitySessionManager().getSnapshot());
@@ -23,5 +23,11 @@ public class WebUIController {
     public String config(Model model) {
         model.addAttribute("configuration", services.getConfiguration());
         return "config";
+    }
+    
+    @RequestMapping(value="/queue")
+    public String queue(Model model) {
+        model.addAttribute("queue", services.getQueueManager().getSnapshot());
+        return "queue";
     }
 }

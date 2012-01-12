@@ -28,9 +28,9 @@ public class AdminMetadata {
     private Date captureTimestamp;
     private Date fileWriteTimestamp;
     private Date sessionStartTimestamp;
-    private long sessionId;
+    private Long sessionId;
     private String capturedFilePathname;
-    private long id;
+    private Long id;
     
     
     public AdminMetadata() {
@@ -127,7 +127,7 @@ public class AdminMetadata {
         this.sessionStartTimestamp = sessionStartTimestamp;
     }
 
-    public void setSessionId(long sessionId) {
+    public void setSessionId(Long sessionId) {
         this.sessionId = sessionId;
     }
 
@@ -135,7 +135,7 @@ public class AdminMetadata {
         this.capturedFilePathname = capturedFilePathname;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 }

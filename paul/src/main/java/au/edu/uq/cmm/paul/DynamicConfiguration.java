@@ -93,7 +93,7 @@ public class DynamicConfiguration extends ConfigurationBase implements Configura
                 if (!facilityMap.containsKey(facilityConfig.getAddress())) {
                     Facility facility = new Facility(facilityConfig);
                     facilityMap.put(facility.getAddress(), facility);
-                    LOG.error("Merged facility '" + facility.getFacilityId() + 
+                    LOG.info("Merged facility '" + facility.getFacilityId() + 
                             "' with address '" + facility.getAddress() + "'");
                 }
             }

@@ -27,6 +27,7 @@ public class Paul extends CompositeServiceBase {
     private UncPathnameMapper uncNameMapper;
     private EntityManagerFactory entityManagerFactory;
     private DynamicConfiguration config;
+    private QueueManager queueManager;
     
     public Paul() throws IOException {
         this(null);
@@ -44,11 +45,12 @@ public class Paul extends CompositeServiceBase {
         proxy = new AclsProxy(config);
         // If the probe fails, we die ...
         proxy.probeServer();
-        statusManager = new FacilityStatusManager(entityManagerFactory, proxy);
+        statusManager = new FacilityStatusManager(this);
         // FIXME ... this should be pluggable.
         uncNameMapper = new SambaUncPathameMapper(SMB_CONF_PATHNAME);
-        fileWatcher = new FileWatcher(config, uncNameMapper);
-        fileGrabber = new FileGrabber(entityManagerFactory, fileWatcher, statusManager);
+        fileWatcher = new FileWatcher(this);
+        fileGrabber = new FileGrabber(this);
+        queueManager = new QueueManager(this);
     }
 
     public static void main(String[] args) {
@@ -96,5 +98,29 @@ public class Paul extends CompositeServiceBase {
 
     public DynamicConfiguration getConfiguration() {
         return config;
+    }
+
+    public QueueManager getQueueManager() {
+        return queueManager;
+    }
+
+    public FileGrabber getFileGrabber() {
+        return fileGrabber;
+    }
+
+    public FileWatcher getFileWatcher() {
+        return fileWatcher;
+    }
+
+    public EntityManagerFactory getEntityManagerFactory() {
+        return entityManagerFactory;
+    }
+
+    public AclsProxy getProxy() {
+        return proxy;
+    }
+
+    public UncPathnameMapper getUncNameMapper() {
+        return uncNameMapper;
     }
 }
