@@ -8,7 +8,9 @@
         <h1>ACLS Facility Status</h1>
         <ul>
           <c:forEach items="${facilities}" var="facility">
-            <li>${facility.facilityId} is ${facility.inUse ? 'in use' : 'idle'}</li>
+            <c:if test="${!facility.dummy}">
+              <li>${facility.facilityId} is ${facility.inUse ? 'in use' : 'idle'}</li>
+            </c:if>
           </c:forEach>
         </ul>
     </body>

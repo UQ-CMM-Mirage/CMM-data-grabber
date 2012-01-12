@@ -26,6 +26,7 @@ import au.edu.uq.cmm.paul.DynamicConfiguration;
 @Table(name = "facilities")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public class Facility implements FacilityConfig {
+
     private List<FacilitySession> sessions = new ArrayList<FacilitySession>();
     private Long id;
     private DynamicConfiguration configuration;
@@ -41,6 +42,7 @@ public class Facility implements FacilityConfig {
     private boolean dummy;
     private boolean useFileLocks = true;
     private int fileSettlingTime;
+    private String address;
     
 
     public Facility() {
@@ -59,6 +61,15 @@ public class Facility implements FacilityConfig {
         dummy = facilityConfig.isDummy();
         useFileLocks = facilityConfig.isUseFileLocks();
         fileSettlingTime = facilityConfig.getFileSettlingTime();
+        address = facilityConfig.getAddress();
+    }
+    
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
     }
 
     public String getAccessName() {

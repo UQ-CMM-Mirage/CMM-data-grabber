@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import au.edu.uq.cmm.paul.Paul;
 
 @Controller
-public class FacilityStatusController {
+public class WebUIController {
     
     @Autowired
     Paul services;
@@ -17,5 +17,11 @@ public class FacilityStatusController {
     public String status(Model model) {
         model.addAttribute("facilities", services.getFacilitySessionManager().getSnapshot());
         return "status";
+    }
+    
+    @RequestMapping(value="/config")
+    public String config(Model model) {
+        model.addAttribute("configuration", services.getConfiguration());
+        return "config";
     }
 }

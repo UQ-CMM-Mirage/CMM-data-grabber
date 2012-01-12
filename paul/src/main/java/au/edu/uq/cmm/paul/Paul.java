@@ -26,7 +26,7 @@ public class Paul extends CompositeServiceBase {
     private AclsProxy proxy;
     private UncPathnameMapper uncNameMapper;
     private EntityManagerFactory entityManagerFactory;
-    
+    private DynamicConfiguration config;
     
     public Paul() throws IOException {
         this(null);
@@ -37,7 +37,7 @@ public class Paul extends CompositeServiceBase {
         entityManagerFactory = 
                 Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul");
         
-        DynamicConfiguration config = new DynamicConfiguration();
+        config = new DynamicConfiguration();
         if (config.isEmpty() && staticConfig != null) {
             config.merge(entityManagerFactory, staticConfig);
         }
@@ -92,5 +92,9 @@ public class Paul extends CompositeServiceBase {
 
     public FacilityStatusManager getFacilitySessionManager() {
         return statusManager;
+    }
+
+    public DynamicConfiguration getConfiguration() {
+        return config;
     }
 }

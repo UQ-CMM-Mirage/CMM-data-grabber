@@ -90,10 +90,11 @@ public class DynamicConfiguration extends ConfigurationBase implements Configura
             setProxyPort(staticConfig.getProxyPort());
             setServerPort(staticConfig.getServerPort());
             for (FacilityConfig facilityConfig: staticConfig.getFacilities()) {
-                if (!facilityMap.containsKey(facilityConfig.getFacilityId())) {
+                if (!facilityMap.containsKey(facilityConfig.getAddress())) {
                     Facility facility = new Facility(facilityConfig);
-                    // entityManager.persist(facility);
-                    facilityMap.put(facilityConfig.getFacilityId(), facility);
+                    facilityMap.put(facility.getAddress(), facility);
+                    LOG.error("Merged facility '" + facility.getFacilityId() + 
+                            "' with address '" + facility.getAddress() + "'");
                 }
             }
             entityManager.persist(this);
@@ -104,7 +105,7 @@ public class DynamicConfiguration extends ConfigurationBase implements Configura
     }
 
     @OneToMany(mappedBy="configuration", cascade=CascadeType.ALL)
-    @MapKey(name="facilityId")
+    @MapKey(name="address")
     public Map<String, Facility> getFacilityMap() {
         return facilityMap;
     }
