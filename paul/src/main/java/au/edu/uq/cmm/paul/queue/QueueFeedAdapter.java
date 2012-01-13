@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.abdera.i18n.iri.IRI;
 import org.apache.abdera.model.Content;
+import org.apache.abdera.model.Entry;
 import org.apache.abdera.model.Person;
 import org.apache.abdera.protocol.server.RequestContext;
 import org.apache.abdera.protocol.server.context.ResponseContextException;
@@ -23,7 +24,7 @@ import au.edu.uq.cmm.paul.grabber.AdminMetadata;
 public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetadata> {
 
     private static final Logger LOG = Logger.getLogger(QueueFeedAdapter.class);
-    private static final String ID_PREFIX = "PREFIX-";
+    private static final String ID_PREFIX = "";
 
     private EntityManagerFactory entityManagerFactory;
     
@@ -86,12 +87,12 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
 
     @Override
     public String getId(AdminMetadata record) throws ResponseContextException {
-        return ID_PREFIX + record.getId();
+        return ID_PREFIX + record.getUuid();
     }
 
     @Override
     public String getName(AdminMetadata record) throws ResponseContextException {
-        return record.getId() + "-" + record.getCapturedFilePathname();
+        return record.getId() + "-" + record.getUuid();
     }
 
     @Override
@@ -131,6 +132,19 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
         author.setName(record.getUserName());
         return Arrays.asList(author);
     }
+    
+    @Override
+    protected String addEntryDetails(RequestContext request, Entry e,
+            IRI feedIri, AdminMetadata record)
+            throws ResponseContextException {
+        String res = super.addEntryDetails(request, e, feedIri, record);
+        e.addLink("http://gs710-cmm:8080/paul/files/" + 
+                new File(record.getCapturedFilePathname()).getName(),
+                "enclosure");
+        return res;
+    }
+
+
 
     @Override
     public String getId(RequestContext rc) {

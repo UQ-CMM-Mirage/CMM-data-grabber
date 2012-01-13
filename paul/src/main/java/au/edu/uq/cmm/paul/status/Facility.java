@@ -19,7 +19,7 @@ import javax.persistence.Transient;
 import org.hibernate.annotations.GenericGenerator;
 
 import au.edu.uq.cmm.aclslib.server.FacilityConfig;
-import au.edu.uq.cmm.paul.DynamicConfiguration;
+import au.edu.uq.cmm.paul.PaulConfiguration;
 
 /**
  * The persistable implementation of FacilityConfig
@@ -33,7 +33,7 @@ public class Facility implements FacilityConfig {
 
     private List<FacilitySession> sessions = new ArrayList<FacilitySession>();
     private Long id;
-    private DynamicConfiguration configuration;
+    private PaulConfiguration configuration;
     
     private boolean useFullScreen;
     private String driveName;
@@ -218,11 +218,11 @@ public class Facility implements FacilityConfig {
 
     @ManyToOne
     @JoinColumn(name="configuration_id", updatable=false)
-    public DynamicConfiguration getConfiguration() {
+    public PaulConfiguration getConfiguration() {
         return configuration;
     }
 
-    public void setConfiguration(DynamicConfiguration configuration) {
+    public void setConfiguration(PaulConfiguration configuration) {
         this.configuration = configuration;
     }
 }

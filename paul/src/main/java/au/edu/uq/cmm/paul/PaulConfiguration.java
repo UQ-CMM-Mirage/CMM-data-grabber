@@ -33,19 +33,19 @@ import au.edu.uq.cmm.paul.status.Facility;
  */
 @Entity
 @Table(name = "CONFIGURATION")
-public class DynamicConfiguration extends ConfigurationBase implements Configuration {
-    private static final Logger LOG = Logger.getLogger(DynamicConfiguration.class);
+public class PaulConfiguration extends ConfigurationBase implements Configuration {
+    private static final Logger LOG = Logger.getLogger(PaulConfiguration.class);
 
     private Long id;
     private Map<String, Facility> facilityMap = new HashMap<String, Facility>();
     
     
-    public static DynamicConfiguration load(EntityManagerFactory entityManagerFactory) {
+    public static PaulConfiguration load(EntityManagerFactory entityManagerFactory) {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             return entityManager.
-                    createQuery("from DynamicConfiguration",
-                            DynamicConfiguration.class).
+                    createQuery("from PaulConfiguration",
+                            PaulConfiguration.class).
                     getSingleResult();
         } finally {
             entityManager.close();
