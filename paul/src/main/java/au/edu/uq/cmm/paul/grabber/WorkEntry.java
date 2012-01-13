@@ -16,7 +16,7 @@ import org.codehaus.jackson.JsonGenerationException;
 import au.edu.uq.cmm.aclslib.server.FacilityConfig;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
-import au.edu.uq.cmm.paul.QueueManager;
+import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.status.FacilitySession;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
 

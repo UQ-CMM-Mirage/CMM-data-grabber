@@ -1,4 +1,4 @@
-package au.edu.uq.cmm.paul;
+package au.edu.uq.cmm.paul.queue;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -17,6 +17,8 @@ import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
+import au.edu.uq.cmm.paul.Paul;
+import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.grabber.AdminMetadata;
 
 /**

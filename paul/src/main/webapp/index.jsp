@@ -9,6 +9,7 @@
         <ul>
           <li><a href="config">Configuration</a></li>
           <li><a href="status">Facility Status</a></li>
+          <li><a href="atom/queue">Ingestion Queue</a></li>
         </ul>
     </body>
 </html>

@@ -12,6 +12,7 @@ import au.edu.uq.cmm.aclslib.server.StaticConfiguration;
 import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
 import au.edu.uq.cmm.aclslib.service.ServiceException;
 import au.edu.uq.cmm.paul.grabber.FileGrabber;
+import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
 import au.edu.uq.cmm.paul.watcher.FileWatcher;
 import au.edu.uq.cmm.paul.watcher.SambaUncPathameMapper;
