@@ -10,7 +10,7 @@
           <li>Proxy host - ${configuration.proxyHost} : ${configuration.proxyPort}</li>
           <li>Server host - ${configuration.serverHost} : ${configuration.serverPort}</li>
           <li>Base file URL - ${configuration.baseFileUrl}</li>
-          <li>Capture directory - ${configuration.capthureDirectory}</li>
+          <li>Capture directory - ${configuration.captureDirectory}</li>
           <li>Clients use 'project' - ${configuration.useProject}</li>
           <li>Facilities:
             <ul>
