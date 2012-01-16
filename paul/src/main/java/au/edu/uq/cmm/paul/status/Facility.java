@@ -3,12 +3,15 @@ package au.edu.uq.cmm.paul.status;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
@@ -17,13 +20,16 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 import org.hibernate.annotations.GenericGenerator;
 
 import au.edu.uq.cmm.aclslib.server.FacilityConfig;
+import au.edu.uq.cmm.paul.PaulConfiguration;
 
 @Entity
-@Table(name = "FACILITIES")
+@Table(name = "facilities")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public class Facility implements FacilityConfig {
+
     private List<FacilitySession> sessions = new ArrayList<FacilitySession>();
-    private long id;
+    private Long id;
+    private PaulConfiguration configuration;
     
     private boolean useFullScreen;
     private String driveName;
@@ -36,10 +42,34 @@ public class Facility implements FacilityConfig {
     private boolean dummy;
     private boolean useFileLocks = true;
     private int fileSettlingTime;
+    private String address;
     
 
     public Facility() {
         super();
+    }
+
+    public Facility(FacilityConfig facilityConfig) {
+        useFullScreen = facilityConfig.isUseFullScreen();
+        driveName = facilityConfig.getDriveName();
+        accessPassword = facilityConfig.getAccessPassword();
+        accessName = facilityConfig.getAccessName();
+        facilityId = facilityConfig.getFacilityId();
+        folderName = facilityConfig.getFolderName();
+        useTimer = facilityConfig.isUseTimer();
+        facilityName = facilityConfig.getFacilityName();
+        dummy = facilityConfig.isDummy();
+        useFileLocks = facilityConfig.isUseFileLocks();
+        fileSettlingTime = facilityConfig.getFileSettlingTime();
+        address = facilityConfig.getAddress();
+    }
+    
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
     }
 
     public String getAccessName() {
@@ -139,7 +169,7 @@ public class Facility implements FacilityConfig {
     @Id
     @GeneratedValue(generator="increment")
     @GenericGenerator(name="increment", strategy = "increment")
-    public long getId() {
+    public Long getId() {
         return id;
     }
     
@@ -170,8 +200,8 @@ public class Facility implements FacilityConfig {
         return null;
     }
 
-    @OneToMany
-    @JoinColumn(name="PART_ID")
+    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER)
+    @JoinColumn(name="session_id")
     public List<FacilitySession> getSessions() {
         return sessions;
     }
@@ -180,7 +210,17 @@ public class Facility implements FacilityConfig {
         this.sessions = sessions;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
+    }
+
+    @ManyToOne
+    @JoinColumn(name="configuration_id", updatable=false)
+    public PaulConfiguration getConfiguration() {
+        return configuration;
+    }
+
+    public void setConfiguration(PaulConfiguration configuration) {
+        this.configuration = configuration;
     }
 }

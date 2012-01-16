@@ -1,6 +1,7 @@
 package au.edu.uq.cmm.paul.grabber;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -28,9 +29,10 @@ public class AdminMetadata {
     private Date captureTimestamp;
     private Date fileWriteTimestamp;
     private Date sessionStartTimestamp;
-    private long sessionId;
+    private Long sessionId;
     private String capturedFilePathname;
-    private long id;
+    private Long id;
+    private UUID uuid;
     
     
     public AdminMetadata() {
@@ -51,6 +53,7 @@ public class AdminMetadata {
         this.fileWriteTimestamp = fileWriteTimestamp;
         this.sessionId = sessionId;
         this.sessionStartTimestamp = sessionStartTimestamp;
+        this.uuid = UUID.randomUUID();
     }
     
     @Id
@@ -127,7 +130,7 @@ public class AdminMetadata {
         this.sessionStartTimestamp = sessionStartTimestamp;
     }
 
-    public void setSessionId(long sessionId) {
+    public void setSessionId(Long sessionId) {
         this.sessionId = sessionId;
     }
 
@@ -135,7 +138,15 @@ public class AdminMetadata {
         this.capturedFilePathname = capturedFilePathname;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
+    }
+
+    public UUID getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
     }
 }
