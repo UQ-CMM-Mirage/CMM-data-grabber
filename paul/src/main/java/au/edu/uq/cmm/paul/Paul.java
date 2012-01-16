@@ -30,22 +30,20 @@ public class Paul extends CompositeServiceBase {
     private PaulConfiguration config;
     private QueueManager queueManager;
     
-    public Paul() throws IOException {
-        this(null);
-    }
-    
-    public Paul(StaticConfiguration staticConfig) throws IOException {
-        // FIXME ... should we wire this with Spring?
-        entityManagerFactory = 
-                Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul");
-        
+    public Paul(StaticConfiguration staticConfig,
+            EntityManagerFactory entityManagerFactory) throws IOException {
+        this.entityManagerFactory = entityManagerFactory;
         config = new PaulConfiguration();
         if (config.isEmpty() && staticConfig != null) {
             config.merge(entityManagerFactory, staticConfig);
         }
         proxy = new AclsProxy(config);
-        // If the probe fails, we die ...
-        proxy.probeServer();
+        try {
+            proxy.probeServer();
+        } catch (ServiceException ex) {
+            LOG.error("ACLS server probe failed", ex);
+            LOG.info("Continuing regardless ...");
+        }
         statusManager = new FacilityStatusManager(this);
         // FIXME ... this should be pluggable.
         uncNameMapper = new SambaUncPathameMapper(SMB_CONF_PATHNAME);
@@ -54,6 +52,7 @@ public class Paul extends CompositeServiceBase {
         queueManager = new QueueManager(this);
     }
 
+    // FIXME - get rid if this?
     public static void main(String[] args) {
         String configFile = null;
         if (args.length > 0) {
@@ -68,7 +67,8 @@ public class Paul extends CompositeServiceBase {
                     System.exit(2);
                 }
             }
-            Paul grabber = new Paul(staticConfig);
+            Paul grabber = new Paul(staticConfig, 
+                    Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul"));
             grabber.startup();
             grabber.awaitShutdown();
             LOG.info("Exitting normally");

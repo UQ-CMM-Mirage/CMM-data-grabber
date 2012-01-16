@@ -43,6 +43,7 @@ public class PaulConfiguration extends ConfigurationBase implements Configuratio
     public static PaulConfiguration load(EntityManagerFactory entityManagerFactory) {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
+            entityManager.getTransaction().begin();
             return entityManager.
                     createQuery("from PaulConfiguration",
                             PaulConfiguration.class).

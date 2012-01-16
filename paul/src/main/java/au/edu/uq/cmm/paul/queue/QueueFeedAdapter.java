@@ -30,10 +30,8 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
     private EntityManagerFactory entityManagerFactory;
     private String baseFileUrl;
     
-    public QueueFeedAdapter() {
-        // FIXME ... should we wire this with Spring?
-        entityManagerFactory = 
-                Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul");
+    public QueueFeedAdapter(EntityManagerFactory entityManagerFactory) {
+        this.entityManagerFactory = entityManagerFactory;
         PaulConfiguration configuration = PaulConfiguration.load(entityManagerFactory);
         baseFileUrl = configuration.getBaseFileUrl();
     }
