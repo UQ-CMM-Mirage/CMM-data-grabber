@@ -15,7 +15,7 @@
   
   <servlet-mapping>
 	    <servlet-name>Paul</servlet-name>
-		<url-pattern>/zzz/*</url-pattern>
+		<url-pattern>/</url-pattern>
   </servlet-mapping>
 	
 
