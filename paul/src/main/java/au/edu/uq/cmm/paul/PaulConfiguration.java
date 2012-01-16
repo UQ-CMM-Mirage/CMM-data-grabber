@@ -89,6 +89,8 @@ public class PaulConfiguration extends ConfigurationBase implements Configuratio
             setServerHost(staticConfig.getServerHost());
             setProxyPort(staticConfig.getProxyPort());
             setServerPort(staticConfig.getServerPort());
+            setBaseFileUrl(staticConfig.getBaseFileUrl());
+            setCaptureDirectory(staticConfig.getCaptureDirectory());
             for (FacilityConfig facilityConfig: staticConfig.getFacilities()) {
                 if (!facilityMap.containsKey(facilityConfig.getAddress())) {
                     Facility facility = new Facility(facilityConfig);

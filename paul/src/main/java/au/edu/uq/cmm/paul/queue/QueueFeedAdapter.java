@@ -19,6 +19,7 @@ import org.apache.abdera.protocol.server.context.ResponseContextException;
 import org.apache.abdera.protocol.server.impl.AbstractEntityCollectionAdapter;
 import org.apache.log4j.Logger;
 
+import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.grabber.AdminMetadata;
 
 public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetadata> {
@@ -27,11 +28,14 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
     private static final String ID_PREFIX = "";
 
     private EntityManagerFactory entityManagerFactory;
+    private String baseFileUrl;
     
     public QueueFeedAdapter() {
         // FIXME ... should we wire this with Spring?
         entityManagerFactory = 
                 Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul");
+        PaulConfiguration configuration = PaulConfiguration.load(entityManagerFactory);
+        baseFileUrl = configuration.getBaseFileUrl();
     }
     
     @Override
@@ -138,13 +142,11 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
             IRI feedIri, AdminMetadata record)
             throws ResponseContextException {
         String res = super.addEntryDetails(request, e, feedIri, record);
-        e.addLink("http://gs710-cmm:8080/paul/files/" + 
+        e.addLink(baseFileUrl + 
                 new File(record.getCapturedFilePathname()).getName(),
                 "enclosure");
         return res;
     }
-
-
 
     @Override
     public String getId(RequestContext rc) {

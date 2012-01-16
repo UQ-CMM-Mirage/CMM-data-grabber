@@ -23,8 +23,8 @@ import org.apache.log4j.Logger;
 
 import au.edu.uq.cmm.aclslib.server.FacilityConfig;
 import au.edu.uq.cmm.aclslib.service.MonitoredThreadServiceBase;
-import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.Paul;
+import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.PaulException;
 
 public class FileWatcher extends MonitoredThreadServiceBase {
