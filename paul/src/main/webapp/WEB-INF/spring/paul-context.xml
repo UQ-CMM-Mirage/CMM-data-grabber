@@ -2,7 +2,7 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:mvc="http://www.springframework.org/schema/mvc"
-    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:context="http://www.springframework.org/schema/context" 
     xsi:schemaLocation="
         http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd
         http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
@@ -18,14 +18,7 @@
     <!-- Enables the Spring MVC @Controller programming model -->
     <mvc:annotation-driven />
 
-	<bean
-		class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
-		<property name="mediaTypes">
-			<map>
-				<entry key="atom" value="application/atom+xml" />
-				<entry key="html" value="text/html" />
-			</map>
-		</property>
+	<bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
 		<property name="viewResolvers">
 			<list>
 				<bean class="org.springframework.web.servlet.view.BeanNameViewResolver" />
@@ -38,18 +31,16 @@
 			</list>
 		</property>
 	</bean>
-	
-	<!-- 
-	<bean id="ingestionFeed" class="au.edu.uq.cmm.paul.servlet.IngestionAtomView"/>
-	 -->
     
     <bean class="au.edu.uq.cmm.paul.Paul" name="services" 
     	init-method="startup" destroy-method="shutdown">
-    	<constructor-arg ref="config"></constructor-arg>
+    	<!-- Note that the static config is only used if the dynamic
+    	     config loaded from the database is empty / uninitialized -->
+    	<constructor-arg ref="staticConfig"></constructor-arg>
     </bean>
     
-    <bean class="au.edu.uq.cmm.aclslib.server.Configuration" 
-          factory-method="loadConfiguration" name="config">
+    <bean class="au.edu.uq.cmm.aclslib.server.StaticConfiguration" 
+          factory-method="loadConfiguration" name="staticConfig">
           <constructor-arg><value>/home/scrawley/config.json</value></constructor-arg>
     </bean>
  

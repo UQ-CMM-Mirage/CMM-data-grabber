@@ -12,7 +12,11 @@ import javax.persistence.Table;
 
 import org.hibernate.annotations.GenericGenerator;
 
-
+/**
+ * A FacilitySession records minimal details of an ACLS Facility sesssion.
+ * 
+ * @author scrawley
+ */
 @Entity
 @Table(name = "SESSIONS")
 public class FacilitySession {
@@ -36,6 +40,11 @@ public class FacilitySession {
         this.loginTime = loginTime;
     }
 
+    /**
+     * Get the logout timestamp.
+     * @return the logout timestamp or ({@literal null} if the session is still
+     *     notionally in progress.
+     */
     public Date getLogoutTime() {
         return logoutTime;
     }

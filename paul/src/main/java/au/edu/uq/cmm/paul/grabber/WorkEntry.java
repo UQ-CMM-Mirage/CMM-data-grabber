@@ -1,10 +1,8 @@
 package au.edu.uq.cmm.paul.grabber;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.channels.FileLock;
 import java.util.Date;
@@ -12,18 +10,13 @@ import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
-import javax.persistence.EntityManager;
-
 import org.apache.log4j.Logger;
-import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
 
 import au.edu.uq.cmm.aclslib.server.FacilityConfig;
+import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
+import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.status.FacilitySession;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
 
@@ -34,18 +27,20 @@ import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
  * @author scrawley
  */
 class WorkEntry implements Runnable {
-    private static final Logger LOG = Logger.getLogger(FileGrabber.class);
+    private static final Logger LOG = Logger.getLogger(WorkEntry.class);
 
     private final FileGrabber fileGrabber;
+    private final QueueManager queueManager;
     private final BlockingDeque<FileWatcherEvent> events;
     private final File file;
     private final FacilityConfig facility;
     private final Date timestamp;
     
-    public WorkEntry(FileGrabber fileGrabber, FileWatcherEvent event, File file) {
+    public WorkEntry(Paul services, FileWatcherEvent event, File file) {
         this.facility = event.getFacility();
         this.timestamp = new Date(event.getTimestamp());
-        this.fileGrabber = fileGrabber;
+        this.fileGrabber = services.getFileGrabber();
+        this.queueManager = services.getQueueManager();
         this.file = file;
         this.events = new LinkedBlockingDeque<FileWatcherEvent>();
         this.events.add(event);
@@ -103,7 +98,7 @@ class WorkEntry implements Runnable {
         LOG.debug("Start file grabbing");
         Date now = new Date();
         FacilitySession session = fileGrabber.getStatusManager().
-                getLoginDetails(facility, timestamp.getTime());
+                getLoginDetails(facility.getFacilityId(), timestamp.getTime());
         File copiedFile = copyFile(is, file);
         saveMetadata(now, session, copiedFile);
         LOG.debug("Done grabbing");
@@ -121,35 +116,7 @@ class WorkEntry implements Runnable {
                 file.getAbsolutePath(), copiedFile.getAbsolutePath(),
                 userName, facility.getFacilityId(), 
                 account, now, timestamp, sessionId, sessionTimestamp);
-        saveToFileSystem(metadataFile, metadata);
-        saveToDatabase(metadata);
-    }
-
-    private void saveToDatabase(AdminMetadata metadata) {
-        EntityManager entityManager = fileGrabber.getEntityManager();
-        try {
-            entityManager.getTransaction().begin();
-            entityManager.persist(metadata);
-            entityManager.getTransaction().commit();
-        } finally {
-            entityManager.close();
-        }
-    }
-
-    private void saveToFileSystem(File metadataFile, AdminMetadata metadata)
-            throws IOException, JsonGenerationException {
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(metadataFile))) {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonFactory jf = new JsonFactory();
-            JsonGenerator jg = jf.createJsonGenerator(bw);
-            jg.useDefaultPrettyPrinter();
-            mapper.writeValue(jg, metadata);
-            LOG.info("Saved admin metadata to " + metadataFile);
-        } catch (JsonParseException ex) {
-            throw new PaulException(ex);
-        } catch (JsonMappingException ex) {
-            throw new PaulException(ex);
-        }
+        queueManager.addEntry(metadata, metadataFile);
     }
 
     private File copyFile(FileInputStream is, File source) throws IOException {

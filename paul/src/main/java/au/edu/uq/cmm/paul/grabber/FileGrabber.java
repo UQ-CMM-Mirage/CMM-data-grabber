@@ -10,14 +10,13 @@ import java.util.concurrent.TimeUnit;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 
 import org.apache.log4j.Logger;
 
 import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
+import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
-import au.edu.uq.cmm.paul.watcher.FileWatcher;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEventListener;
 
@@ -51,16 +50,17 @@ public class FileGrabber extends CompositeServiceBase
     private final FacilityStatusManager statusManager;
     private File safeDirectory = new File("/tmp/safe");
     private ExecutorService executor;
-    private EntityManagerFactory entityManagerFactory;
+    private final EntityManagerFactory entityManagerFactory;
+    private final Paul services;
     
-    public FileGrabber(FileWatcher watcher, FacilityStatusManager statusManager) {
-        watcher.addListener(this);
-        this.statusManager = statusManager;
+    public FileGrabber(Paul services) {
+        this.services = services;
+        services.getFileWatcher().addListener(this);
+        this.statusManager = services.getFacilitySessionManager();
         if (!safeDirectory.exists() || !safeDirectory.isDirectory()) {
             throw new PaulException("The grabber's safe directory doesn't exist");
         }
-        entityManagerFactory = Persistence.createEntityManagerFactory(
-                "au.edu.uq.cmm.paul");
+        this.entityManagerFactory = services.getEntityManagerFactory();
     }
 
     public File getSafeDirectory() {
@@ -97,7 +97,7 @@ public class FileGrabber extends CompositeServiceBase
         synchronized (this) {
            WorkEntry workEntry = workMap.get(file);
            if (workEntry == null) {
-               workEntry = new WorkEntry(this, event, file);
+               workEntry = new WorkEntry(services, event, file);
                workMap.put(file, workEntry);
                executor.execute(workEntry);
                LOG.debug("Added a workEntry");

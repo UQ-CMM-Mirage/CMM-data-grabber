@@ -21,9 +21,10 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
-import au.edu.uq.cmm.aclslib.server.Configuration;
 import au.edu.uq.cmm.aclslib.server.FacilityConfig;
 import au.edu.uq.cmm.aclslib.service.MonitoredThreadServiceBase;
+import au.edu.uq.cmm.paul.Paul;
+import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.PaulException;
 
 public class FileWatcher extends MonitoredThreadServiceBase {
@@ -66,7 +67,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
     
     private static final Logger LOG = Logger.getLogger(FileWatcher.class);
     
-    private Configuration config;
+    private PaulConfiguration config;
     private Map<WatchKey, WatcherEntry> watchMap = 
             new HashMap<WatchKey, WatcherEntry>();
     private UncPathnameMapper uncNameMapper;
@@ -76,10 +77,10 @@ public class FileWatcher extends MonitoredThreadServiceBase {
             new ArrayList<FileWatcherEventListener>();
     
     
-    public FileWatcher(Configuration config, UncPathnameMapper uncNameMapper) 
+    public FileWatcher(Paul services) 
             throws UnknownHostException {
-        this.config = config;
-        this.uncNameMapper = uncNameMapper;
+        this.config = services.getConfiguration();
+        this.uncNameMapper = services.getUncNameMapper();
     }
 
     @SuppressWarnings("unchecked")
@@ -156,7 +157,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
     private void configureWatcher() throws IOException {
         FileSystem fs = FileSystems.getDefault();
         watcher = fs.newWatchService();
-        for (FacilityConfig facility : config.getFacilities().values()) {
+        for (FacilityConfig facility : config.getFacilities()) {
             if (facility.getDriveName() == null) {
                 continue;
             }
