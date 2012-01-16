@@ -18,19 +18,16 @@
     <!-- Enables the Spring MVC @Controller programming model -->
     <mvc:annotation-driven />
 
-	<bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
-		<property name="viewResolvers">
-			<list>
-				<bean class="org.springframework.web.servlet.view.BeanNameViewResolver" />
+
+				<bean class="org.springframework.web.servlet.view.BeanNameViewResolver" >
+					<property name="order"><value>1</value></property>
+				</bean>
 				<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
 					<!-- Resolve logical view names to .jsp resources in the /WEB-INF/views 
 						directory -->
 					<property name="prefix" value="/WEB-INF/jsp/" />
 					<property name="suffix" value=".jsp" />
 				</bean>
-			</list>
-		</property>
-	</bean>
     
     <bean class="au.edu.uq.cmm.paul.Paul" name="services" 
     	init-method="startup" destroy-method="shutdown">
@@ -43,6 +40,9 @@
     <bean class="au.edu.uq.cmm.aclslib.server.StaticConfiguration" 
           factory-method="loadConfiguration" name="staticConfig">
           <constructor-arg value="/home/scrawley/config.json"/>
+    </bean>
+    
+    <bean id="fileView" class="au.edu.uq.cmm.paul.servlet.FileView">
     </bean>
  
 </beans>

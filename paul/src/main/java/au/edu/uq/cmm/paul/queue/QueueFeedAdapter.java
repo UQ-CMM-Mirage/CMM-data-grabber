@@ -1,6 +1,7 @@
 package au.edu.uq.cmm.paul.queue;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -22,7 +23,6 @@ import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.grabber.AdminMetadata;
 
 public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetadata> {
-
     private static final Logger LOG = Logger.getLogger(QueueFeedAdapter.class);
     private static final String ID_PREFIX = "";
 
@@ -60,8 +60,9 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
             throws ResponseContextException {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
-            return entityManager.createQuery("from AdminMetadata", 
+            List<AdminMetadata> list = entityManager.createQuery("from AdminMetadata", 
                     AdminMetadata.class).getResultList();
+            return new ArrayList<AdminMetadata>(list);
         } finally {
             entityManager.close();
         }
