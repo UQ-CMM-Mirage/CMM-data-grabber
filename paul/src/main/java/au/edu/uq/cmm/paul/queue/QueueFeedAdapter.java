@@ -7,7 +7,6 @@ import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.abdera.i18n.iri.IRI;

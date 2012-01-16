@@ -42,7 +42,7 @@
     
     <bean class="au.edu.uq.cmm.aclslib.server.StaticConfiguration" 
           factory-method="loadConfiguration" name="staticConfig">
-          <constructor-arg><value>/home/scrawley/config.json</value></constructor-arg>
+          <constructor-arg value="/home/scrawley/config.json"/>
     </bean>
  
 </beans>

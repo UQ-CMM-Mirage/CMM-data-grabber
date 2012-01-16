@@ -13,6 +13,7 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.MapKey;
+import javax.persistence.NoResultException;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
@@ -41,13 +42,28 @@ public class PaulConfiguration extends ConfigurationBase implements Configuratio
     
     
     public static PaulConfiguration load(EntityManagerFactory entityManagerFactory) {
+        return load(entityManagerFactory, false);
+    }
+    
+    public static PaulConfiguration load(EntityManagerFactory entityManagerFactory,
+            boolean createIfMissing) {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             entityManager.getTransaction().begin();
-            return entityManager.
-                    createQuery("from PaulConfiguration",
-                            PaulConfiguration.class).
+            try {
+                return entityManager.
+                    createQuery("from PaulConfiguration", PaulConfiguration.class).
                     getSingleResult();
+            } catch (NoResultException ex) {
+                if (createIfMissing) {
+                    PaulConfiguration res = new PaulConfiguration();
+                    entityManager.persist(res);
+                    entityManager.getTransaction().commit();
+                    return res;
+                } else {
+                    throw new PaulException("The configuration record is missing", ex);
+                }
+            }
         } finally {
             entityManager.close();
         }
@@ -100,7 +116,7 @@ public class PaulConfiguration extends ConfigurationBase implements Configuratio
                             "' with address '" + facility.getAddress() + "'");
                 }
             }
-            entityManager.persist(this);
+            entityManager.merge(this);
             entityManager.getTransaction().commit();
         } finally {
             entityManager.close();

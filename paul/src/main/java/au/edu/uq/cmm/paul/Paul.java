@@ -33,7 +33,7 @@ public class Paul extends CompositeServiceBase {
     public Paul(StaticConfiguration staticConfig,
             EntityManagerFactory entityManagerFactory) throws IOException {
         this.entityManagerFactory = entityManagerFactory;
-        config = new PaulConfiguration();
+        config = PaulConfiguration.load(entityManagerFactory, true);
         if (config.isEmpty() && staticConfig != null) {
             config.merge(entityManagerFactory, staticConfig);
         }
