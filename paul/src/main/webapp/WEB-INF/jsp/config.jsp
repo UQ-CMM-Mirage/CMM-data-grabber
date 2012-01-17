@@ -12,6 +12,15 @@
           <li>Base file URL - ${configuration.baseFileUrl}</li>
           <li>Capture directory - ${configuration.captureDirectory}</li>
           <li>Clients use 'project' - ${configuration.useProject}</li>
+          <li>Feed parameters
+            <ul>
+              <li>Feed URL - ${configuration.feedUrl}</li>
+              <li>Feed Id - ${configuration.feedId}</li>
+              <li>Feed Title - ${configuration.feedTitle}</li>
+              <li>Feed Author - ${configuration.feedAuthor}</li>
+              <li>Feed Author email - ${configuration.feedAuthorEmail}</li>
+            </ul>
+          </li>
           <li>Facilities:
             <ul>
               <c:forEach items="${configuration.facilities}" var="facility">
