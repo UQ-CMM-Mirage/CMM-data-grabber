@@ -50,6 +50,8 @@ public class PaulConfiguration implements Configuration {
     private String feedTitle;
     private String feedAuthor;
     private String feedAuthorEmail;
+    private String feedUrl;
+    private int feedPageSize = 20;
 
     
     public int getProxyPort() {
@@ -150,6 +152,22 @@ public class PaulConfiguration implements Configuration {
         this.feedAuthorEmail = feedAuthorEmail;
     }
     
+    public String getFeedUrl() {
+        return feedUrl;
+    }
+
+    public void setFeedUrl(String feedUrl) {
+        this.feedUrl = feedUrl;
+    }
+    
+    public int getFeedPageSize() {
+        return feedPageSize;
+    }
+
+    public void setFeedPageSize(int feedPageSize) {
+        this.feedPageSize = feedPageSize;
+    }
+
     public static PaulConfiguration load(EntityManagerFactory entityManagerFactory) {
         return load(entityManagerFactory, false);
     }
@@ -163,14 +181,12 @@ public class PaulConfiguration implements Configuration {
                 PaulConfiguration res = entityManager.
                     createQuery("from PaulConfiguration", PaulConfiguration.class).
                     getSingleResult();
-                LOG.debug("Loaded record with id " + res.getId() + " " + res + " / " + res.getFeedId());
                 return res;
             } catch (NoResultException ex) {
                 if (createIfMissing) {
                     PaulConfiguration res = new PaulConfiguration();
                     entityManager.persist(res);
                     entityManager.getTransaction().commit();
-                    LOG.debug("Initialized record with id " + res.getId() + " " + res);
                     return res;
                 } else {
                     throw new PaulException("The configuration record is missing", ex);
@@ -224,6 +240,8 @@ public class PaulConfiguration implements Configuration {
             setFeedTitle(staticConfig.getFeedTitle());
             setFeedAuthor(staticConfig.getFeedAuthor());
             setFeedAuthorEmail(staticConfig.getFeedAuthorEmail());
+            setFeedUrl(staticConfig.getFeedUrl());
+            setFeedPageSize(staticConfig.getFeedPageSize());
             for (FacilityConfig facilityConfig: staticConfig.getFacilities()) {
                 if (!facilityMap.containsKey(facilityConfig.getAddress())) {
                     Facility facility = new Facility(facilityConfig);
@@ -234,8 +252,6 @@ public class PaulConfiguration implements Configuration {
             }
             PaulConfiguration res = entityManager.merge(this);
             entityManager.getTransaction().commit();
-            LOG.debug("Saved record with id " + this.getId() + " " + this + " / " + this.getFeedId());
-            LOG.debug(res.getId() + " / " + res.getFeedId());
             return res;
         } finally {
             entityManager.close();
