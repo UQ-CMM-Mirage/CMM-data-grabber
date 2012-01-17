@@ -35,8 +35,10 @@ public class Paul extends CompositeServiceBase {
         this.entityManagerFactory = entityManagerFactory;
         config = PaulConfiguration.load(entityManagerFactory, true);
         if (config.isEmpty() && staticConfig != null) {
-            config.merge(entityManagerFactory, staticConfig);
+            config = config.merge(entityManagerFactory, staticConfig);
         }
+        // Testing ...
+        PaulConfiguration.load(entityManagerFactory);
         proxy = new AclsProxy(config);
         try {
             proxy.probeServer();

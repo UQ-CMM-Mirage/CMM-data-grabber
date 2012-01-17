@@ -27,17 +27,16 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
     private static final String ID_PREFIX = "";
 
     private EntityManagerFactory entityManagerFactory;
-    private String baseFileUrl;
+    private PaulConfiguration configuration;
     
     public QueueFeedAdapter(EntityManagerFactory entityManagerFactory) {
         this.entityManagerFactory = entityManagerFactory;
-        PaulConfiguration configuration = PaulConfiguration.load(entityManagerFactory);
-        baseFileUrl = configuration.getBaseFileUrl();
+        this.configuration = PaulConfiguration.load(entityManagerFactory);
     }
     
     @Override
     public String getTitle(RequestContext rc) {
-        return "Mirage Ingestion Queue";
+        return configuration.getFeedTitle();
     }
 
     @Override
@@ -124,7 +123,7 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
     @Override
     public String getAuthor(RequestContext rc)
             throws ResponseContextException {
-        return "Centre for Microscopy and Microanalysis, Univ of Queensland";
+        return configuration.getFeedAuthor();
     }
     
     @Override
@@ -140,7 +139,7 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
             IRI feedIri, AdminMetadata record)
             throws ResponseContextException {
         String res = super.addEntryDetails(request, e, feedIri, record);
-        e.addLink(baseFileUrl + 
+        e.addLink(configuration.getBaseFileUrl() + 
                 new File(record.getCapturedFilePathname()).getName(),
                 "enclosure");
         return res;
@@ -148,6 +147,6 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
 
     @Override
     public String getId(RequestContext rc) {
-        return "tag:cmm.uq.edu.au,2012:mirage-ingestion:feed";
+        return configuration.getFeedId();
     }
 }

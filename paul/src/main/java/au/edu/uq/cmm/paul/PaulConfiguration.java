@@ -22,7 +22,6 @@ import org.apache.log4j.Logger;
 import org.hibernate.annotations.GenericGenerator;
 
 import au.edu.uq.cmm.aclslib.server.Configuration;
-import au.edu.uq.cmm.aclslib.server.ConfigurationBase;
 import au.edu.uq.cmm.aclslib.server.FacilityConfig;
 import au.edu.uq.cmm.paul.status.Facility;
 
@@ -34,12 +33,122 @@ import au.edu.uq.cmm.paul.status.Facility;
  */
 @Entity
 @Table(name = "CONFIGURATION")
-public class PaulConfiguration extends ConfigurationBase implements Configuration {
+public class PaulConfiguration implements Configuration {
     private static final Logger LOG = Logger.getLogger(PaulConfiguration.class);
-
+    
     private Long id;
     private Map<String, Facility> facilityMap = new HashMap<String, Facility>();
     
+    private int proxyPort = 1024;
+    private int serverPort = 1024;
+    private String serverHost;
+    private String proxyHost;
+    private boolean useProject;
+    private String captureDirectory;
+    private String baseFileUrl;
+    private String feedId;
+    private String feedTitle;
+    private String feedAuthor;
+    private String feedAuthorEmail;
+
+    
+    public int getProxyPort() {
+        return proxyPort;
+    }
+
+    public String getServerHost() {
+        return serverHost;
+    }
+
+    public int getServerPort() {
+        return serverPort;
+    }
+
+    public boolean isUseProject() {
+        return useProject;
+    }
+
+    public void setProxyPort(int proxyPort) {
+        this.proxyPort = proxyPort;
+    }
+
+    public void setServerHost(String serverHost) {
+        this.serverHost = serverHost;
+    }
+
+    public void setServerPort(int serverPort) {
+        this.serverPort = serverPort;
+    }
+
+    public void setUseProject(boolean useProject) {
+        this.useProject = useProject;
+    }
+
+    public String getProxyHost() {
+        return proxyHost;
+    }
+
+    public void setProxyHost(String proxyHost) {
+        this.proxyHost = proxyHost;
+    }
+
+    @Transient
+    public final String getDummyFacility() {
+        for (FacilityConfig facility : getFacilities()) {
+            if (facility.isDummy()) {
+                return facility.getFacilityId();
+            }
+        }
+        throw new IllegalStateException("There are no dummy facilities");
+    }
+
+    public String getCaptureDirectory() {
+        return captureDirectory;
+    }
+
+    public void setCaptureDirectory(String captureDirectory) {
+        this.captureDirectory = captureDirectory;
+    }
+
+    public String getBaseFileUrl() {
+        return baseFileUrl;
+    }
+
+    public void setBaseFileUrl(String baseFileUrl) {
+        this.baseFileUrl = baseFileUrl;
+    }
+
+    public String getFeedId() {
+        return feedId;
+    }
+
+    public void setFeedId(String feedId) {
+        this.feedId = feedId;
+    }
+
+    public String getFeedTitle() {
+        return feedTitle;
+    }
+
+    public void setFeedTitle(String feedTitle) {
+        this.feedTitle = feedTitle;
+    }
+
+    public String getFeedAuthor() {
+        return feedAuthor;
+    }
+
+    public void setFeedAuthor(String feedAuthor) {
+        this.feedAuthor = feedAuthor;
+    }
+
+    public String getFeedAuthorEmail() {
+        return feedAuthorEmail;
+    }
+
+    public void setFeedAuthorEmail(String feedAuthorEmail) {
+        this.feedAuthorEmail = feedAuthorEmail;
+    }
     
     public static PaulConfiguration load(EntityManagerFactory entityManagerFactory) {
         return load(entityManagerFactory, false);
@@ -51,14 +160,17 @@ public class PaulConfiguration extends ConfigurationBase implements Configuratio
         try {
             entityManager.getTransaction().begin();
             try {
-                return entityManager.
+                PaulConfiguration res = entityManager.
                     createQuery("from PaulConfiguration", PaulConfiguration.class).
                     getSingleResult();
+                LOG.debug("Loaded record with id " + res.getId() + " " + res + " / " + res.getFeedId());
+                return res;
             } catch (NoResultException ex) {
                 if (createIfMissing) {
                     PaulConfiguration res = new PaulConfiguration();
                     entityManager.persist(res);
                     entityManager.getTransaction().commit();
+                    LOG.debug("Initialized record with id " + res.getId() + " " + res);
                     return res;
                 } else {
                     throw new PaulException("The configuration record is missing", ex);
@@ -96,8 +208,8 @@ public class PaulConfiguration extends ConfigurationBase implements Configuratio
         return facilityMap.isEmpty();
     }
 
-    public void merge(EntityManagerFactory entityManagerFactory,
-            ConfigurationBase staticConfig) {
+    public PaulConfiguration merge(EntityManagerFactory entityManagerFactory,
+            Configuration staticConfig) {
         LOG.info("Merging details from static Configuration");
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
@@ -108,6 +220,10 @@ public class PaulConfiguration extends ConfigurationBase implements Configuratio
             setServerPort(staticConfig.getServerPort());
             setBaseFileUrl(staticConfig.getBaseFileUrl());
             setCaptureDirectory(staticConfig.getCaptureDirectory());
+            setFeedId(staticConfig.getFeedId());
+            setFeedTitle(staticConfig.getFeedTitle());
+            setFeedAuthor(staticConfig.getFeedAuthor());
+            setFeedAuthorEmail(staticConfig.getFeedAuthorEmail());
             for (FacilityConfig facilityConfig: staticConfig.getFacilities()) {
                 if (!facilityMap.containsKey(facilityConfig.getAddress())) {
                     Facility facility = new Facility(facilityConfig);
@@ -116,8 +232,11 @@ public class PaulConfiguration extends ConfigurationBase implements Configuratio
                             "' with address '" + facility.getAddress() + "'");
                 }
             }
-            entityManager.merge(this);
+            PaulConfiguration res = entityManager.merge(this);
             entityManager.getTransaction().commit();
+            LOG.debug("Saved record with id " + this.getId() + " " + this + " / " + this.getFeedId());
+            LOG.debug(res.getId() + " / " + res.getFeedId());
+            return res;
         } finally {
             entityManager.close();
         }
