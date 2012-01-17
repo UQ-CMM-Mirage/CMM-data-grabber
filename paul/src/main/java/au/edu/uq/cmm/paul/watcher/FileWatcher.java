@@ -128,7 +128,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
         WatchEvent<Path> ev = cast(event);
         Path path = entry.dir.resolve(ev.context());
         File file = path.toFile();
-        LOG.debug("Event for facility " + entry.facility.getFacilityId());
+        LOG.debug("Event for facility " + entry.facility.getFacilityName());
         if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
             LOG.debug("Created - " + path);
             if (file.isDirectory()) {
@@ -189,7 +189,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
                 StandardWatchEventKinds.ENTRY_DELETE, 
                 StandardWatchEventKinds.OVERFLOW);
         LOG.debug("Added directory watcher for " + local + 
-                " for facility " + facility.getFacilityId());
+                " for facility " + facility.getFacilityName());
         WatcherEntry entry = new WatcherEntry(key, parent, dir, facility);
         watchMap.put(key, entry);
         // Recursively add keys for nested directories.
@@ -219,7 +219,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
             watchMap.remove(entry.key);
             entry.key.cancel();
             LOG.debug("Cancelled directory watcher for " + entry.dir + 
-                    " for facility " + entry.facility.getFacilityId());
+                    " for facility " + entry.facility.getFacilityName());
             if (entry.parent != null) {
                 entry.parent.children.remove(entry);
             }

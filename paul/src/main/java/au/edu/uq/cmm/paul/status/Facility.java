@@ -36,9 +36,9 @@ public class Facility implements FacilityConfig {
     private String accessPassword;
     private String accessName;
     private String folderName;
-    private String facilityId;
-    private boolean useTimer;
     private String facilityName;
+    private boolean useTimer;
+    private String facilityDescription;
     private boolean dummy;
     private boolean useFileLocks = true;
     private int fileSettlingTime;
@@ -54,10 +54,10 @@ public class Facility implements FacilityConfig {
         driveName = facilityConfig.getDriveName();
         accessPassword = facilityConfig.getAccessPassword();
         accessName = facilityConfig.getAccessName();
-        facilityId = facilityConfig.getFacilityId();
+        facilityName = facilityConfig.getFacilityName();
         folderName = facilityConfig.getFolderName();
         useTimer = facilityConfig.isUseTimer();
-        facilityName = facilityConfig.getFacilityName();
+        facilityDescription = facilityConfig.getFacilityDescription();
         dummy = facilityConfig.isDummy();
         useFileLocks = facilityConfig.isUseFileLocks();
         fileSettlingTime = facilityConfig.getFileSettlingTime();
@@ -84,12 +84,12 @@ public class Facility implements FacilityConfig {
         return driveName;
     }
 
-    public String getFacilityId() {
-        return facilityId;
-    }
-
     public String getFacilityName() {
         return facilityName;
+    }
+
+    public String getFacilityDescription() {
+        return facilityDescription;
     }
 
     public String getFolderName() {
@@ -126,12 +126,12 @@ public class Facility implements FacilityConfig {
         this.driveName = driveName;
     }
 
-    public void setFacilityId(String facilityId) {
-        this.facilityId = facilityId;
+    public void setFacilityName(String name) {
+        this.facilityName = name;
     }
 
-    public void setFacilityName(String facilityName) {
-        this.facilityName = facilityName;
+    public void setFacilityDescription(String desc) {
+        this.facilityDescription = desc;
     }
 
     public void setFolderName(String folderName) {

@@ -98,7 +98,7 @@ class WorkEntry implements Runnable {
         LOG.debug("Start file grabbing");
         Date now = new Date();
         FacilitySession session = fileGrabber.getStatusManager().
-                getLoginDetails(facility.getFacilityId(), timestamp.getTime());
+                getLoginDetails(facility.getFacilityName(), timestamp.getTime());
         File copiedFile = copyFile(is, file);
         saveMetadata(now, session, copiedFile);
         LOG.debug("Done grabbing");
@@ -114,7 +114,7 @@ class WorkEntry implements Runnable {
         File metadataFile = new File(copiedFile.getPath().replace(".data", ".admin"));
         AdminMetadata metadata = new AdminMetadata(
                 file.getAbsolutePath(), copiedFile.getAbsolutePath(),
-                userName, facility.getFacilityId(), 
+                userName, facility.getFacilityName(), 
                 account, now, timestamp, sessionId, sessionTimestamp);
         queueManager.addEntry(metadata, metadataFile);
     }
