@@ -109,13 +109,14 @@ class WorkEntry implements Runnable {
             throws IOException, JsonGenerationException {
         String userName = session != null ? session.getUserName() : "unknown";
         String account = session != null ? session.getAccount() : "unknown";
-        long sessionId = session != null ? session.getSessionId() : -1L;
+        long sessionId = session != null ? session.getId() : -1L;
+        String sessionUuid = session != null ? session.getSessionUuid() : "unknown";
         Date sessionTimestamp = session != null ? session.getLoginTime() : new Date(0L);
         File metadataFile = new File(copiedFile.getPath().replace(".data", ".admin"));
         AdminMetadata metadata = new AdminMetadata(
                 file.getAbsolutePath(), copiedFile.getAbsolutePath(),
-                userName, facility.getFacilityName(), 
-                account, now, timestamp, sessionId, sessionTimestamp);
+                metadataFile.getAbsolutePath(), userName, facility.getFacilityName(), 
+                account, now, timestamp, sessionId, sessionUuid, sessionTimestamp);
         queueManager.addEntry(metadata, metadataFile);
     }
 

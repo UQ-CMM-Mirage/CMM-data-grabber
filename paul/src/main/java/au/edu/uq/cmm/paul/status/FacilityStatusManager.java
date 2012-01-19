@@ -41,10 +41,10 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             entityManager.getTransaction().begin();
-            String facilityId = event.getFacilityId();
-            Facility facility = getFacility(entityManager, facilityId);
+            String facilityName = event.getFacilityName();
+            Facility facility = getFacility(entityManager, facilityName);
             if (facility == null) {
-                LOG.error("No facility found for facility id " + facilityId);
+                LOG.error("No facility found for facility id " + facilityName);
                 return;
             }
             if (event instanceof AclsLoginEvent) {
@@ -71,10 +71,10 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
         }
     }
 
-    private Facility getFacility(EntityManager entityManager, String facilityId) {
+    private Facility getFacility(EntityManager entityManager, String facilityName) {
         TypedQuery<Facility> query = entityManager.createQuery(
-                "from Facility f where f.facilityId = :facilityId", Facility.class);
-        query.setParameter("facilityId", facilityId);
+                "from Facility f where f.facilityName = :facilityName", Facility.class);
+        query.setParameter("facilityName", facilityName);
         List<Facility> res = query.getResultList();
         if (res.size() == 0) {
             return null;

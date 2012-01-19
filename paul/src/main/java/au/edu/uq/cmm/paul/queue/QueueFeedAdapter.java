@@ -17,6 +17,8 @@ import org.apache.abdera.model.Content;
 import org.apache.abdera.model.Entry;
 import org.apache.abdera.model.Feed;
 import org.apache.abdera.model.Person;
+import org.apache.abdera.model.Text;
+import org.apache.abdera.model.Text.Type;
 import org.apache.abdera.protocol.server.RequestContext;
 import org.apache.abdera.protocol.server.context.ResponseContextException;
 import org.apache.abdera.protocol.server.impl.AbstractEntityCollectionAdapter;
@@ -27,7 +29,7 @@ import au.edu.uq.cmm.paul.grabber.AdminMetadata;
 
 public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetadata> {
     private static final Logger LOG = Logger.getLogger(QueueFeedAdapter.class);
-    private static final String ID_PREFIX = "";
+    private static final String ID_PREFIX = "urn:uuid:";
 
     private EntityManagerFactory entityManagerFactory;
     private PaulConfiguration configuration;
@@ -51,10 +53,7 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
     @Override
     public Object getContent(AdminMetadata record, RequestContext rc)
             throws ResponseContextException {
-        String url = new File(record.getSourceFilePathname()).toURI().toString();
-        Content content = rc.getAbdera().getFactory().newContent(Content.Type.TEXT);
-        content.setText(url);
-        return content;
+        return null;
     }
 
     @Override
@@ -112,12 +111,12 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
 
     @Override
     public String getId(AdminMetadata record) throws ResponseContextException {
-        return ID_PREFIX + record.getUuid();
+        return ID_PREFIX + record.getRecordUuid();
     }
 
     @Override
     public String getName(AdminMetadata record) throws ResponseContextException {
-        return record.getId() + "-" + record.getUuid();
+        return record.getId() + "-" + record.getRecordUuid();
     }
 
     @Override
@@ -166,6 +165,9 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
         e.addLink(configuration.getBaseFileUrl() + 
                 new File(record.getCapturedFilePathname()).getName(),
                 "enclosure");
+        e.addLink(configuration.getBaseFileUrl() + 
+                new File(record.getMetadataFilePathname()).getName(),
+                "enclosure");
         return res;
     }
 
@@ -173,10 +175,6 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
     public String getId(RequestContext rc) {
         return configuration.getFeedId();
     }
-    
-    //
-    // Overrides 
-    //
     
     /**
      * Create the base feed for the requested collection.  This override allows
@@ -231,7 +229,31 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
                 } else {
                     addContent(e, entryObj, request);
                 }
+
+                if (entryObj.getSessionId() != -1) {
+                    String sessionTitle = "Session of " + entryObj.getUserName() + "/" +
+                            entryObj.getAccountName() + " started on " +
+                            entryObj.getSessionStartTimestamp();
+                    e.addCategory(
+                            "http://mytardis.org/schemas/atom-import#experiment-ExperimentID",
+                            entryObj.getSessionUuid(), "experiment");
+                    e.addCategory(
+                            "http://mytardis.org/schemas/atom-import#experiment-ExperimentTitle",
+                            sessionTitle, "experiment title");
+                }
             }
         }
+    }
+
+    @Override
+    public Text getSummary(AdminMetadata record, RequestContext rc)
+            throws ResponseContextException {
+        Text summary = rc.getAbdera().getFactory().newSummary(Type.TEXT);
+        summary.setText(record.getSourceFilePathname() + " as captured at " +
+                record.getCaptureTimestamp() + " (id = " + record.getId() +
+                ", uuid = " + record.getRecordUuid() + ", session uuid = " +
+                record.getSessionUuid() + ")");
+       
+        return summary;
     }
 }

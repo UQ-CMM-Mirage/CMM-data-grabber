@@ -16,6 +16,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.apache.log4j.Logger;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.hibernate.annotations.GenericGenerator;
 
@@ -184,15 +185,14 @@ public class Facility implements FacilityConfig {
     @JsonIgnore
     @Transient
     public synchronized boolean isInUse() {
-        return sessions.size() > 0 && 
-                currentSession().getLogoutTime().getTime() == 0L;
+        return sessions.size() > 0 && currentSession().getLogoutTime() == null;
     }
 
     public synchronized FacilitySession getLoginDetails(long timestamp) {
-        for (int i = sessions.size() - 1; i >= 0; i++) {
+        for (int i = sessions.size() - 1; i >= 0; i--) {
             FacilitySession session = sessions.get(i);
             if (session.getLoginTime().getTime() <= timestamp && 
-                    (session.getLogoutTime().getTime() == 0L || 
+                    (session.getLogoutTime() == null || 
                      session.getLogoutTime().getTime() >= timestamp)) {
                 return session;
             }
@@ -214,6 +214,9 @@ public class Facility implements FacilityConfig {
         this.id = id;
     }
 
+    /**
+     * Get the parent Configuration for this record.
+     */
     @ManyToOne
     @JoinColumn(name="configuration_id", updatable=false)
     public PaulConfiguration getConfiguration() {

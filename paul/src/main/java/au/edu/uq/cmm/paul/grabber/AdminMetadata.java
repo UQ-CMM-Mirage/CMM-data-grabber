@@ -29,10 +29,12 @@ public class AdminMetadata {
     private Date captureTimestamp;
     private Date fileWriteTimestamp;
     private Date sessionStartTimestamp;
-    private Long sessionId;
+    private long sessionId;
     private String capturedFilePathname;
+    private String metadataFilePathname;
     private Long id;
-    private UUID uuid;
+    private String sessionUuid;
+    private String recordUuid;
     
     
     public AdminMetadata() {
@@ -40,12 +42,13 @@ public class AdminMetadata {
     }
     
     public AdminMetadata(String sourceFilePathname, String capturedFilePathname, 
-            String userName, String facilityId,
+            String metadataFilePathname, String userName, String facilityId,
             String accountName, Date captureTimestamp, Date fileWriteTimestamp,
-            long sessionId, Date sessionStartTimestamp) {
+            long sessionId, String sessionUuid, Date sessionStartTimestamp) {
         super();
         this.sourceFilePathname = sourceFilePathname;
         this.capturedFilePathname = capturedFilePathname;
+        this.metadataFilePathname = metadataFilePathname;
         this.userName = userName;
         this.facilityId = facilityId;
         this.accountName = accountName;
@@ -53,7 +56,8 @@ public class AdminMetadata {
         this.fileWriteTimestamp = fileWriteTimestamp;
         this.sessionId = sessionId;
         this.sessionStartTimestamp = sessionStartTimestamp;
-        this.uuid = UUID.randomUUID();
+        this.sessionUuid = sessionUuid;
+        this.recordUuid = UUID.randomUUID().toString();
     }
     
     @Id
@@ -130,7 +134,7 @@ public class AdminMetadata {
         this.sessionStartTimestamp = sessionStartTimestamp;
     }
 
-    public void setSessionId(Long sessionId) {
+    public void setSessionId(long sessionId) {
         this.sessionId = sessionId;
     }
 
@@ -142,11 +146,27 @@ public class AdminMetadata {
         this.id = id;
     }
 
-    public UUID getUuid() {
-        return uuid;
+    public String getSessionUuid() {
+        return sessionUuid;
     }
 
-    public void setUuid(UUID uuid) {
-        this.uuid = uuid;
+    public void setSessionUuid(String uuid) {
+        this.sessionUuid = uuid;
+    }
+
+    public String getRecordUuid() {
+        return recordUuid;
+    }
+
+    public void setRecordUuid(String recordUuid) {
+        this.recordUuid = recordUuid;
+    }
+
+    public String getMetadataFilePathname() {
+        return metadataFilePathname;
+    }
+
+    public void setMetadataFilePathname(String metadataFilePathname) {
+        this.metadataFilePathname = metadataFilePathname;
     }
 }
