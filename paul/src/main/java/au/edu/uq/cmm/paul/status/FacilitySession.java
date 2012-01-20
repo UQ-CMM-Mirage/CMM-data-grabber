@@ -30,13 +30,14 @@ public class FacilitySession {
     private Date logoutTime;
     private Long id;
     private String sessionUuid;
+    private String emailAddress;
     
     public FacilitySession() {
         super();
     }
     
     public FacilitySession(String userName, String account, Facility facility,
-            Date loginTime) {
+            String emailAddress, Date loginTime) {
         super();
         if (userName.isEmpty() || account.isEmpty() || 
                 facility == null || loginTime == null) {
@@ -46,6 +47,7 @@ public class FacilitySession {
         this.account = account;
         this.facility = facility;
         this.loginTime = loginTime;
+        this.emailAddress = emailAddress;
         this.sessionUuid = UUID.randomUUID().toString();
     }
 
@@ -115,5 +117,13 @@ public class FacilitySession {
 
     public void setSessionUuid(String sessionUuid) {
         this.sessionUuid = sessionUuid;
+    }
+
+    public String getEmailAddress() {
+        return emailAddress;
+    }
+
+    public void setEmailAddress(String emailAddress) {
+        this.emailAddress = emailAddress;
     }
 }

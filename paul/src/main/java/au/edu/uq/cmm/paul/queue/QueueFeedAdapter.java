@@ -40,31 +40,31 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
     }
     
     @Override
-    public String getTitle(RequestContext rc) {
+    public String getTitle(RequestContext request) {
         return configuration.getFeedTitle();
     }
 
     @Override
-    public void deleteEntry(String resourceName, RequestContext rc)
+    public void deleteEntry(String resourceName, RequestContext request)
             throws ResponseContextException {
         throw new ResponseContextException(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
     }
 
     @Override
-    public Object getContent(AdminMetadata record, RequestContext rc)
+    public Object getContent(AdminMetadata record, RequestContext request)
             throws ResponseContextException {
         return null;
     }
 
     @Override
-    public Iterable<AdminMetadata> getEntries(RequestContext rc)
+    public Iterable<AdminMetadata> getEntries(RequestContext request)
             throws ResponseContextException {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             TypedQuery<AdminMetadata> query;
             Long id;
             try {
-                String from = rc.getParameter("from");
+                String from = request.getParameter("from");
                 id = from == null ? null : Long.valueOf(from);
             } catch (NumberFormatException ex) {
                 throw new ResponseContextException(HttpServletResponse.SC_BAD_REQUEST);
@@ -91,7 +91,7 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
     }
 
     @Override
-    public AdminMetadata getEntry(String resourceName, RequestContext rc)
+    public AdminMetadata getEntry(String resourceName, RequestContext request)
             throws ResponseContextException {
         String[] parts = resourceName.split("-");
         EntityManager entityManager = entityManagerFactory.createEntityManager();
@@ -154,18 +154,21 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
             throws ResponseContextException {
         Person author = request.getAbdera().getFactory().newAuthor();
         author.setName(record.getUserName());
+        if (record.getEmailAddress() != null) {
+            author.setEmail(record.getEmailAddress());
+        }
         return Arrays.asList(author);
     }
     
     @Override
-    protected String addEntryDetails(RequestContext request, Entry e,
+    protected String addEntryDetails(RequestContext request, Entry entry,
             IRI feedIri, AdminMetadata record)
             throws ResponseContextException {
-        String res = super.addEntryDetails(request, e, feedIri, record);
-        e.addLink(configuration.getBaseFileUrl() + 
+        String res = super.addEntryDetails(request, entry, feedIri, record);
+        entry.addLink(configuration.getBaseFileUrl() + 
                 new File(record.getCapturedFilePathname()).getName(),
                 "enclosure");
-        e.addLink(configuration.getBaseFileUrl() + 
+        entry.addLink(configuration.getBaseFileUrl() + 
                 new File(record.getMetadataFilePathname()).getName(),
                 "enclosure");
         return res;
@@ -181,7 +184,8 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
      * us to add the author email and so forth.
      */
     @Override
-    protected Feed createFeedBase(RequestContext request) throws ResponseContextException {
+    protected Feed createFeedBase(RequestContext request) 
+            throws ResponseContextException {
         Factory factory = request.getAbdera().getFactory();
         Feed feed = factory.newFeed();
         feed.setId(getId(request));
@@ -210,34 +214,34 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
         Iterable<AdminMetadata> entries = getEntries(request);
         if (entries != null) {
             int count = 0;
-            for (AdminMetadata entryObj : entries) {
-                LOG.debug("count = " + count + ", entry id = " + entryObj.getId());
+            for (AdminMetadata record : entries) {
+                LOG.debug("count = " + count + ", entry id = " + record.getId());
                 if (++count > configuration.getFeedPageSize()) {
                     String nextPageUrl = configuration.getFeedUrl() +
-                            "?from=" + entryObj.getId();
+                            "?from=" + record.getId();
                     LOG.debug("Adding 'next' link - " + nextPageUrl);
                     feed.addLink(nextPageUrl, "next");
                     break;
                 }
-                Entry e = feed.addEntry();
+                Entry entry = feed.addEntry();
 
-                IRI feedIri = new IRI(getFeedIriForEntry(entryObj, request));
-                addEntryDetails(request, e, feedIri, entryObj);
+                IRI feedIri = new IRI(getFeedIriForEntry(record, request));
+                addEntryDetails(request, entry, feedIri, record);
 
-                if (isMediaEntry(entryObj)) {
-                    addMediaContent(feedIri, e, entryObj, request);
+                if (isMediaEntry(record)) {
+                    addMediaContent(feedIri, entry, record, request);
                 } else {
-                    addContent(e, entryObj, request);
+                    addContent(entry, record, request);
                 }
 
-                if (entryObj.getSessionId() != -1) {
-                    String sessionTitle = "Session of " + entryObj.getUserName() + "/" +
-                            entryObj.getAccountName() + " started on " +
-                            entryObj.getSessionStartTimestamp();
-                    e.addCategory(
+                if (record.getSessionId() != -1) {
+                    String sessionTitle = "Session of " + record.getUserName() + "/" +
+                            record.getAccountName() + " started on " +
+                            record.getSessionStartTimestamp();
+                    entry.addCategory(
                             "http://mytardis.org/schemas/atom-import#experiment-ExperimentID",
-                            entryObj.getSessionUuid(), "experiment");
-                    e.addCategory(
+                            record.getSessionUuid(), "experiment");
+                    entry.addCategory(
                             "http://mytardis.org/schemas/atom-import#experiment-ExperimentTitle",
                             sessionTitle, "experiment title");
                 }
@@ -246,9 +250,9 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
     }
 
     @Override
-    public Text getSummary(AdminMetadata record, RequestContext rc)
+    public Text getSummary(AdminMetadata record, RequestContext request)
             throws ResponseContextException {
-        Text summary = rc.getAbdera().getFactory().newSummary(Type.TEXT);
+        Text summary = request.getAbdera().getFactory().newSummary(Type.TEXT);
         summary.setText(record.getSourceFilePathname() + " as captured at " +
                 record.getCaptureTimestamp() + " (id = " + record.getId() +
                 ", uuid = " + record.getRecordUuid() + ", session uuid = " +

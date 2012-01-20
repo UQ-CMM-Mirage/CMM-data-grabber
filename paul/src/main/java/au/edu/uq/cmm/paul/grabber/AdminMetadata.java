@@ -35,6 +35,7 @@ public class AdminMetadata {
     private Long id;
     private String sessionUuid;
     private String recordUuid;
+    private String emailAddress;
     
     
     public AdminMetadata() {
@@ -43,7 +44,8 @@ public class AdminMetadata {
     
     public AdminMetadata(String sourceFilePathname, String capturedFilePathname, 
             String metadataFilePathname, String userName, String facilityId,
-            String accountName, Date captureTimestamp, Date fileWriteTimestamp,
+            String accountName, String emailAddress,
+            Date captureTimestamp, Date fileWriteTimestamp,
             long sessionId, String sessionUuid, Date sessionStartTimestamp) {
         super();
         this.sourceFilePathname = sourceFilePathname;
@@ -52,6 +54,7 @@ public class AdminMetadata {
         this.userName = userName;
         this.facilityId = facilityId;
         this.accountName = accountName;
+        this.emailAddress = emailAddress;
         this.captureTimestamp = captureTimestamp;
         this.fileWriteTimestamp = fileWriteTimestamp;
         this.sessionId = sessionId;
@@ -168,5 +171,13 @@ public class AdminMetadata {
 
     public void setMetadataFilePathname(String metadataFilePathname) {
         this.metadataFilePathname = metadataFilePathname;
+    }
+
+    public String getEmailAddress() {
+        return emailAddress;
+    }
+
+    public void setEmailAddress(String emailAddress) {
+        this.emailAddress = emailAddress;
     }
 }
