@@ -7,8 +7,8 @@ import javax.persistence.Persistence;
 
 import org.apache.log4j.Logger;
 
+import au.edu.uq.cmm.aclslib.config.StaticConfiguration;
 import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
-import au.edu.uq.cmm.aclslib.server.StaticConfiguration;
 import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
 import au.edu.uq.cmm.aclslib.service.ServiceException;
 import au.edu.uq.cmm.paul.grabber.FileGrabber;
