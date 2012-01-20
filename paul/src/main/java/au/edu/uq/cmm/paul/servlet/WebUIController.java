@@ -23,7 +23,7 @@ public class WebUIController {
     
     @RequestMapping(value="/config", method=RequestMethod.GET)
     public String config(Model model) {
-        model.addAttribute("configuration", services.getConfiguration());
+        model.addAttribute("config", services.getConfiguration());
         return "config";
     }
     

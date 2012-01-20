@@ -1,6 +1,7 @@
 package au.edu.uq.cmm.paul.status;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -9,6 +10,8 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 import org.hibernate.annotations.GenericGenerator;
 
@@ -25,19 +28,27 @@ public class FacilitySession {
     private Facility facility;
     private Date loginTime;
     private Date logoutTime;
-    private Long sessionId;
+    private Long id;
+    private String sessionUuid;
+    private String emailAddress;
     
     public FacilitySession() {
         super();
     }
     
     public FacilitySession(String userName, String account, Facility facility,
-            Date loginTime) {
+            String emailAddress, Date loginTime) {
         super();
+        if (userName.isEmpty() || account.isEmpty() || 
+                facility == null || loginTime == null) {
+            throw new IllegalArgumentException("Empty or missing argument");
+        }
         this.userName = userName;
         this.account = account;
         this.facility = facility;
         this.loginTime = loginTime;
+        this.emailAddress = emailAddress;
+        this.sessionUuid = UUID.randomUUID().toString();
     }
 
     /**
@@ -49,6 +60,7 @@ public class FacilitySession {
         return logoutTime;
     }
 
+    @Temporal(TemporalType.TIMESTAMP)
     public void setLogoutTime(Date logoutTime) {
         this.logoutTime = logoutTime;
     }
@@ -67,6 +79,7 @@ public class FacilitySession {
         return facility;
     }
 
+    @Temporal(TemporalType.TIMESTAMP)
     public Date getLoginTime() {
         return loginTime;
     }
@@ -74,12 +87,12 @@ public class FacilitySession {
     @Id
     @GeneratedValue(generator="increment")
     @GenericGenerator(name="increment", strategy = "increment")
-    public Long getSessionId() {
-        return sessionId;
+    public Long getId() {
+        return id;
     }
 
-    public void setSessionId(Long sessionId) {
-        this.sessionId = sessionId;
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public void setUserName(String userName) {
@@ -96,5 +109,21 @@ public class FacilitySession {
 
     public void setLoginTime(Date loginTime) {
         this.loginTime = loginTime;
+    }
+
+    public String getSessionUuid() {
+        return sessionUuid;
+    }
+
+    public void setSessionUuid(String sessionUuid) {
+        this.sessionUuid = sessionUuid;
+    }
+
+    public String getEmailAddress() {
+        return emailAddress;
+    }
+
+    public void setEmailAddress(String emailAddress) {
+        this.emailAddress = emailAddress;
     }
 }

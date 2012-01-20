@@ -92,7 +92,7 @@ public class FileGrabber extends CompositeServiceBase
     public void eventOccurred(FileWatcherEvent event) {
         File file = event.getFile();
         LOG.debug("FileWatcherEvent received : " + 
-                event.getFacility().getFacilityId() + "," + 
+                event.getFacility().getFacilityName() + "," + 
                 file + "," + event.isCreate());
         synchronized (this) {
            WorkEntry workEntry = workMap.get(file);
