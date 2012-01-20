@@ -52,7 +52,8 @@ public class PaulConfiguration implements Configuration {
     private String feedAuthorEmail;
     private String feedUrl;
     private int feedPageSize = 20;
-
+    private long facilityRecheckInterval;
+    
     
     public int getProxyPort() {
         return proxyPort;
@@ -98,7 +99,7 @@ public class PaulConfiguration implements Configuration {
     public final String getDummyFacility() {
         for (FacilityConfig facility : getFacilities()) {
             if (facility.isDummy()) {
-                return facility.getFacilityId();
+                return facility.getFacilityName();
             }
         }
         throw new IllegalStateException("There are no dummy facilities");
@@ -168,6 +169,14 @@ public class PaulConfiguration implements Configuration {
         this.feedPageSize = feedPageSize;
     }
 
+    public long getFacilityRecheckInterval() {
+        return facilityRecheckInterval;
+    }
+
+    public void setFacilityRecheckInterval(long facilityRecheckInterval) {
+        this.facilityRecheckInterval = facilityRecheckInterval;
+    }
+
     public static PaulConfiguration load(EntityManagerFactory entityManagerFactory) {
         return load(entityManagerFactory, false);
     }
@@ -210,9 +219,9 @@ public class PaulConfiguration implements Configuration {
         return facility;
     }
 
-    public Facility lookupFacilityById(String id) {
+    public Facility lookupFacilityByName(String id) {
         for (Facility f : facilityMap.values()) {
-            if (id.equals(f.getFacilityId())) {
+            if (id.equals(f.getFacilityName())) {
                 return f;
             }
         }
@@ -246,7 +255,7 @@ public class PaulConfiguration implements Configuration {
                 if (!facilityMap.containsKey(facilityConfig.getAddress())) {
                     Facility facility = new Facility(facilityConfig);
                     facilityMap.put(facility.getAddress(), facility);
-                    LOG.info("Merged facility '" + facility.getFacilityId() + 
+                    LOG.info("Merged facility '" + facility.getFacilityName() + 
                             "' with address '" + facility.getAddress() + "'");
                 }
             }

@@ -30,51 +30,64 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
     // FIXME - the facility statuses need to be persisted.
     private AclsProxy proxy;
     private EntityManagerFactory entityManagerFactory;
+    private SessionDetailMapper aclsAccountMapper;
 
     public FacilityStatusManager(Paul services) {
         this.proxy = services.getProxy();
         this.proxy.addListener(this);
         this.entityManagerFactory = services.getEntityManagerFactory();
+        this.aclsAccountMapper = services.getSessionDetailMapper();
+        if (this.aclsAccountMapper == null) {
+            this.aclsAccountMapper = new DefaultSessionDetailsMapper();
+        }
     }
 
     public void eventOccurred(AclsFacilityEvent event) {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             entityManager.getTransaction().begin();
-            String facilityId = event.getFacilityId();
-            Facility facility = getFacility(entityManager, facilityId);
+            String facilityName = event.getFacilityName();
+            Facility facility = getFacility(entityManager, facilityName);
             if (facility == null) {
-                LOG.error("No facility found for facility id " + facilityId);
+                LOG.error("No facility found for facility id " + facilityName);
                 return;
             }
+            String userName = aclsAccountMapper.mapToUserName(
+                    event.getUserName(), event.getAccount());
+            String accountName = aclsAccountMapper.mapToAccountName(
+                    event.getUserName(), event.getAccount());
+            String emailAddress = aclsAccountMapper.mapToEmailAddress(
+                    event.getUserName(), event.getAccount());
             if (event instanceof AclsLoginEvent) {
                 FacilitySession details = new FacilitySession(
-                        event.getUserName(), event.getAccount(), facility, 
-                        new Date());
+                        userName, accountName, facility, emailAddress, new Date());
                 facility.addSession(details);
             } else if (event instanceof AclsLogoutEvent) {
                 FacilitySession details = facility.currentSession();
-                if (details == null ||
-                        !details.getUserName().equals(event.getUserName()) ||
-                        !details.getAccount().equals(event.getAccount())) {
-                    details = new FacilitySession(
-                            event.getUserName(), event.getAccount(), facility, 
-                            new Date(0L));
-                    facility.addSession(details);
+                if (details == null) {
+                    throw new InvalidSessionException(
+                            "No current session for facility " + facility.getFacilityName());
+                } else if (!details.getUserName().equals(userName) ||
+                        !details.getAccount().equals(accountName)) {
+                    throw new InvalidSessionException(
+                            "Inconsistent session user or account name for facility " + 
+                            facility.getFacilityName());
                 }
                 details.setLogoutTime(new Date());
             }
             entityManager.persist(facility);
             entityManager.getTransaction().commit();
+        } catch (InvalidSessionException ex) {
+            LOG.error("Bad session information - ignoring login/logout event", ex);
         } finally {
             entityManager.close();
         }
     }
 
-    private Facility getFacility(EntityManager entityManager, String facilityId) {
+    private Facility getFacility(EntityManager entityManager, String facilityName) {
         TypedQuery<Facility> query = entityManager.createQuery(
-                "from Facility f where f.facilityId = :facilityId", Facility.class);
-        query.setParameter("facilityId", facilityId);
+                "from Facility f where f.facilityName = :facilityName", Facility.class);
+        query.setParameter("facilityName", facilityName);
         List<Facility> res = query.getResultList();
         if (res.size() == 0) {
             return null;

@@ -98,7 +98,7 @@ class WorkEntry implements Runnable {
         LOG.debug("Start file grabbing");
         Date now = new Date();
         FacilitySession session = fileGrabber.getStatusManager().
-                getLoginDetails(facility.getFacilityId(), timestamp.getTime());
+                getLoginDetails(facility.getFacilityName(), timestamp.getTime());
         File copiedFile = copyFile(is, file);
         saveMetadata(now, session, copiedFile);
         LOG.debug("Done grabbing");
@@ -108,14 +108,17 @@ class WorkEntry implements Runnable {
             FacilitySession session, File copiedFile)
             throws IOException, JsonGenerationException {
         String userName = session != null ? session.getUserName() : "unknown";
+        String emailAddress = session != null ? session.getEmailAddress() : null;
         String account = session != null ? session.getAccount() : "unknown";
-        long sessionId = session != null ? session.getSessionId() : -1L;
+        long sessionId = session != null ? session.getId() : -1L;
+        String sessionUuid = session != null ? session.getSessionUuid() : "unknown";
         Date sessionTimestamp = session != null ? session.getLoginTime() : new Date(0L);
         File metadataFile = new File(copiedFile.getPath().replace(".data", ".admin"));
         AdminMetadata metadata = new AdminMetadata(
                 file.getAbsolutePath(), copiedFile.getAbsolutePath(),
-                userName, facility.getFacilityId(), 
-                account, now, timestamp, sessionId, sessionTimestamp);
+                metadataFile.getAbsolutePath(), userName, 
+                facility.getFacilityName(), account, emailAddress, 
+                now, timestamp, sessionId, sessionUuid, sessionTimestamp);
         queueManager.addEntry(metadata, metadataFile);
     }
 

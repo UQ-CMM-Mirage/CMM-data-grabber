@@ -7,24 +7,25 @@
     <body>
         <h1>Paul Configuration</h1>
         <ul>
-          <li>Proxy host - ${configuration.proxyHost} : ${configuration.proxyPort}</li>
-          <li>Server host - ${configuration.serverHost} : ${configuration.serverPort}</li>
-          <li>Base file URL - ${configuration.baseFileUrl}</li>
-          <li>Capture directory - ${configuration.captureDirectory}</li>
-          <li>Clients use 'project' - ${configuration.useProject}</li>
+          <li>Proxy host - ${config.proxyHost} : ${config.proxyPort}</li>
+          <li>Server host - ${config.serverHost} : ${config.serverPort}</li>
+          <li>Base file URL - ${config.baseFileUrl}</li>
+          <li>Capture directory - ${config.captureDirectory}</li>
+          <li>Clients use 'project' - ${config.useProject}</li>
+          <li>Facility recheck interval - ${config.facilityRecheckInterval}</li>
           <li>Feed parameters
             <ul>
-              <li>Feed URL - ${configuration.feedUrl}</li>
-              <li>Feed Id - ${configuration.feedId}</li>
-              <li>Feed Title - ${configuration.feedTitle}</li>
-              <li>Feed Author - ${configuration.feedAuthor}</li>
-              <li>Feed Author email - ${configuration.feedAuthorEmail}</li>
+              <li>Feed URL - ${config.feedUrl}</li>
+              <li>Feed Id - ${config.feedId}</li>
+              <li>Feed Title - ${config.feedTitle}</li>
+              <li>Feed Author - ${config.feedAuthor}</li>
+              <li>Feed Author email - ${config.feedAuthorEmail}</li>
             </ul>
           </li>
           <li>Facilities:
             <ul>
-              <c:forEach items="${configuration.facilities}" var="facility">
-                <li>${facility.facilityId} - ${facility.facilityName}
+              <c:forEach items="${config.facilities}" var="facility">
+                <li>${facility.facilityName} - ${facility.facilityDescription}
                   <ul>
                     <li>DNS Name / IP address - ${facility.address}</li>
                     <li>Drive name - ${facility.driveName}</li>

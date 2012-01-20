@@ -13,6 +13,7 @@ import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
 import au.edu.uq.cmm.aclslib.service.ServiceException;
 import au.edu.uq.cmm.paul.grabber.FileGrabber;
 import au.edu.uq.cmm.paul.queue.QueueManager;
+import au.edu.uq.cmm.paul.status.SessionDetailMapper;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
 import au.edu.uq.cmm.paul.watcher.FileWatcher;
 import au.edu.uq.cmm.paul.watcher.SambaUncPathameMapper;
@@ -29,11 +30,22 @@ public class Paul extends CompositeServiceBase {
     private EntityManagerFactory entityManagerFactory;
     private PaulConfiguration config;
     private QueueManager queueManager;
+    private SessionDetailMapper sessionDetailMapper;
     
     public Paul(StaticConfiguration staticConfig,
-            EntityManagerFactory entityManagerFactory) throws IOException {
+            EntityManagerFactory entityManagerFactory)
+    throws IOException {
+        this(staticConfig, entityManagerFactory, null);
+    }
+    
+    public Paul(StaticConfiguration staticConfig,
+            EntityManagerFactory entityManagerFactory,
+            SessionDetailMapper sessionDetailMapper)
+    throws IOException {
         this.entityManagerFactory = entityManagerFactory;
+        this.sessionDetailMapper = sessionDetailMapper;
         config = PaulConfiguration.load(entityManagerFactory, true);
+        
         if (config.isEmpty() && staticConfig != null) {
             config = config.merge(entityManagerFactory, staticConfig);
         }
@@ -125,5 +137,9 @@ public class Paul extends CompositeServiceBase {
 
     public UncPathnameMapper getUncNameMapper() {
         return uncNameMapper;
+    }
+
+    public SessionDetailMapper getSessionDetailMapper() {
+        return sessionDetailMapper;
     }
 }
