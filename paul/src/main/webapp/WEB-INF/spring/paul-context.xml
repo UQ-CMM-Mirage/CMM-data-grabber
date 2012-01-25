@@ -41,11 +41,14 @@
 		<constructor-arg>
 			<bean class="au.edu.uq.cmm.paul.status.LashupAclsAccountMapper" />
 		</constructor-arg>
+		<constructor-arg>
+			<bean class="au.edu.uq.cmm.paul.watcher.SambaUncPathnameMapper" />
+		</constructor-arg>
 	</bean>
 
-	<bean class="au.edu.uq.cmm.aclslib.server.StaticConfiguration"
-		factory-method="loadConfiguration" name="staticConfig">
-		<constructor-arg value="/home/scrawley/config.json" />
+	<bean class="au.edu.uq.cmm.aclslib.config.StaticConfiguration"
+		factory-method="loadConfigurationFromUrl" name="staticConfig">
+		<constructor-arg value="classpath:paul-config.json" />
 	</bean>
 
 	<bean id="fileView" class="au.edu.uq.cmm.paul.servlet.FileView">

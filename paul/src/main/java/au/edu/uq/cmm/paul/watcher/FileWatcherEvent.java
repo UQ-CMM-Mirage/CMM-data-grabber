@@ -3,7 +3,7 @@ package au.edu.uq.cmm.paul.watcher;
 import java.io.File;
 import java.util.EventObject;
 
-import au.edu.uq.cmm.aclslib.server.FacilityConfig;
+import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 
 @SuppressWarnings("serial")
 public class FileWatcherEvent extends EventObject {
