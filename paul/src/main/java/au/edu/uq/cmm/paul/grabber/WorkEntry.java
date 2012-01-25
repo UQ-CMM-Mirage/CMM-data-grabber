@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonGenerationException;
 
-import au.edu.uq.cmm.aclslib.server.FacilityConfig;
+import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.queue.QueueManager;

@@ -24,14 +24,21 @@ import org.ini4j.InvalidFileFormatException;
  * 
  * @author scrawley
  */
-public class SambaUncPathameMapper implements UncPathnameMapper {
-    private static final Logger LOG = Logger.getLogger(SambaUncPathameMapper.class);
+public class SambaUncPathnameMapper implements UncPathnameMapper {
+    public static final String DEFAULT_SMB_CONF_PATHNAME = "/etc/samba/smb.conf";
+    
+    private static final Logger LOG = Logger.getLogger(SambaUncPathnameMapper.class);
     private static final Pattern UNC_PATTERN = 
             Pattern.compile("//([^/]+)/([^/]+)(?:/+(.*))?");
     private Map<String, File> shareMap = new HashMap<String, File>();
     private Set<String> hostNames;
     
-    public SambaUncPathameMapper(String smbConfFileName) 
+    public SambaUncPathnameMapper() 
+            throws InvalidFileFormatException, IOException {
+        this(DEFAULT_SMB_CONF_PATHNAME);
+    }
+
+    public SambaUncPathnameMapper(String smbConfFileName) 
             throws InvalidFileFormatException, IOException {
         initShareMap(smbConfFileName);
         initHostnames();
