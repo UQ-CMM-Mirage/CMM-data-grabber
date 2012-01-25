@@ -41,6 +41,9 @@
 		<constructor-arg>
 			<bean class="au.edu.uq.cmm.paul.status.LashupAclsAccountMapper" />
 		</constructor-arg>
+		<constructor-arg>
+			<bean class="au.edu.uq.cmm.paul.watcher.SambaUncPathnameMapper" />
+		</constructor-arg>
 	</bean>
 
 	<bean class="au.edu.uq.cmm.aclslib.config.StaticConfiguration"

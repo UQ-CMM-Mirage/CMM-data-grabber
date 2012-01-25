@@ -16,11 +16,10 @@ import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.status.SessionDetailMapper;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
 import au.edu.uq.cmm.paul.watcher.FileWatcher;
-import au.edu.uq.cmm.paul.watcher.SambaUncPathameMapper;
+import au.edu.uq.cmm.paul.watcher.SambaUncPathnameMapper;
 import au.edu.uq.cmm.paul.watcher.UncPathnameMapper;
 
 public class Paul extends CompositeServiceBase {
-    private static final String SMB_CONF_PATHNAME = "/etc/samba/smb.conf";
     private static final Logger LOG = Logger.getLogger(Paul.class);
     private FileWatcher fileWatcher;
     private FileGrabber fileGrabber;
@@ -35,12 +34,13 @@ public class Paul extends CompositeServiceBase {
     public Paul(StaticConfiguration staticConfig,
             EntityManagerFactory entityManagerFactory)
     throws IOException {
-        this(staticConfig, entityManagerFactory, null);
+        this(staticConfig, entityManagerFactory, null, new SambaUncPathnameMapper());
     }
     
     public Paul(StaticConfiguration staticConfig,
             EntityManagerFactory entityManagerFactory,
-            SessionDetailMapper sessionDetailMapper)
+            SessionDetailMapper sessionDetailMapper,
+            UncPathnameMapper uncNameMapper)
     throws IOException {
         this.entityManagerFactory = entityManagerFactory;
         this.sessionDetailMapper = sessionDetailMapper;
@@ -59,8 +59,7 @@ public class Paul extends CompositeServiceBase {
             LOG.info("Continuing regardless ...");
         }
         statusManager = new FacilityStatusManager(this);
-        // FIXME ... this should be pluggable.
-        uncNameMapper = new SambaUncPathameMapper(SMB_CONF_PATHNAME);
+        this.uncNameMapper = uncNameMapper;
         fileWatcher = new FileWatcher(this);
         fileGrabber = new FileGrabber(this);
         queueManager = new QueueManager(this);
