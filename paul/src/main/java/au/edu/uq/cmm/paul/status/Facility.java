@@ -177,14 +177,16 @@ public class Facility implements FacilityConfig {
         sessions.add(session);
     }
 
-    public synchronized FacilitySession currentSession() {
+    @JsonIgnore
+    @Transient
+    public synchronized FacilitySession getCurrentSession() {
         return (sessions.size() == 0) ? null : sessions.get(sessions.size() - 1);
     }
     
     @JsonIgnore
     @Transient
     public synchronized boolean isInUse() {
-        return sessions.size() > 0 && currentSession().getLogoutTime() == null;
+        return sessions.size() > 0 && getCurrentSession().getLogoutTime() == null;
     }
 
     public synchronized FacilitySession getLoginDetails(long timestamp) {

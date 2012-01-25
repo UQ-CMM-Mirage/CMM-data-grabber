@@ -11,6 +11,11 @@
             <c:if test="${!facility.dummy}">
               <li>
                 ${facility.facilityName} is ${facility.inUse ? 'in use' : 'idle'}
+                <c:if test="${facility.inUse}">
+                    - user : ${facility.currentSession.userName},
+                      account : ${facility.currentSession.account},
+                      started : ${facility.currentSession.loginTime}
+                </c:if>
               </li>
             </c:if>
           </c:forEach>
