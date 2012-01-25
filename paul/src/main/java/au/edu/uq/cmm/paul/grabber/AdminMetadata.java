@@ -23,7 +23,7 @@ import org.hibernate.annotations.GenericGenerator;
 @Table(name = "ADMIN_METADATA")
 public class AdminMetadata {
     private String userName;
-    private String facilityId;
+    private String facilityName;
     private String accountName;
     private String sourceFilePathname;
     private Date captureTimestamp;
@@ -43,7 +43,7 @@ public class AdminMetadata {
     }
     
     public AdminMetadata(String sourceFilePathname, String capturedFilePathname, 
-            String metadataFilePathname, String userName, String facilityId,
+            String metadataFilePathname, String userName, String facilityName,
             String accountName, String emailAddress,
             Date captureTimestamp, Date fileWriteTimestamp,
             long sessionId, String sessionUuid, Date sessionStartTimestamp) {
@@ -52,7 +52,7 @@ public class AdminMetadata {
         this.capturedFilePathname = capturedFilePathname;
         this.metadataFilePathname = metadataFilePathname;
         this.userName = userName;
-        this.facilityId = facilityId;
+        this.facilityName = facilityName;
         this.accountName = accountName;
         this.emailAddress = emailAddress;
         this.captureTimestamp = captureTimestamp;
@@ -74,8 +74,8 @@ public class AdminMetadata {
         return userName;
     }
 
-    public String getFacilityId() {
-        return facilityId;
+    public String getFacilityName() {
+        return facilityName;
     }
 
     public String getAccountName() {
@@ -113,8 +113,8 @@ public class AdminMetadata {
         this.userName = userName;
     }
 
-    public void setFacilityId(String facilityId) {
-        this.facilityId = facilityId;
+    public void setFacilityName(String facilityName) {
+        this.facilityName = facilityName;
     }
 
     public void setAccountName(String accountName) {

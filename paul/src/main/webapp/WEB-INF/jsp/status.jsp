@@ -9,7 +9,9 @@
         <ul>
           <c:forEach items="${facilities}" var="facility">
             <c:if test="${!facility.dummy}">
-              <li>${facility.facilityId} is ${facility.inUse ? 'in use' : 'idle'}</li>
+              <li>
+                ${facility.facilityName} is ${facility.inUse ? 'in use' : 'idle'}
+              </li>
             </c:if>
           </c:forEach>
         </ul>
