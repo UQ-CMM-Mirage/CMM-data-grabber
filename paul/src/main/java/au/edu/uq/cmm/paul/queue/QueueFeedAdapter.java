@@ -25,9 +25,9 @@ import org.apache.abdera.protocol.server.impl.AbstractEntityCollectionAdapter;
 import org.apache.log4j.Logger;
 
 import au.edu.uq.cmm.paul.PaulConfiguration;
-import au.edu.uq.cmm.paul.grabber.AdminMetadata;
+import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 
-public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetadata> {
+public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMetadata> {
     private static final Logger LOG = Logger.getLogger(QueueFeedAdapter.class);
     private static final String ID_PREFIX = "urn:uuid:";
 
@@ -51,17 +51,17 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
     }
 
     @Override
-    public Object getContent(AdminMetadata record, RequestContext request)
+    public Object getContent(DatasetMetadata record, RequestContext request)
             throws ResponseContextException {
         return null;
     }
 
     @Override
-    public Iterable<AdminMetadata> getEntries(RequestContext request)
+    public Iterable<DatasetMetadata> getEntries(RequestContext request)
             throws ResponseContextException {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
-            TypedQuery<AdminMetadata> query;
+            TypedQuery<DatasetMetadata> query;
             Long id;
             try {
                 String from = request.getParameter("from");
@@ -72,16 +72,16 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
             if (id != null) {
                 LOG.debug("Fetching from id " + id);
                 query = entityManager.createQuery(
-                        "from AdminMetadata a where a.id <= :id order by a.id desc", 
-                        AdminMetadata.class).setParameter("id", id);
+                        "from DatasetMetadata a where a.id <= :id order by a.id desc", 
+                        DatasetMetadata.class).setParameter("id", id);
             } else {
                 LOG.debug("Fetching from start of queue");
                 query = entityManager.createQuery(
-                        "from AdminMetadata a order by a.id desc", 
-                        AdminMetadata.class);
+                        "from DatasetMetadata a order by a.id desc", 
+                        DatasetMetadata.class);
             }
             query.setMaxResults(configuration.getFeedPageSize() + 1);
-            List<AdminMetadata> res = new ArrayList<AdminMetadata>(query.getResultList());
+            List<DatasetMetadata> res = new ArrayList<DatasetMetadata>(query.getResultList());
             LOG.debug("Max page size " + configuration.getFeedPageSize() +
                       ", fetched " + res.size());
             return res;
@@ -91,14 +91,14 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
     }
 
     @Override
-    public AdminMetadata getEntry(String resourceName, RequestContext request)
+    public DatasetMetadata getEntry(String resourceName, RequestContext request)
             throws ResponseContextException {
         String[] parts = resourceName.split("-");
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
-            AdminMetadata record = 
-                    entityManager.createQuery("from AdminMetadata a where a.id = :id", 
-                    AdminMetadata.class).setParameter("id", parts[0]).getSingleResult();
+            DatasetMetadata record = 
+                    entityManager.createQuery("from DatasetMetadata a where a.id = :id", 
+                    DatasetMetadata.class).setParameter("id", parts[0]).getSingleResult();
             if (record == null) {
                 throw new ResponseContextException(HttpServletResponse.SC_NOT_FOUND);
             } else {
@@ -110,34 +110,34 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
     }
 
     @Override
-    public String getId(AdminMetadata record) throws ResponseContextException {
+    public String getId(DatasetMetadata record) throws ResponseContextException {
         return ID_PREFIX + record.getRecordUuid();
     }
 
     @Override
-    public String getName(AdminMetadata record) throws ResponseContextException {
+    public String getName(DatasetMetadata record) throws ResponseContextException {
         return record.getId() + "-" + record.getRecordUuid();
     }
 
     @Override
-    public String getTitle(AdminMetadata record) throws ResponseContextException {
+    public String getTitle(DatasetMetadata record) throws ResponseContextException {
         return record.getSourceFilePathname();
     }
 
     @Override
-    public Date getUpdated(AdminMetadata record) throws ResponseContextException {
+    public Date getUpdated(DatasetMetadata record) throws ResponseContextException {
         return record.getFileWriteTimestamp();
     }
 
     @Override
-    public AdminMetadata postEntry(String title, IRI id, String summary, Date updated,
+    public DatasetMetadata postEntry(String title, IRI id, String summary, Date updated,
             List<Person> authors, Content content, RequestContext rc)
             throws ResponseContextException {
         throw new ResponseContextException(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
     }
 
     @Override
-    public void putEntry(AdminMetadata record, String title, Date updated, 
+    public void putEntry(DatasetMetadata record, String title, Date updated, 
             List<Person> authors, String summary, Content content, RequestContext rc)
             throws ResponseContextException {
         throw new ResponseContextException(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
@@ -150,7 +150,7 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
     }
     
     @Override
-    public List<Person> getAuthors(AdminMetadata record, RequestContext request)
+    public List<Person> getAuthors(DatasetMetadata record, RequestContext request)
             throws ResponseContextException {
         Person author = request.getAbdera().getFactory().newAuthor();
         author.setName(record.getUserName());
@@ -162,7 +162,7 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
     
     @Override
     protected String addEntryDetails(RequestContext request, Entry entry,
-            IRI feedIri, AdminMetadata record)
+            IRI feedIri, DatasetMetadata record)
             throws ResponseContextException {
         String res = super.addEntryDetails(request, entry, feedIri, record);
         entry.addLink(configuration.getBaseFileUrl() + 
@@ -211,10 +211,10 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
     protected void addFeedDetails(Feed feed, RequestContext request) 
             throws ResponseContextException {
         feed.setUpdated(new Date());
-        Iterable<AdminMetadata> entries = getEntries(request);
+        Iterable<DatasetMetadata> entries = getEntries(request);
         if (entries != null) {
             int count = 0;
-            for (AdminMetadata record : entries) {
+            for (DatasetMetadata record : entries) {
                 LOG.debug("count = " + count + ", entry id = " + record.getId());
                 if (++count > configuration.getFeedPageSize()) {
                     String nextPageUrl = configuration.getFeedUrl() +
@@ -250,7 +250,7 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<AdminMetad
     }
 
     @Override
-    public Text getSummary(AdminMetadata record, RequestContext request)
+    public Text getSummary(DatasetMetadata record, RequestContext request)
             throws ResponseContextException {
         Text summary = request.getAbdera().getFactory().newSummary(Type.TEXT);
         summary.setText(record.getSourceFilePathname() + " as captured at " +

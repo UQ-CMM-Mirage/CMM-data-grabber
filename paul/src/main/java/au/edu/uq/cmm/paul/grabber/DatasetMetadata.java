@@ -20,8 +20,8 @@ import org.hibernate.annotations.GenericGenerator;
  * @author scrawley
  */
 @Entity
-@Table(name = "ADMIN_METADATA")
-public class AdminMetadata {
+@Table(name = "DATASET_METADATA")
+public class DatasetMetadata {
     private String userName;
     private String facilityName;
     private String accountName;
@@ -38,11 +38,11 @@ public class AdminMetadata {
     private String emailAddress;
     
     
-    public AdminMetadata() {
+    public DatasetMetadata() {
         super();
     }
     
-    public AdminMetadata(String sourceFilePathname, String capturedFilePathname, 
+    public DatasetMetadata(String sourceFilePathname, String capturedFilePathname, 
             String metadataFilePathname, String userName, String facilityName,
             String accountName, String emailAddress,
             Date captureTimestamp, Date fileWriteTimestamp,

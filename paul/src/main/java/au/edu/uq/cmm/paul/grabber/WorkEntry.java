@@ -114,7 +114,7 @@ class WorkEntry implements Runnable {
         String sessionUuid = session != null ? session.getSessionUuid() : "unknown";
         Date sessionTimestamp = session != null ? session.getLoginTime() : new Date(0L);
         File metadataFile = new File(copiedFile.getPath().replace(".data", ".admin"));
-        AdminMetadata metadata = new AdminMetadata(
+        DatasetMetadata metadata = new DatasetMetadata(
                 file.getAbsolutePath(), copiedFile.getAbsolutePath(),
                 metadataFile.getAbsolutePath(), userName, 
                 facility.getFacilityName(), account, emailAddress, 
