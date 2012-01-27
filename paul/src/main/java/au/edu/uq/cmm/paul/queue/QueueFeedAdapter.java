@@ -17,8 +17,6 @@ import org.apache.abdera.model.Content;
 import org.apache.abdera.model.Entry;
 import org.apache.abdera.model.Feed;
 import org.apache.abdera.model.Person;
-import org.apache.abdera.model.Text;
-import org.apache.abdera.model.Text.Type;
 import org.apache.abdera.protocol.server.RequestContext;
 import org.apache.abdera.protocol.server.context.ResponseContextException;
 import org.apache.abdera.protocol.server.impl.AbstractEntityCollectionAdapter;
@@ -27,6 +25,7 @@ import org.apache.log4j.Logger;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
+import au.edu.uq.cmm.paul.status.FacilitySession;
 
 public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMetadata> {
     private static final Logger LOG = Logger.getLogger(QueueFeedAdapter.class);
@@ -54,7 +53,10 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
     @Override
     public Object getContent(DatasetMetadata record, RequestContext request)
             throws ResponseContextException {
-        return null;
+        return "dataset for " + record.getSourceFilePathnameBase() + 
+                ", capture timestamp = " + record.getCaptureTimestamp() + 
+                ", dataset uuid = " + record.getRecordUuid() + 
+                ", session uuid = " + record.getSessionUuid();
     }
 
     @Override
@@ -237,7 +239,7 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
                     addContent(entry, record, request);
                 }
 
-                if (record.getSessionId() != -1) {
+                if (!record.getUserName().equals(FacilitySession.UNKNOWN)) {
                     String sessionTitle = "Session of " + record.getUserName() + "/" +
                             record.getAccountName() + " started on " +
                             record.getSessionStartTimestamp();
@@ -250,17 +252,5 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
                 }
             }
         }
-    }
-
-    @Override
-    public Text getSummary(DatasetMetadata record, RequestContext request)
-            throws ResponseContextException {
-        Text summary = request.getAbdera().getFactory().newSummary(Type.TEXT);
-        summary.setText(record.getSourceFilePathnameBase() + " as captured at " +
-                record.getCaptureTimestamp() + " (id = " + record.getId() +
-                ", uuid = " + record.getRecordUuid() + ", session uuid = " +
-                record.getSessionUuid() + ")");
-       
-        return summary;
     }
 }

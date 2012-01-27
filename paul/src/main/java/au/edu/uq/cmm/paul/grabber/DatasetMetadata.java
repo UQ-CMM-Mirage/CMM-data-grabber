@@ -34,7 +34,6 @@ public class DatasetMetadata {
     private String sourceFilePathnameBase;
     private Date captureTimestamp;
     private Date sessionStartTimestamp;
-    private long sessionId;
     private String metadataFilePathname;
     private Long id;
     private String sessionUuid;
@@ -50,7 +49,7 @@ public class DatasetMetadata {
     public DatasetMetadata(String sourceFilePathnameBase, 
             String metadataFilePathname, String userName, String facilityName,
             String accountName, String emailAddress, Date captureTimestamp,
-            long sessionId, String sessionUuid, Date sessionStartTimestamp,
+            String sessionUuid, Date sessionStartTimestamp,
             List<DatafileMetadata> datafiles) {
         super();
         this.sourceFilePathnameBase = sourceFilePathnameBase;
@@ -60,7 +59,6 @@ public class DatasetMetadata {
         this.accountName = accountName;
         this.emailAddress = emailAddress;
         this.captureTimestamp = captureTimestamp;
-        this.sessionId = sessionId;
         this.sessionStartTimestamp = sessionStartTimestamp;
         this.sessionUuid = sessionUuid;
         this.recordUuid = UUID.randomUUID().toString();
@@ -97,10 +95,6 @@ public class DatasetMetadata {
         return sessionStartTimestamp;
     }
 
-    public long getSessionId() {
-        return sessionId;
-    }
-
     public void setUserName(String userName) {
         this.userName = userName;
     }
@@ -119,10 +113,6 @@ public class DatasetMetadata {
 
     public void setSessionStartTimestamp(Date sessionStartTimestamp) {
         this.sessionStartTimestamp = sessionStartTimestamp;
-    }
-
-    public void setSessionId(long sessionId) {
-        this.sessionId = sessionId;
     }
 
     public void setId(Long id) {
