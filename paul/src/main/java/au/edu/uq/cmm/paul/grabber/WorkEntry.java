@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileLock;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -113,12 +114,16 @@ class WorkEntry implements Runnable {
         long sessionId = session != null ? session.getId() : -1L;
         String sessionUuid = session != null ? session.getSessionUuid() : "unknown";
         Date sessionTimestamp = session != null ? session.getLoginTime() : new Date(0L);
+        // FIXME - support multiple files ...
         File metadataFile = new File(copiedFile.getPath().replace(".data", ".admin"));
+        DatafileMetadata d = new DatafileMetadata(
+                file.getAbsolutePath(), copiedFile.getAbsolutePath(), 
+                now, timestamp, "application/octet-stream");
         DatasetMetadata metadata = new DatasetMetadata(
-                file.getAbsolutePath(), copiedFile.getAbsolutePath(),
-                metadataFile.getAbsolutePath(), userName, 
+                file.getAbsolutePath(), metadataFile.getAbsolutePath(), userName, 
                 facility.getFacilityName(), account, emailAddress, 
-                now, timestamp, sessionId, sessionUuid, sessionTimestamp);
+                now, sessionId, sessionUuid, sessionTimestamp,
+                Arrays.asList(d));
         queueManager.addEntry(metadata, metadataFile);
     }
 

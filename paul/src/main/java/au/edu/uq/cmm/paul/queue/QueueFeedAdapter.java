@@ -25,6 +25,7 @@ import org.apache.abdera.protocol.server.impl.AbstractEntityCollectionAdapter;
 import org.apache.log4j.Logger;
 
 import au.edu.uq.cmm.paul.PaulConfiguration;
+import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 
 public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMetadata> {
@@ -121,12 +122,12 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
 
     @Override
     public String getTitle(DatasetMetadata record) throws ResponseContextException {
-        return record.getSourceFilePathname();
+        return record.getSourceFilePathnameBase();
     }
 
     @Override
     public Date getUpdated(DatasetMetadata record) throws ResponseContextException {
-        return record.getFileWriteTimestamp();
+        return record.getCaptureTimestamp();
     }
 
     @Override
@@ -165,9 +166,11 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
             IRI feedIri, DatasetMetadata record)
             throws ResponseContextException {
         String res = super.addEntryDetails(request, entry, feedIri, record);
-        entry.addLink(configuration.getBaseFileUrl() + 
-                new File(record.getCapturedFilePathname()).getName(),
-                "enclosure");
+        for (DatafileMetadata datafile : record.getDatafiles()) {
+            entry.addLink(configuration.getBaseFileUrl() + 
+                    new File(datafile.getCapturedFilePathname()).getName(),
+                    "enclosure");
+        }
         entry.addLink(configuration.getBaseFileUrl() + 
                 new File(record.getMetadataFilePathname()).getName(),
                 "enclosure");
@@ -253,7 +256,7 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
     public Text getSummary(DatasetMetadata record, RequestContext request)
             throws ResponseContextException {
         Text summary = request.getAbdera().getFactory().newSummary(Type.TEXT);
-        summary.setText(record.getSourceFilePathname() + " as captured at " +
+        summary.setText(record.getSourceFilePathnameBase() + " as captured at " +
                 record.getCaptureTimestamp() + " (id = " + record.getId() +
                 ", uuid = " + record.getRecordUuid() + ", session uuid = " +
                 record.getSessionUuid() + ")");

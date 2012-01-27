@@ -1,20 +1,26 @@
 package au.edu.uq.cmm.paul.grabber;
 
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.codehaus.jackson.annotate.JsonIgnore;
 import org.hibernate.annotations.GenericGenerator;
 
 
 /**
- * This class represents the administrative metadata for a file captured
+ * This class represents the administrative metadata for a dataset captured
  * by the FileGrabber.
  * 
  * @author scrawley
@@ -25,47 +31,46 @@ public class DatasetMetadata {
     private String userName;
     private String facilityName;
     private String accountName;
-    private String sourceFilePathname;
+    private String sourceFilePathnameBase;
     private Date captureTimestamp;
-    private Date fileWriteTimestamp;
     private Date sessionStartTimestamp;
     private long sessionId;
-    private String capturedFilePathname;
     private String metadataFilePathname;
     private Long id;
     private String sessionUuid;
     private String recordUuid;
     private String emailAddress;
+    private List<DatafileMetadata> datafiles;
     
     
     public DatasetMetadata() {
         super();
     }
     
-    public DatasetMetadata(String sourceFilePathname, String capturedFilePathname, 
+    public DatasetMetadata(String sourceFilePathnameBase, 
             String metadataFilePathname, String userName, String facilityName,
-            String accountName, String emailAddress,
-            Date captureTimestamp, Date fileWriteTimestamp,
-            long sessionId, String sessionUuid, Date sessionStartTimestamp) {
+            String accountName, String emailAddress, Date captureTimestamp,
+            long sessionId, String sessionUuid, Date sessionStartTimestamp,
+            List<DatafileMetadata> datafiles) {
         super();
-        this.sourceFilePathname = sourceFilePathname;
-        this.capturedFilePathname = capturedFilePathname;
+        this.sourceFilePathnameBase = sourceFilePathnameBase;
         this.metadataFilePathname = metadataFilePathname;
         this.userName = userName;
         this.facilityName = facilityName;
         this.accountName = accountName;
         this.emailAddress = emailAddress;
         this.captureTimestamp = captureTimestamp;
-        this.fileWriteTimestamp = fileWriteTimestamp;
         this.sessionId = sessionId;
         this.sessionStartTimestamp = sessionStartTimestamp;
         this.sessionUuid = sessionUuid;
         this.recordUuid = UUID.randomUUID().toString();
+        this.datafiles = datafiles;
     }
     
     @Id
     @GeneratedValue(generator = "increment")
     @GenericGenerator(name = "increment", strategy = "increment")
+    @JsonIgnore
     public Long getId() {
         return id;
     }
@@ -85,19 +90,6 @@ public class DatasetMetadata {
     @Temporal(TemporalType.TIMESTAMP)
     public Date getCaptureTimestamp() {
         return captureTimestamp;
-    }
-
-    @Temporal(TemporalType.TIMESTAMP)
-    public Date getFileWriteTimestamp() {
-        return fileWriteTimestamp;
-    }
-
-    public String getSourceFilePathname() {
-        return sourceFilePathname;
-    }
-
-    public String getCapturedFilePathname() {
-        return capturedFilePathname;
     }
 
     @Temporal(TemporalType.TIMESTAMP)
@@ -121,16 +113,8 @@ public class DatasetMetadata {
         this.accountName = accountName;
     }
 
-    public void setSourceFilePathname(String sourceFilePathname) {
-        this.sourceFilePathname = sourceFilePathname;
-    }
-
     public void setCaptureTimestamp(Date captureTimestamp) {
         this.captureTimestamp = captureTimestamp;
-    }
-
-    public void setFileWriteTimestamp(Date fileWriteTimestamp) {
-        this.fileWriteTimestamp = fileWriteTimestamp;
     }
 
     public void setSessionStartTimestamp(Date sessionStartTimestamp) {
@@ -139,10 +123,6 @@ public class DatasetMetadata {
 
     public void setSessionId(long sessionId) {
         this.sessionId = sessionId;
-    }
-
-    public void setCapturedFilePathname(String capturedFilePathname) {
-        this.capturedFilePathname = capturedFilePathname;
     }
 
     public void setId(Long id) {
@@ -179,5 +159,23 @@ public class DatasetMetadata {
 
     public void setEmailAddress(String emailAddress) {
         this.emailAddress = emailAddress;
+    }
+
+    public String getSourceFilePathnameBase() {
+        return sourceFilePathnameBase;
+    }
+
+    public void setSourceFilePathnameBase(String sourceFilePathnameBase) {
+        this.sourceFilePathnameBase = sourceFilePathnameBase;
+    }
+
+    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER)
+    @JoinColumn(name="datafile_id")
+    public List<DatafileMetadata> getDatafiles() {
+        return datafiles;
+    }
+
+    public void setDatafiles(List<DatafileMetadata> datafiles) {
+        this.datafiles = datafiles;
     }
 }
