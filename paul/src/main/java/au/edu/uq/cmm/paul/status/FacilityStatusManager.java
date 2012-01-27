@@ -63,7 +63,7 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
                         userName, accountName, facility, emailAddress, new Date());
                 facility.addSession(details);
             } else if (event instanceof AclsLogoutEvent) {
-                FacilitySession details = facility.currentSession();
+                FacilitySession details = facility.getCurrentSession();
                 if (details == null) {
                     throw new InvalidSessionException(
                             "No current session for facility " + facility.getFacilityName());

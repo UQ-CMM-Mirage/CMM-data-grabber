@@ -19,9 +19,16 @@ import javax.persistence.Transient;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.hibernate.annotations.GenericGenerator;
 
+import au.edu.uq.cmm.aclslib.config.DatafileConfig;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 
+/**
+ * The Paul implementation of FacilityConfig persists the configuration data
+ * using Hibernate.  It also tracks the login sessions for a facility.
+ * 
+ * @author scrawley
+ */
 @Entity
 @Table(name = "facilities")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
@@ -43,6 +50,7 @@ public class Facility implements FacilityConfig {
     private boolean useFileLocks = true;
     private int fileSettlingTime;
     private String address;
+    private List<Datafile> datafiles;
     
 
     public Facility() {
@@ -62,6 +70,10 @@ public class Facility implements FacilityConfig {
         useFileLocks = facilityConfig.isUseFileLocks();
         fileSettlingTime = facilityConfig.getFileSettlingTime();
         address = facilityConfig.getAddress();
+        datafiles = new ArrayList<Datafile>();
+        for (DatafileConfig datafile : facilityConfig.getDatafiles()) {
+            datafiles.add(new Datafile(datafile));
+        }
     }
     
     public String getAddress() {
@@ -165,6 +177,16 @@ public class Facility implements FacilityConfig {
     public void setFileSettlingTime(int fileSettlingTime) {
         this.fileSettlingTime = fileSettlingTime;
     }
+
+    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.LAZY)
+    @JoinColumn(name="datafile_id")
+    public List<Datafile> getDatafiles() {
+        return datafiles;
+    }
+
+    public void setDatafiles(List<Datafile> datafiles) {
+        this.datafiles = datafiles;
+    }
     
     @Id
     @GeneratedValue(generator="increment")
@@ -177,14 +199,16 @@ public class Facility implements FacilityConfig {
         sessions.add(session);
     }
 
-    public synchronized FacilitySession currentSession() {
+    @JsonIgnore
+    @Transient
+    public synchronized FacilitySession getCurrentSession() {
         return (sessions.size() == 0) ? null : sessions.get(sessions.size() - 1);
     }
     
     @JsonIgnore
     @Transient
     public synchronized boolean isInUse() {
-        return sessions.size() > 0 && currentSession().getLogoutTime() == null;
+        return sessions.size() > 0 && getCurrentSession().getLogoutTime() == null;
     }
 
     public synchronized FacilitySession getLoginDetails(long timestamp) {

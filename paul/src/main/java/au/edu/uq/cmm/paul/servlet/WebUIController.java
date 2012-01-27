@@ -9,6 +9,12 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import au.edu.uq.cmm.paul.Paul;
 
+/**
+ * The MVC controller for Paul's web UI.  This supports the status and configuration
+ * pages and also implements GET access to the files in the queue area.
+ * 
+ * @author scrawley
+ */
 @Controller
 public class WebUIController {
     

@@ -211,16 +211,16 @@ public class PaulConfiguration implements Configuration {
         return new ArrayList<FacilityConfig>(facilityMap.values());
     }
 
-    public Facility lookupFacilityByAddress(InetAddress addr) {
-        Facility facility = facilityMap.get(addr.getHostAddress());
+    public FacilityConfig lookupFacilityByAddress(InetAddress addr) {
+        FacilityConfig facility = facilityMap.get(addr.getHostAddress());
         if (facility == null) {
             facility = facilityMap.get(addr.getHostName());
         }
         return facility;
     }
 
-    public Facility lookupFacilityByName(String id) {
-        for (Facility f : facilityMap.values()) {
+    public FacilityConfig lookupFacilityByName(String id) {
+        for (FacilityConfig f : facilityMap.values()) {
             if (id.equals(f.getFacilityName())) {
                 return f;
             }
@@ -233,6 +233,16 @@ public class PaulConfiguration implements Configuration {
         return facilityMap.isEmpty();
     }
 
+    /**
+     * Merge configuration details from a static configuration to the 
+     * persistent configuration.  The merging process is pretty crude, as
+     * this is only intended as a bootstrapping mechanism.  If the merge 
+     * succeeds, the result updates the persistent configuration.
+     * 
+     * @param entityManagerFactory
+     * @param staticConfig
+     * @return the merged/persisted configuration
+     */
     public PaulConfiguration merge(EntityManagerFactory entityManagerFactory,
             Configuration staticConfig) {
         LOG.info("Merging details from static Configuration");
