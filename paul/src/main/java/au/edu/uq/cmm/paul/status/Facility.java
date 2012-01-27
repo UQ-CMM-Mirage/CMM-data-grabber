@@ -22,6 +22,12 @@ import org.hibernate.annotations.GenericGenerator;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 
+/**
+ * The Paul implementation of FacilityConfig persists the configuration data
+ * using Hibernate.  It also tracks the login sessions for a facility.
+ * 
+ * @author scrawley
+ */
 @Entity
 @Table(name = "facilities")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)

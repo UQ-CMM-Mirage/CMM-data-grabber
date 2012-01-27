@@ -1,9 +1,8 @@
 package au.edu.uq.cmm.paul.status;
 
 /**
- * This is a lashup session mapper for use with 
- * the UNSW ACLS test server that has been set up to use email
- * addresses as user names.
+ * This is a lashup session mapper for use with the UNSW ACLS test server 
+ * that has been set up to use email addresses as user names.
  * 
  * @author scrawley
  */
@@ -13,11 +12,7 @@ public class LashupAclsAccountMapper implements SessionDetailMapper {
     public String mapToUserName(String userName, String accountName) 
             throws InvalidSessionException {
         int pos = userName.indexOf('@');
-        if (pos > 0) {
-            return userName.substring(0, pos);
-        } else {
-            return userName;
-        }
+        return (pos > 0) ? userName.substring(0, pos) : userName;
     }
 
     @Override
@@ -26,12 +21,7 @@ public class LashupAclsAccountMapper implements SessionDetailMapper {
     }
 
     @Override
-    public String mapToEmailAddress(String userName, String accountName)
-            throws InvalidSessionException {
-        if (userName.indexOf('@') > 0) {
-            return userName;
-        } else {
-            return null;
-        }
+    public String mapToEmailAddress(String userName, String accountName) {
+        return (userName.indexOf('@') > 0) ? userName : null;
     }
 }

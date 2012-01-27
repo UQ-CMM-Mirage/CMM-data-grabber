@@ -27,6 +27,13 @@ import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 import au.edu.uq.cmm.paul.status.FacilitySession;
 
+/**
+ * This class is an Abdera feed adapter that maps the data grabber's output queue as
+ * an atom feed.  Note that we override some of the superclasses protected methods 
+ * in order to implement paging and to add categories to the feed entries. 
+ * 
+ * @author scrawley
+ */
 public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMetadata> {
     private static final Logger LOG = Logger.getLogger(QueueFeedAdapter.class);
     private static final String ID_PREFIX = "urn:uuid:";
