@@ -19,6 +19,7 @@ import javax.persistence.Transient;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.hibernate.annotations.GenericGenerator;
 
+import au.edu.uq.cmm.aclslib.config.DatafileConfig;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 
@@ -49,6 +50,7 @@ public class Facility implements FacilityConfig {
     private boolean useFileLocks = true;
     private int fileSettlingTime;
     private String address;
+    private List<Datafile> datafiles;
     
 
     public Facility() {
@@ -68,6 +70,10 @@ public class Facility implements FacilityConfig {
         useFileLocks = facilityConfig.isUseFileLocks();
         fileSettlingTime = facilityConfig.getFileSettlingTime();
         address = facilityConfig.getAddress();
+        datafiles = new ArrayList<Datafile>();
+        for (DatafileConfig datafile : facilityConfig.getDatafiles()) {
+            datafiles.add(new Datafile(datafile));
+        }
     }
     
     public String getAddress() {
@@ -170,6 +176,16 @@ public class Facility implements FacilityConfig {
 
     public void setFileSettlingTime(int fileSettlingTime) {
         this.fileSettlingTime = fileSettlingTime;
+    }
+
+    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.LAZY)
+    @JoinColumn(name="datafile_id")
+    public List<Datafile> getDatafiles() {
+        return datafiles;
+    }
+
+    public void setDatafiles(List<Datafile> datafiles) {
+        this.datafiles = datafiles;
     }
     
     @Id

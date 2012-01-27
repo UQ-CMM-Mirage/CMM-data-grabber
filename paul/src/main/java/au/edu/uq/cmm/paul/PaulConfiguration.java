@@ -233,6 +233,16 @@ public class PaulConfiguration implements Configuration {
         return facilityMap.isEmpty();
     }
 
+    /**
+     * Merge configuration details from a static configuration to the 
+     * persistent configuration.  The merging process is pretty crude, as
+     * this is only intended as a bootstrapping mechanism.  If the merge 
+     * succeeds, the result updates the persistent configuration.
+     * 
+     * @param entityManagerFactory
+     * @param staticConfig
+     * @return the merged/persisted configuration
+     */
     public PaulConfiguration merge(EntityManagerFactory entityManagerFactory,
             Configuration staticConfig) {
         LOG.info("Merging details from static Configuration");
