@@ -19,7 +19,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
-import au.edu.uq.cmm.paul.grabber.AdminMetadata;
+import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 
 /**
  * This class is responsible for low-level management of the ingestion queue.
@@ -34,23 +34,23 @@ public class QueueManager {
         this.entityManagerFactory = services.getEntityManagerFactory();
     }
 
-    public List<AdminMetadata> getSnapshot() {
+    public List<DatasetMetadata> getSnapshot() {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
-            return entityManager.createQuery("from AdminMetadata a order by a.id", 
-                    AdminMetadata.class).getResultList();
+            return entityManager.createQuery("from DatasetMetadata a order by a.id", 
+                    DatasetMetadata.class).getResultList();
         } finally {
             entityManager.close();
         }
     }
 
-    public void addEntry(AdminMetadata metadata, File metadataFile) 
+    public void addEntry(DatasetMetadata metadata, File metadataFile) 
             throws JsonGenerationException, IOException {
         saveToFileSystem(metadataFile, metadata);
         saveToDatabase(metadata);
     }
 
-    private void saveToDatabase(AdminMetadata metadata) {
+    private void saveToDatabase(DatasetMetadata metadata) {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             entityManager.getTransaction().begin();
@@ -61,7 +61,7 @@ public class QueueManager {
         }
     }
 
-    private void saveToFileSystem(File metadataFile, AdminMetadata metadata)
+    private void saveToFileSystem(File metadataFile, DatasetMetadata metadata)
             throws IOException, JsonGenerationException {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(metadataFile))) {
             ObjectMapper mapper = new ObjectMapper();

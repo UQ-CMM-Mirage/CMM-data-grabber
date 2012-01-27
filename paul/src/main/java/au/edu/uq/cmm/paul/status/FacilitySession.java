@@ -23,6 +23,8 @@ import org.hibernate.annotations.GenericGenerator;
 @Entity
 @Table(name = "SESSIONS")
 public class FacilitySession {
+    public static final String UNKNOWN = "unknown";
+    
     private String userName;
     private String account;
     private Facility facility;
@@ -125,5 +127,13 @@ public class FacilitySession {
 
     public void setEmailAddress(String emailAddress) {
         this.emailAddress = emailAddress;
+    }
+
+    public static FacilitySession makeDummySession(Facility facility, Date now) {
+        FacilitySession res = new FacilitySession(
+                FacilitySession.UNKNOWN, FacilitySession.UNKNOWN, 
+                facility, null, now);
+        res.setSessionUuid(FacilitySession.UNKNOWN);
+        return res;
     }
 }

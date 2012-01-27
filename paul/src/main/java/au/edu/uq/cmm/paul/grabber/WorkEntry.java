@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileLock;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -13,10 +14,10 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonGenerationException;
 
-import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.queue.QueueManager;
+import au.edu.uq.cmm.paul.status.Facility;
 import au.edu.uq.cmm.paul.status.FacilitySession;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
 
@@ -33,11 +34,11 @@ class WorkEntry implements Runnable {
     private final QueueManager queueManager;
     private final BlockingDeque<FileWatcherEvent> events;
     private final File file;
-    private final FacilityConfig facility;
+    private final Facility facility;
     private final Date timestamp;
     
     public WorkEntry(Paul services, FileWatcherEvent event, File file) {
-        this.facility = event.getFacility();
+        this.facility = (Facility) event.getFacility();
         this.timestamp = new Date(event.getTimestamp());
         this.fileGrabber = services.getFileGrabber();
         this.queueManager = services.getQueueManager();
@@ -99,6 +100,9 @@ class WorkEntry implements Runnable {
         Date now = new Date();
         FacilitySession session = fileGrabber.getStatusManager().
                 getLoginDetails(facility.getFacilityName(), timestamp.getTime());
+        if (session == null) {
+            session = FacilitySession.makeDummySession(facility, now);
+        }
         File copiedFile = copyFile(is, file);
         saveMetadata(now, session, copiedFile);
         LOG.debug("Done grabbing");
@@ -107,18 +111,16 @@ class WorkEntry implements Runnable {
     private void saveMetadata(Date now,
             FacilitySession session, File copiedFile)
             throws IOException, JsonGenerationException {
-        String userName = session != null ? session.getUserName() : "unknown";
-        String emailAddress = session != null ? session.getEmailAddress() : null;
-        String account = session != null ? session.getAccount() : "unknown";
-        long sessionId = session != null ? session.getId() : -1L;
-        String sessionUuid = session != null ? session.getSessionUuid() : "unknown";
-        Date sessionTimestamp = session != null ? session.getLoginTime() : new Date(0L);
+        // FIXME - support multiple files properly ...
         File metadataFile = new File(copiedFile.getPath().replace(".data", ".admin"));
-        AdminMetadata metadata = new AdminMetadata(
-                file.getAbsolutePath(), copiedFile.getAbsolutePath(),
-                metadataFile.getAbsolutePath(), userName, 
-                facility.getFacilityName(), account, emailAddress, 
-                now, timestamp, sessionId, sessionUuid, sessionTimestamp);
+        DatafileMetadata d = new DatafileMetadata(
+                file.getAbsolutePath(), copiedFile.getAbsolutePath(), 
+                now, timestamp, "application/octet-stream");
+        DatasetMetadata metadata = new DatasetMetadata(
+                file.getAbsolutePath(), metadataFile.getAbsolutePath(), 
+                session.getUserName(), facility.getFacilityName(), 
+                session.getAccount(), session.getEmailAddress(), 
+                now, session.getSessionUuid(), session.getLoginTime(), Arrays.asList(d));
         queueManager.addEntry(metadata, metadataFile);
     }
 
