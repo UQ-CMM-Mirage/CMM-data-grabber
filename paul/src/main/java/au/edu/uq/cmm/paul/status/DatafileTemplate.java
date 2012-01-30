@@ -7,18 +7,22 @@ import javax.persistence.Table;
 
 import org.hibernate.annotations.GenericGenerator;
 
-import au.edu.uq.cmm.aclslib.config.DatafileConfig;;
+import au.edu.uq.cmm.aclslib.config.DatafileTemplateConfig;;
 
 @Entity
-@Table(name = "datafiles")
-public class Datafile implements DatafileConfig {
+@Table(name = "datafile_templates")
+public class DatafileTemplate implements DatafileTemplateConfig {
 
     private boolean optional;
     private String mimeType;
     private String filePattern;
     private Long id;
+    
+    public DatafileTemplate() {
+        super();
+    }
 
-    public Datafile(DatafileConfig datafile) {
+    public DatafileTemplate(DatafileTemplateConfig datafile) {
         this.optional = datafile.isOptional();
         this.mimeType = datafile.getMimeType();
         this.filePattern = datafile.getFilePattern();

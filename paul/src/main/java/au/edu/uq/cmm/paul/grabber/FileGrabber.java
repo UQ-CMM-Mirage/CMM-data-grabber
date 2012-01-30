@@ -7,12 +7,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 
 import org.apache.log4j.Logger;
 
+import au.edu.uq.cmm.aclslib.config.DatafileTemplateConfig;
+import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
@@ -91,14 +95,23 @@ public class FileGrabber extends CompositeServiceBase
     @Override
     public void eventOccurred(FileWatcherEvent event) {
         File file = event.getFile();
+        FacilityConfig facility = event.getFacility();
         LOG.debug("FileWatcherEvent received : " + 
-                event.getFacility().getFacilityName() + "," + 
-                file + "," + event.isCreate());
+                facility.getFacilityName() + "," + file + "," + event.isCreate());
+        File baseFile = file;
+        for (DatafileTemplateConfig datafile : facility.getDatafileTemplates()) {
+            Pattern pattern = Pattern.compile(datafile.getFilePattern());
+            Matcher matcher = pattern.matcher(file.getAbsolutePath());
+            if (matcher.matches()) {
+                baseFile = new File(matcher.group(1));
+                break;
+            }
+        }
         synchronized (this) {
-           WorkEntry workEntry = workMap.get(file);
+           WorkEntry workEntry = workMap.get(baseFile);
            if (workEntry == null) {
-               workEntry = new WorkEntry(services, event, file);
-               workMap.put(file, workEntry);
+               workEntry = new WorkEntry(services, event, baseFile);
+               workMap.put(baseFile, workEntry);
                executor.execute(workEntry);
                LOG.debug("Added a workEntry");
            } else {
