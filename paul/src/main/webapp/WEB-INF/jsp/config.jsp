@@ -16,10 +16,10 @@
           <li>Feed parameters
             <ul>
               <li>Feed URL - ${config.feedUrl}</li>
-              <li>Feed Id - ${config.feedId}</li>
-              <li>Feed Title - ${config.feedTitle}</li>
-              <li>Feed Author - ${config.feedAuthor}</li>
-              <li>Feed Author email - ${config.feedAuthorEmail}</li>
+              <li>Feed id - ${config.feedId}</li>
+              <li>Feed title - ${config.feedTitle}</li>
+              <li>Feed author - ${config.feedAuthor}</li>
+              <li>Feed author email - ${config.feedAuthorEmail}</li>
             </ul>
           </li>
           <li>Facilities:
@@ -27,11 +27,20 @@
               <c:forEach items="${config.facilities}" var="facility">
                 <li>${facility.facilityName} - ${facility.facilityDescription}
                   <ul>
-                    <li>DNS Name / IP address - ${facility.address}</li>
+                    <li>DNS name / IP address - ${facility.address}</li>
                     <li>Drive name - ${facility.driveName}</li>
                     <li>Folder name - ${facility.folderName}</li>
                     <li>Access name - ${facility.accessName}</li>
                     <li>Access password - ${facility.accessPassword}</li>
+                    <li>Datafile templates: ${facility.datafileTemplates.isEmpty() ? 'none' : ''}
+                      <ul>
+                        <c:forEach items="${facility.datafileTemplates}" var="template">
+                      	  <li>Pattern - '${template.filePattern}', 
+                      	      mimeType - '${template.filePattern}',
+                      	      optional - ${template.optional}</li>
+                      	</c:forEach>
+                      </ul>
+                    </li>
                     <li>File settling time - ${facility.fileSettlingTime} ms</li>
                     <li>Uses file locking - ${facility.useFileLocks}</li>
                     <li>Client uses timer - ${facility.useTimer}</li>
