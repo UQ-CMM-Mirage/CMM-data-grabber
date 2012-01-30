@@ -17,6 +17,10 @@ public class DatafileTemplate implements DatafileTemplateConfig {
     private String mimeType;
     private String filePattern;
     private Long id;
+    
+    public DatafileTemplate() {
+        super();
+    }
 
     public DatafileTemplate(DatafileTemplateConfig datafile) {
         this.optional = datafile.isOptional();
