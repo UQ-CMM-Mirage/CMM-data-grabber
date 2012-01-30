@@ -16,16 +16,18 @@ public class DatafileTemplate implements DatafileTemplateConfig {
     private boolean optional;
     private String mimeType;
     private String filePattern;
+    private String suffix;
     private Long id;
     
     public DatafileTemplate() {
         super();
     }
 
-    public DatafileTemplate(DatafileTemplateConfig datafile) {
-        this.optional = datafile.isOptional();
-        this.mimeType = datafile.getMimeType();
-        this.filePattern = datafile.getFilePattern();
+    public DatafileTemplate(DatafileTemplateConfig template) {
+        this.optional = template.isOptional();
+        this.mimeType = template.getMimeType();
+        this.filePattern = template.getFilePattern();
+        this.suffix = template.getSuffix();
     }
 
     public String getFilePattern() {
@@ -50,6 +52,14 @@ public class DatafileTemplate implements DatafileTemplateConfig {
 
     public void setFilePattern(String filePattern) {
         this.filePattern = filePattern;
+    }
+
+    public String getSuffix() {
+        return suffix;
+    }
+
+    public void setSuffix(String suffix) {
+        this.suffix = suffix;
     }
 
     @Id

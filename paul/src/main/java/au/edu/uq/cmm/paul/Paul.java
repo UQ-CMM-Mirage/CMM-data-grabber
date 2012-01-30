@@ -20,6 +20,8 @@ import au.edu.uq.cmm.paul.watcher.SambaUncPathnameMapper;
 import au.edu.uq.cmm.paul.watcher.UncPathnameMapper;
 
 public class Paul extends CompositeServiceBase {
+    // FIXME - need to do something to hook this class into the servlet lifecycle 
+    // so that it gets told when the servlet is being shutdown.
     private static final Logger LOG = Logger.getLogger(Paul.class);
     private FileWatcher fileWatcher;
     private FileGrabber fileGrabber;
