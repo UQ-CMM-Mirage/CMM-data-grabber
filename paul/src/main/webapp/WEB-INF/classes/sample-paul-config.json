@@ -11,7 +11,7 @@
   "feedTitle" : "Data grabber data set feed",
   "feedAuthor" : "Some Centre, University of Example",
   "feedAuthorEmail" : "nobody@example.com",
-  "feedPageSize" : 1,
+  "feedPageSize" : 10,
   "facilities" : {
     "127.0.0.1" : {
       "useFullScreen" : true,
@@ -35,7 +35,11 @@
       "useTimer" : false,
       "facilityDescription" : "Trollscope 2000",
       "useFullScreen" : true,
-      "fileSettlingTime" : 5000
+      "fileSettlingTime" : 5000,
+      "datafileTemplates" : [
+        {"filePattern" : "(.*)\\.txt", "mimeType" : "text/plain"},
+        {"filePattern" : "(.*)\\.guf", "mimeType" : "vendor/guf"}
+      ]
     },
     "hatstand.example.com" : {
       "useFullScreen" : false,
