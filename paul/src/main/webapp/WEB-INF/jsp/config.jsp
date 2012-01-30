@@ -32,7 +32,7 @@
                     <li>Folder name - ${facility.folderName}</li>
                     <li>Access name - ${facility.accessName}</li>
                     <li>Access password - ${facility.accessPassword}</li>
-                    <li>Datafile templates: ${facility.datafileTemplates.isEmpty() ? 'none' : ''}
+                    <li>Datafile templates: ${empty facility.datafileTemplates ? 'none' : ''}
                       <ul>
                         <c:forEach items="${facility.datafileTemplates}" var="template">
                       	  <li>Pattern - '${template.filePattern}', 
