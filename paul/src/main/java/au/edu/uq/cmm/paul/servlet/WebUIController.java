@@ -3,6 +3,9 @@ package au.edu.uq.cmm.paul.servlet;
 import java.io.File;
 import java.io.IOException;
 
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.TypedQuery;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
@@ -25,8 +28,6 @@ import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 @Controller
 public class WebUIController {
     private static final Logger LOG = Logger.getLogger(WebUIController.class);
-    // FIXME - hard-wired == BAD
-    private final String directory = "/tmp/safe";
     
     @Autowired
     Paul services;
@@ -54,7 +55,7 @@ public class WebUIController {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return null;
         }
-        File file = new File(directory, fileName);
+        File file = new File(services.getConfiguration().getCaptureDirectory(), fileName);
         DatafileMetadata metadata = fetchMetadata(file);
         if (metadata == null) {
             LOG.debug("No metadata for file " + fileName);
@@ -68,6 +69,18 @@ public class WebUIController {
     }
     
     private DatafileMetadata fetchMetadata(File file) {
-        return null;
+        EntityManager entityManager = 
+                services.getEntityManagerFactory().createEntityManager();
+        try {
+            TypedQuery<DatafileMetadata> query = entityManager.createQuery(
+                    "from DatafileMetadata d where d.capturedFilePathname = :pathName", 
+                    DatafileMetadata.class);
+            query.setParameter("pathName", file.getAbsolutePath());
+            return query.getSingleResult();
+        } catch (NoResultException ex) {
+            return null;
+        } finally {
+            entityManager.close();
+        }
     }
 }
