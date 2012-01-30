@@ -108,7 +108,7 @@ public class FileGrabber extends CompositeServiceBase
             }
         }
         synchronized (this) {
-           WorkEntry workEntry = workMap.get(file);
+           WorkEntry workEntry = workMap.get(baseFile);
            if (workEntry == null) {
                workEntry = new WorkEntry(services, event, baseFile);
                workMap.put(baseFile, workEntry);

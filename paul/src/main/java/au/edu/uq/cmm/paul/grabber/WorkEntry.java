@@ -19,7 +19,6 @@ import java.util.regex.Pattern;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonGenerationException;
 
-import au.edu.uq.cmm.aclslib.config.DatafileTemplateConfig;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.queue.QueueManager;
