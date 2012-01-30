@@ -3,6 +3,14 @@ package au.edu.uq.cmm.paul.grabber;
 import java.io.File;
 import java.util.Date;
 
+import au.edu.uq.cmm.paul.status.DatafileTemplate;
+
+/**
+ * This class holds the details of a Datafile that we have grabbed, 
+ * or are going to grab.
+ * 
+ * @author scrawley
+ */
 class GrabbedFile {
 
     private File baseFile;
@@ -10,12 +18,12 @@ class GrabbedFile {
     private File copiedFile;
     private Date copyTimestamp;
     private Date fileTimestamp;
-    private String mimeType;
+    private DatafileTemplate template;
     
 
-    public GrabbedFile(File baseFile, File file, String mimeType) {
+    public GrabbedFile(File baseFile, File file, DatafileTemplate template) {
         this.file = file;
-        this.mimeType = mimeType;
+        this.template = template;
         this.baseFile = baseFile;
     }
 
@@ -33,14 +41,6 @@ class GrabbedFile {
 
     public Date getFileTimestamp() {
         return fileTimestamp;
-    }
-
-    public String getMimeType() {
-        return mimeType;
-    }
-
-    public void setMimeType(String mimeType) {
-        this.mimeType = mimeType;
     }
 
     public void setFile(File file) {
@@ -65,5 +65,13 @@ class GrabbedFile {
 
     public void setBaseFile(File baseFile) {
         this.baseFile = baseFile;
+    }
+
+    public DatafileTemplate getTemplate() {
+        return template;
+    }
+
+    public void setTemplate(DatafileTemplate template) {
+        this.template = template;
     }
 }

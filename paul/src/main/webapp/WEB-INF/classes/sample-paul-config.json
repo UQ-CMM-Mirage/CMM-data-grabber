@@ -37,8 +37,8 @@
       "useFullScreen" : true,
       "fileSettlingTime" : 5000,
       "datafileTemplates" : [
-        {"filePattern" : "(.*)\\.txt", "mimeType" : "text/plain"},
-        {"filePattern" : "(.*)\\.guf", "mimeType" : "vendor/guf"}
+        {"filePattern" : "(.*)\\.txt", "mimeType" : "text/plain", "suffix" : ".txt"},
+        {"filePattern" : "(.*)\\.guf", "mimeType" : "vendor/guf", "suffix" : ".guf"}
       ]
     },
     "hatstand.example.com" : {

@@ -35,8 +35,9 @@
                     <li>Datafile templates: ${empty facility.datafileTemplates ? 'none' : ''}
                       <ul>
                         <c:forEach items="${facility.datafileTemplates}" var="template">
-                      	  <li>Pattern - '${template.filePattern}', 
+                      	  <li>Pattern  - '${template.filePattern}', 
                       	      mimeType - '${template.mimeType}',
+                      	      suffix   - '${template.suffix}',
                       	      optional - ${template.optional}</li>
                       	</c:forEach>
                       </ul>
