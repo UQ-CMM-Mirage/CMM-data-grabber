@@ -8,6 +8,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.UniqueConstraint;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.hibernate.annotations.GenericGenerator;
@@ -20,7 +21,8 @@ import org.hibernate.annotations.GenericGenerator;
  * @author scrawley
  */
 @Entity
-@Table(name = "DATAFILE_METADATA")
+@Table(name = "DATAFILE_METADATA",
+        uniqueConstraints=@UniqueConstraint(columnNames={"capturedFilePathname"}))
 public class DatafileMetadata {
     private String sourceFilePathname;
     private Date captureTimestamp;

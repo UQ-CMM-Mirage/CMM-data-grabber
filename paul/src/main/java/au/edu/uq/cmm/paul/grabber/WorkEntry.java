@@ -29,7 +29,8 @@ import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
 
 /**
  * This class represents a unit of work for the {@link FileGrabber} executor;
- * i.e. a file to be "grabbed".
+ * i.e. a dataset to be "grabbed".  This class does most of the work of grabbing
+ * and creation of the queue entries.
  * 
  * @author scrawley
  */
@@ -66,8 +67,7 @@ class WorkEntry implements Runnable {
         List<DatafileTemplate> templates = facility.getDatafileTemplates();
         if (templates.isEmpty()) {
             if (!files.containsKey(file)) {
-                files.put(file, new GrabbedFile(
-                        file, file, "application/octet-stream"));
+                files.put(file, new GrabbedFile(file, file, null));
                 LOG.debug("Added file " + file + " to map for grabbing");
             } else {
                 LOG.debug("File " + file + " already in map for grabbing");
@@ -79,7 +79,7 @@ class WorkEntry implements Runnable {
                 if (matcher.matches()) {
                     if (!files.containsKey(file)) {
                         files.put(file, new GrabbedFile(
-                                new File(matcher.group(1)), file, template.getMimeType()));
+                                new File(matcher.group(1)), file, template));
                         LOG.debug("Added file " + file + " to map for grabbing");
                     } else {
                         LOG.debug("File " + file + " already in map for grabbing");
@@ -156,7 +156,9 @@ class WorkEntry implements Runnable {
         LOG.debug("Start file grabbing");
         Date now = new Date();
         Date fileTimestamp = new Date(file.getFile().lastModified());
-        File copiedFile = copyFile(is, file.getFile());
+        String suffix = (file.getTemplate() == null) ?
+                ".data" : file.getTemplate().getSuffix();
+        File copiedFile = copyFile(is, file.getFile(), suffix);
         file.setCopiedFile(copiedFile);
         file.setFileTimestamp(fileTimestamp);
         file.setCopyTimestamp(now);
@@ -169,10 +171,11 @@ class WorkEntry implements Runnable {
         File metadataFile = generateUniqueFile(".admin");
         List<DatafileMetadata> list = new ArrayList<DatafileMetadata>(files.size());
         for (GrabbedFile g : files.values()) {
+            String mimeType = (g.getTemplate() == null) ? 
+                    "application/octet-stream" : g.getTemplate().getMimeType();
             DatafileMetadata d = new DatafileMetadata(
                     g.getFile().getAbsolutePath(), g.getCopiedFile().getAbsolutePath(), 
-                    g.getFileTimestamp(), g.getCopyTimestamp(), 
-                    g.getMimeType());
+                    g.getFileTimestamp(), g.getCopyTimestamp(), mimeType);
             list.add(d);
         }
         DatasetMetadata metadata = new DatasetMetadata(
@@ -183,13 +186,14 @@ class WorkEntry implements Runnable {
         queueManager.addEntry(metadata, metadataFile);
     }
 
-    private File copyFile(FileInputStream is, File source) throws IOException {
+    private File copyFile(FileInputStream is, File source, String suffix) 
+            throws IOException {
         // TODO - if the time taken to copy files is a problem, we could 
         // potentially improve this by using NIO or memory mapped files.
-        File target = generateUniqueFile(".data");
+        File target = generateUniqueFile(suffix);
         long size = source.length();
         try (FileOutputStream os = new FileOutputStream(target)) {
-            byte[] buffer = new byte[(int)Math.min(size, 8192)];
+            byte[] buffer = new byte[(int) Math.min(size, 8192)];
             int nosRead;
             long totalRead = 0;
             while ((nosRead = is.read(buffer, 0, buffer.length)) > 0) {
