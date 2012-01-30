@@ -13,7 +13,7 @@
           <li>Capture directory - ${config.captureDirectory}</li>
           <li>Clients use 'project' - ${config.useProject}</li>
           <li>Facility recheck interval - ${config.facilityRecheckInterval}</li>
-          <li>Feed parameters
+          <li>Atom feed parameters for ingestion queue:
             <ul>
               <li>Feed URL - ${config.feedUrl}</li>
               <li>Feed id - ${config.feedId}</li>
@@ -36,7 +36,7 @@
                       <ul>
                         <c:forEach items="${facility.datafileTemplates}" var="template">
                       	  <li>Pattern - '${template.filePattern}', 
-                      	      mimeType - '${template.filePattern}',
+                      	      mimeType - '${template.mimeType}',
                       	      optional - ${template.optional}</li>
                       	</c:forEach>
                       </ul>
