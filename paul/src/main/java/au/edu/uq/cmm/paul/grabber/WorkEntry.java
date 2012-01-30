@@ -5,18 +5,25 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileLock;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonGenerationException;
 
+import au.edu.uq.cmm.aclslib.config.DatafileTemplateConfig;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.queue.QueueManager;
+import au.edu.uq.cmm.paul.status.DatafileTemplate;
 import au.edu.uq.cmm.paul.status.Facility;
 import au.edu.uq.cmm.paul.status.FacilitySession;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
@@ -33,41 +40,76 @@ class WorkEntry implements Runnable {
     private final FileGrabber fileGrabber;
     private final QueueManager queueManager;
     private final BlockingDeque<FileWatcherEvent> events;
-    private final File file;
+    private final File baseFile;
+    private final Map<File, GrabbedFile> files;
     private final Facility facility;
     private final Date timestamp;
     
-    public WorkEntry(Paul services, FileWatcherEvent event, File file) {
+    public WorkEntry(Paul services, FileWatcherEvent event, File baseFile) {
         this.facility = (Facility) event.getFacility();
         this.timestamp = new Date(event.getTimestamp());
         this.fileGrabber = services.getFileGrabber();
         this.queueManager = services.getQueueManager();
-        this.file = file;
+        this.baseFile = baseFile;
+        this.files = new ConcurrentHashMap<File, GrabbedFile>();
         this.events = new LinkedBlockingDeque<FileWatcherEvent>();
-        this.events.add(event);
+        addEvent(event);
     }
 
     public void addEvent(FileWatcherEvent event) {
         events.add(event);
+        // FIXME - events that arrive too late possibly won't be grabbed
+        // because they aren't guaranteed to be in the set that the
+        // grabFiles method is iterating.
+        File file = event.getFile();
+        LOG.debug("Processing event for file " + file);
+        boolean matched = false;
+        List<DatafileTemplate> templates = facility.getDatafileTemplates();
+        if (templates.isEmpty()) {
+            if (!files.containsKey(file)) {
+                files.put(file, new GrabbedFile(
+                        file, file, "application/octet-stream"));
+                LOG.debug("Added file " + file + " to map for grabbing");
+            } else {
+                LOG.debug("File " + file + " already in map for grabbing");
+            }
+        } else {
+            for (DatafileTemplate template : templates) {
+                Pattern pattern = Pattern.compile(template.getFilePattern());
+                Matcher matcher = pattern.matcher(file.getAbsolutePath());
+                if (matcher.matches()) {
+                    if (!files.containsKey(file)) {
+                        files.put(file, new GrabbedFile(
+                                new File(matcher.group(1)), file, template.getMimeType()));
+                        LOG.debug("Added file " + file + " to map for grabbing");
+                    } else {
+                        LOG.debug("File " + file + " already in map for grabbing");
+                    }
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) {
+                LOG.debug("File " + file + " didn't match any template - ignoring");
+            }
+        }
     }
 
     @Override
     public void run() {
         FileGrabber.LOG.debug("Processing a workEntry");
         try {
-            grabFile();
+            grabFiles();
         } catch (InterruptedException ex) {
             FileGrabber.LOG.debug("interrupted");
         }
         synchronized (fileGrabber) {
-            // FIXME - temporary hack
-            this.events.clear();
-            fileGrabber.remove(this.file);
+            fileGrabber.remove(this.baseFile);
         }
         FileGrabber.LOG.debug("Finished processing workEntry");
     }
 
-    private void grabFile() throws InterruptedException {
+    private void grabFiles() throws InterruptedException {
         int settling = facility.getFileSettlingTime();
         if (settling <= 0) {
             settling = FileGrabber.DEFAULT_FILE_SETTLING_TIME;
@@ -77,50 +119,68 @@ class WorkEntry implements Runnable {
         while (events.poll(settling, TimeUnit.MILLISECONDS) != null) {
             LOG.debug("poll");
         }
-        // Optionally lock the file, then grab it.
-        try (FileInputStream is = new FileInputStream(file)) {
-            if (facility.isUseFileLocks()) {
-                LOG.debug("acquiring lock on " + file);
-                try (FileLock lock = is.getChannel().lock(0, Long.MAX_VALUE, true)) {
-                    LOG.debug("locked " + file);
-                    doGrabFile(is);
-                }
-                LOG.debug("unlocked " + file);
-            } else {
-                doGrabFile(is);
-            }
-        } catch (IOException ex) {
-            LOG.error("Unexpected IO Error", ex);
-        }
-    }
-
-    private void doGrabFile(FileInputStream is) 
-            throws InterruptedException, IOException {
-        LOG.debug("Start file grabbing");
+        // Optionally lock the files, then grab them.
         Date now = new Date();
         FacilitySession session = fileGrabber.getStatusManager().
                 getLoginDetails(facility.getFacilityName(), timestamp.getTime());
         if (session == null) {
             session = FacilitySession.makeDummySession(facility, now);
         }
-        File copiedFile = copyFile(is, file);
-        saveMetadata(now, session, copiedFile);
+        // FIXME - note that we may not see all of the files ... see above.
+        for (GrabbedFile file : files.values()) {
+            try (FileInputStream is = new FileInputStream(file.getFile())) {
+                if (facility.isUseFileLocks()) {
+                    LOG.debug("acquiring lock on " + file);
+                    try (FileLock lock = is.getChannel().lock(0, Long.MAX_VALUE, true)) {
+                        LOG.debug("locked " + file);
+                        doGrabFile(file, is);
+                    }
+                    LOG.debug("unlocked " + file);
+                } else {
+                    doGrabFile(file, is);
+                }
+            } catch (IOException ex) {
+                LOG.error("Unexpected IO Error", ex);
+            }
+        }
+        try {
+            saveMetadata(now, session);
+        } catch (JsonGenerationException ex) {
+            LOG.error("Unexpected JSON Error", ex);
+        } catch (IOException ex) {
+            LOG.error("Unexpected IO Error", ex);
+        }
+    }
+
+    private void doGrabFile(GrabbedFile file, FileInputStream is) 
+            throws InterruptedException, IOException {
+        LOG.debug("Start file grabbing");
+        Date now = new Date();
+        Date fileTimestamp = new Date(file.getFile().lastModified());
+        File copiedFile = copyFile(is, file.getFile());
+        file.setCopiedFile(copiedFile);
+        file.setFileTimestamp(fileTimestamp);
+        file.setCopyTimestamp(now);
         LOG.debug("Done grabbing");
     }
 
-    private void saveMetadata(Date now,
-            FacilitySession session, File copiedFile)
+    private void saveMetadata(Date now,FacilitySession session)
             throws IOException, JsonGenerationException {
         // FIXME - support multiple files properly ...
-        File metadataFile = new File(copiedFile.getPath().replace(".data", ".admin"));
-        DatafileMetadata d = new DatafileMetadata(
-                file.getAbsolutePath(), copiedFile.getAbsolutePath(), 
-                now, timestamp, "application/octet-stream");
+        File metadataFile = generateUniqueFile(".admin");
+        List<DatafileMetadata> list = new ArrayList<DatafileMetadata>(files.size());
+        for (GrabbedFile g : files.values()) {
+            DatafileMetadata d = new DatafileMetadata(
+                    g.getFile().getAbsolutePath(), g.getCopiedFile().getAbsolutePath(), 
+                    g.getFileTimestamp(), g.getCopyTimestamp(), 
+                    g.getMimeType());
+            list.add(d);
+        }
         DatasetMetadata metadata = new DatasetMetadata(
-                file.getAbsolutePath(), metadataFile.getAbsolutePath(), 
+                baseFile.getAbsolutePath(), metadataFile.getAbsolutePath(), 
                 session.getUserName(), facility.getFacilityName(), 
                 session.getAccount(), session.getEmailAddress(), 
-                now, session.getSessionUuid(), session.getLoginTime(), Arrays.asList(d));
+                now, session.getSessionUuid(), session.getLoginTime(), list);
         queueManager.addEntry(metadata, metadataFile);
     }
 
