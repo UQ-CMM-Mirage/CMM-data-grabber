@@ -7,7 +7,7 @@ import javax.persistence.Table;
 
 import org.hibernate.annotations.GenericGenerator;
 
-import au.edu.uq.cmm.aclslib.config.DatafileTemplateConfig;;
+import au.edu.uq.cmm.aclslib.config.DatafileTemplateConfig;
 
 @Entity
 @Table(name = "datafile_templates")

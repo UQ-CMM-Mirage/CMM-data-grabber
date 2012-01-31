@@ -14,6 +14,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.UniqueConstraint;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.hibernate.annotations.GenericGenerator;
@@ -26,7 +27,8 @@ import org.hibernate.annotations.GenericGenerator;
  * @author scrawley
  */
 @Entity
-@Table(name = "DATASET_METADATA")
+@Table(name = "DATASET_METADATA",
+        uniqueConstraints=@UniqueConstraint(columnNames={"recordUuid"}))
 public class DatasetMetadata {
     private String userName;
     private String facilityName;
