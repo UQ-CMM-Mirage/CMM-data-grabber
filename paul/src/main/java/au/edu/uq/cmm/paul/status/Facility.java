@@ -11,17 +11,16 @@ import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+import javax.persistence.UniqueConstraint;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.hibernate.annotations.GenericGenerator;
 
 import au.edu.uq.cmm.aclslib.config.DatafileTemplateConfig;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
-import au.edu.uq.cmm.paul.PaulConfiguration;
 
 /**
  * The Paul implementation of FacilityConfig persists the configuration data
@@ -30,13 +29,15 @@ import au.edu.uq.cmm.paul.PaulConfiguration;
  * @author scrawley
  */
 @Entity
-@Table(name = "facilities")
+@Table(name = "facilities",
+       uniqueConstraints={
+            @UniqueConstraint(columnNames={"facilityName"}),
+            @UniqueConstraint(columnNames={"address"})})
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public class Facility implements FacilityConfig {
 
     private List<FacilitySession> sessions = new ArrayList<FacilitySession>();
     private Long id;
-    private PaulConfiguration configuration;
     
     private boolean useFullScreen;
     private String driveName;
@@ -48,9 +49,10 @@ public class Facility implements FacilityConfig {
     private String facilityDescription;
     private boolean dummy;
     private boolean useFileLocks = true;
+    private boolean caseInsensitive;
     private int fileSettlingTime;
     private String address;
-    private List<DatafileTemplate> templates;
+    private List<DatafileTemplate> datafileTemplates;
     
 
     public Facility() {
@@ -69,10 +71,11 @@ public class Facility implements FacilityConfig {
         dummy = facilityConfig.isDummy();
         useFileLocks = facilityConfig.isUseFileLocks();
         fileSettlingTime = facilityConfig.getFileSettlingTime();
+        caseInsensitive = facilityConfig.isCaseInsensitive();
         address = facilityConfig.getAddress();
-        templates = new ArrayList<DatafileTemplate>();
+        datafileTemplates = new ArrayList<DatafileTemplate>();
         for (DatafileTemplateConfig template : facilityConfig.getDatafileTemplates()) {
-            templates.add(new DatafileTemplate(template));
+            datafileTemplates.add(new DatafileTemplate(template));
         }
     }
     
@@ -181,11 +184,11 @@ public class Facility implements FacilityConfig {
     @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.LAZY)
     @JoinColumn(name="datafile_id")
     public List<DatafileTemplate> getDatafileTemplates() {
-        return templates;
+        return datafileTemplates;
     }
 
     public void setDatafileTemplates(List<DatafileTemplate> templates) {
-        this.templates = templates;
+        this.datafileTemplates = templates;
     }
     
     @Id
@@ -233,20 +236,15 @@ public class Facility implements FacilityConfig {
         this.sessions = sessions;
     }
 
+    public boolean isCaseInsensitive() {
+        return caseInsensitive;
+    }
+
+    public void setCaseInsensitive(boolean caseInsensitive) {
+        this.caseInsensitive = caseInsensitive;
+    }
+
     public void setId(Long id) {
         this.id = id;
-    }
-
-    /**
-     * Get the parent Configuration for this record.
-     */
-    @ManyToOne
-    @JoinColumn(name="configuration_id", updatable=false)
-    public PaulConfiguration getConfiguration() {
-        return configuration;
-    }
-
-    public void setConfiguration(PaulConfiguration configuration) {
-        this.configuration = configuration;
     }
 }
