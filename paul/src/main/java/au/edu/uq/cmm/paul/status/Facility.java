@@ -49,9 +49,10 @@ public class Facility implements FacilityConfig {
     private String facilityDescription;
     private boolean dummy;
     private boolean useFileLocks = true;
+    private boolean caseInsensitive;
     private int fileSettlingTime;
     private String address;
-    private List<DatafileTemplate> templates;
+    private List<DatafileTemplate> datafileTemplates;
     
 
     public Facility() {
@@ -70,10 +71,11 @@ public class Facility implements FacilityConfig {
         dummy = facilityConfig.isDummy();
         useFileLocks = facilityConfig.isUseFileLocks();
         fileSettlingTime = facilityConfig.getFileSettlingTime();
+        caseInsensitive = facilityConfig.isCaseInsensitive();
         address = facilityConfig.getAddress();
-        templates = new ArrayList<DatafileTemplate>();
+        datafileTemplates = new ArrayList<DatafileTemplate>();
         for (DatafileTemplateConfig template : facilityConfig.getDatafileTemplates()) {
-            templates.add(new DatafileTemplate(template));
+            datafileTemplates.add(new DatafileTemplate(template));
         }
     }
     
@@ -182,11 +184,11 @@ public class Facility implements FacilityConfig {
     @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.LAZY)
     @JoinColumn(name="datafile_id")
     public List<DatafileTemplate> getDatafileTemplates() {
-        return templates;
+        return datafileTemplates;
     }
 
     public void setDatafileTemplates(List<DatafileTemplate> templates) {
-        this.templates = templates;
+        this.datafileTemplates = templates;
     }
     
     @Id
@@ -232,6 +234,14 @@ public class Facility implements FacilityConfig {
 
     public void setSessions(List<FacilitySession> sessions) {
         this.sessions = sessions;
+    }
+
+    public boolean isCaseInsensitive() {
+        return caseInsensitive;
+    }
+
+    public void setCaseInsensitive(boolean caseInsensitive) {
+        this.caseInsensitive = caseInsensitive;
     }
 
     public void setId(Long id) {
