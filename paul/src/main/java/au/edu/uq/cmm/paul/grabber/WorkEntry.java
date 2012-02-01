@@ -74,7 +74,8 @@ class WorkEntry implements Runnable {
             }
         } else {
             for (DatafileTemplate template : templates) {
-                Pattern pattern = Pattern.compile(template.getFilePattern());
+                Pattern pattern = template.getCompiledFilePattern(
+                        facility.isCaseInsensitive());
                 Matcher matcher = pattern.matcher(file.getAbsolutePath());
                 if (matcher.matches()) {
                     if (!files.containsKey(file)) {

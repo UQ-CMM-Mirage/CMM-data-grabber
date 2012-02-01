@@ -12,6 +12,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.UniqueConstraint;
 
 import org.hibernate.annotations.GenericGenerator;
 
@@ -21,7 +22,8 @@ import org.hibernate.annotations.GenericGenerator;
  * @author scrawley
  */
 @Entity
-@Table(name = "SESSIONS")
+@Table(name = "SESSIONS",
+       uniqueConstraints=@UniqueConstraint(columnNames={"sessionUuid"}))
 public class FacilitySession {
     public static final String UNKNOWN = "unknown";
     

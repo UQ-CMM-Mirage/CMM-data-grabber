@@ -1,13 +1,16 @@
 package au.edu.uq.cmm.paul.status;
 
+import java.util.regex.Pattern;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import org.hibernate.annotations.GenericGenerator;
 
-import au.edu.uq.cmm.aclslib.config.DatafileTemplateConfig;;
+import au.edu.uq.cmm.aclslib.config.DatafileTemplateConfig;
 
 @Entity
 @Table(name = "datafile_templates")
@@ -18,6 +21,7 @@ public class DatafileTemplate implements DatafileTemplateConfig {
     private String filePattern;
     private String suffix;
     private Long id;
+    private Pattern compiledPattern;
     
     public DatafileTemplate() {
         super();
@@ -71,5 +75,14 @@ public class DatafileTemplate implements DatafileTemplateConfig {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    @Transient
+    public Pattern getCompiledFilePattern(boolean caseInsensitive) {
+        if (compiledPattern == null) {
+            compiledPattern = Pattern.compile(
+                    filePattern, caseInsensitive ? Pattern.CASE_INSENSITIVE : 0);
+        }
+        return compiledPattern;
     }
 }

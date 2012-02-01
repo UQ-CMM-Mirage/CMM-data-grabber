@@ -4,15 +4,17 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.MapKey;
+import javax.persistence.JoinColumn;
 import javax.persistence.NoResultException;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
@@ -37,7 +39,7 @@ public class PaulConfiguration implements Configuration {
     private static final Logger LOG = Logger.getLogger(PaulConfiguration.class);
     
     private Long id;
-    private Map<String, Facility> facilityMap = new HashMap<String, Facility>();
+    private List<Facility> facilities = new ArrayList<Facility>();
     
     private int proxyPort = 1024;
     private int serverPort = 1024;
@@ -206,21 +208,35 @@ public class PaulConfiguration implements Configuration {
         }
     }
     
+    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.LAZY)
+    @JoinColumn(name="facility_id")
+    public List<Facility> getFacilities() {
+        return facilities;
+    }
+
+    public void setFacilities(List<Facility> facilities) {
+        this.facilities = facilities;
+    }
+    
     @Transient
-    public Collection<FacilityConfig> getFacilities() {
-        return new ArrayList<FacilityConfig>(facilityMap.values());
+    public Collection<FacilityConfig> getFacilityConfigs() {
+        List<FacilityConfig> res = new ArrayList<FacilityConfig>();
+        res.addAll(facilities);
+        return res;
     }
 
     public FacilityConfig lookupFacilityByAddress(InetAddress addr) {
-        FacilityConfig facility = facilityMap.get(addr.getHostAddress());
-        if (facility == null) {
-            facility = facilityMap.get(addr.getHostName());
+        for (FacilityConfig f : facilities) {
+            if (f.getAddress().equals(addr.getHostAddress()) ||
+                    f.getAddress().equals(addr.getHostName())) {
+                return f;
+            }
         }
-        return facility;
+        return null;
     }
 
     public FacilityConfig lookupFacilityByName(String id) {
-        for (FacilityConfig f : facilityMap.values()) {
+        for (FacilityConfig f : facilities) {
             if (id.equals(f.getFacilityName())) {
                 return f;
             }
@@ -230,7 +246,7 @@ public class PaulConfiguration implements Configuration {
 
     @Transient
     public boolean isEmpty() {
-        return facilityMap.isEmpty();
+        return facilities.isEmpty();
     }
 
     /**
@@ -261,12 +277,19 @@ public class PaulConfiguration implements Configuration {
             setFeedAuthorEmail(staticConfig.getFeedAuthorEmail());
             setFeedUrl(staticConfig.getFeedUrl());
             setFeedPageSize(staticConfig.getFeedPageSize());
-            for (FacilityConfig facilityConfig: staticConfig.getFacilities()) {
-                if (!facilityMap.containsKey(facilityConfig.getAddress())) {
-                    Facility facility = new Facility(facilityConfig);
-                    facilityMap.put(facility.getAddress(), facility);
-                    LOG.info("Merged facility '" + facility.getFacilityName() + 
-                            "' with address '" + facility.getAddress() + "'");
+            for (FacilityConfig facilityConfig: staticConfig.getFacilityConfigs()) {
+                boolean found = false;
+                for (FacilityConfig f : facilities) {
+                    if (f.getFacilityName().equals(facilityConfig.getFacilityName()) ||
+                            f.getAddress().equals(facilityConfig.getAddress())) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    facilities.add(new Facility(facilityConfig));
+                    LOG.info("Added facility '" + facilityConfig.getFacilityName() + 
+                            "' with address '" + facilityConfig.getAddress() + "'");
                 }
             }
             PaulConfiguration res = entityManager.merge(this);
@@ -275,16 +298,6 @@ public class PaulConfiguration implements Configuration {
         } finally {
             entityManager.close();
         }
-    }
-
-    @OneToMany(mappedBy="configuration", cascade=CascadeType.ALL)
-    @MapKey(name="address")
-    public Map<String, Facility> getFacilityMap() {
-        return facilityMap;
-    }
-
-    public void setFacilityMap(Map<String, Facility> facilityMap) {
-        this.facilityMap = facilityMap;
     }
 
     @Id
