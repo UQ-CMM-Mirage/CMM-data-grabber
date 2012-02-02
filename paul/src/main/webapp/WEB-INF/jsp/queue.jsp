@@ -2,22 +2,16 @@
 <%@ page session="false" %>
 <html>
     <head>
-        <title>Paul Ingestion Queue</title>
+        <title>Paul Ingestion Queue Admin</title>
     </head>
     <body>
-        <h1>Paul Ingestion Queue</h1>
+        <h1>Paul Ingestion Queue Admin</h1>
         <ul>
              <c:forEach items="${queue}" var="entry">
-                <li>Queue entry ${entry.id} :
-                    <ul>
-                    	<li>User / account : ${entry.userName} / ${entry.accountName}</li>
-                    	<li>Session : ${entry.sessionId} 
-                    	    started ${entry.sessionStartTimestamp}</li>
-                    	<li>Original file : ${entry.sourceFilePathname} 
-                    	    written ${entry.fileWriteTimestamp}</li>
-                    	<li>Queue file : ${entry.capturedFilePathname}
-                    	    captured ${entry.captureTimestamp}</li>
-                    </ul>
+                <li><a href="queue/${entry.id}">Entry # ${entry.id}</a> - 
+                    facility ${entry.facilityName}, 
+                    user : ${entry.userName}, 
+                    captured: ${entry.captureTimestamp}
                 </li>
              </c:forEach>
         </ul>

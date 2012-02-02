@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
+import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 
 /**
  * The MVC controller for Paul's web UI.  This supports the status and configuration
@@ -44,8 +45,37 @@ public class WebUIController {
         return "config";
     }
     
+    @RequestMapping(value="/queue", method=RequestMethod.GET)
+    public String queue(Model model) {
+        model.addAttribute("queue", services.getQueueManager().getSnapshot());
+        return "queue";
+    }
+    
+    @RequestMapping(value="/queue/{entry:.+}", method=RequestMethod.GET)
+    public String queueEntry(@PathVariable String entry, Model model, 
+            HttpServletResponse response) 
+            throws IOException {
+        long id;
+        try {
+            id = Long.parseLong(entry);
+        } catch (NumberFormatException ex) {
+            LOG.debug("Rejected request with bad entry id");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return null;
+        }
+        DatasetMetadata metadata = fetchMetadata(id);
+        if (metadata == null) {
+            LOG.debug("Rejected request for unknown entry");
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return null;
+        }
+        model.addAttribute("entry", metadata);
+        return "queueEntry";
+    }
+    
     @RequestMapping(value="/files/{fileName:.+}", method=RequestMethod.GET)
-    public String file(@PathVariable String fileName, Model model, HttpServletResponse response) 
+    public String file(@PathVariable String fileName, Model model, 
+            HttpServletResponse response) 
             throws IOException {
         LOG.debug("Request to fetch file " + fileName);
         // This aims to prevent requests from reading files outside of the queue directory.
@@ -76,6 +106,22 @@ public class WebUIController {
                     "from DatafileMetadata d where d.capturedFilePathname = :pathName", 
                     DatafileMetadata.class);
             query.setParameter("pathName", file.getAbsolutePath());
+            return query.getSingleResult();
+        } catch (NoResultException ex) {
+            return null;
+        } finally {
+            entityManager.close();
+        }
+    }
+    
+    private DatasetMetadata fetchMetadata(long id) {
+        EntityManager entityManager = 
+                services.getEntityManagerFactory().createEntityManager();
+        try {
+            TypedQuery<DatasetMetadata> query = entityManager.createQuery(
+                    "from DatasetMetadata d where d.id = :id", 
+                    DatasetMetadata.class);
+            query.setParameter("id", id);
             return query.getSingleResult();
         } catch (NoResultException ex) {
             return null;

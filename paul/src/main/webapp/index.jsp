@@ -9,7 +9,8 @@
         <ul>
           <li><a href="config">Configuration</a></li>
           <li><a href="status">Facility Status</a></li>
-          <li><a href="atom/queue">Ingestion Queue</a></li>
+          <li><a href="atom/queue">Ingestion Queue Feed</a></li>
+          <li><a href="queue">Ingestion Queue Admin</a></li>
         </ul>
     </body>
 </html>
