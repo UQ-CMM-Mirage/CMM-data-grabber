@@ -84,7 +84,7 @@ public class Benny extends HttpServlet {
         if (user == null && password == null) {
             String[] credentials = getBasicAuthCredentials(req);
             if (credentials == null) {
-                resp.setHeader("WWW-Authenticate", "Basic realm=" + realm);
+                resp.setHeader("WWW-Authenticate", "Basic realm=\"" + realm + "\"");
                 respond(resp, HttpServletResponse.SC_UNAUTHORIZED, "No credentials provided");
                 return;
             }
