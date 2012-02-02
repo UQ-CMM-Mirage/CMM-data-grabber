@@ -32,6 +32,7 @@
                     <li>Folder name - ${facility.folderName}</li>
                     <li>Access name - ${facility.accessName}</li>
                     <li>Access password - ${facility.accessPassword}</li>
+                    <li>Case insensitive datafile matching - ${facility.caseInsensitive}</li>
                     <li>Datafile templates: ${empty facility.datafileTemplates ? 'none' : ''}
                       <ul>
                         <c:forEach items="${facility.datafileTemplates}" var="template">
