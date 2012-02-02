@@ -119,13 +119,19 @@ class WorkEntry implements Runnable {
         while (events.poll(settling, TimeUnit.MILLISECONDS) != null) {
             LOG.debug("poll");
         }
-        // Optionally lock the files, then grab them.
+        // Avoid creating an empty Dataset (containing just an admin metadata file)
+        if (files.isEmpty()) {
+            LOG.debug("Dropping empty dataset for baseFile " + baseFile);
+            return;
+        }
+        // Prepare for grabbing
         Date now = new Date();
         FacilitySession session = fileGrabber.getStatusManager().
                 getLoginDetails(facility.getFacilityName(), timestamp.getTime());
         if (session == null) {
             session = FacilitySession.makeDummySession(facility, now);
         }
+        // Optionally lock the files, then grab them.
         // FIXME - note that we may not see all of the files ... see above.
         for (GrabbedFile file : files.values()) {
             try (FileInputStream is = new FileInputStream(file.getFile())) {
