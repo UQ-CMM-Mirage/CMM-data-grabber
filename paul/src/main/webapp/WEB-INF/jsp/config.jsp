@@ -11,6 +11,7 @@
           <li>Server host - ${config.serverHost} : ${config.serverPort}</li>
           <li>Base file URL - ${config.baseFileUrl}</li>
           <li>Capture directory - ${config.captureDirectory}</li>
+          <li>Archive directory - ${config.archiveDirectory}</li>
           <li>Clients use 'project' - ${config.useProject}</li>
           <li>Facility recheck interval - ${config.facilityRecheckInterval}</li>
           <li>Atom feed parameters for ingestion queue:

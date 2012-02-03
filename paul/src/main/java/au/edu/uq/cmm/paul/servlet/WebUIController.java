@@ -15,6 +15,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
@@ -47,6 +48,19 @@ public class WebUIController {
     
     @RequestMapping(value="/queue", method=RequestMethod.GET)
     public String queue(Model model) {
+        model.addAttribute("queue", services.getQueueManager().getSnapshot());
+        return "queue";
+    }
+    
+    @RequestMapping(value="/queue", method=RequestMethod.POST, 
+            params={"deleteAll"})
+    public String confirmedQueueDelete(Model model, 
+            @RequestParam(required=false) String mode, 
+            @RequestParam(required=false) String confirmed) {
+        if (confirmed == null) {
+            return "queueDeleteConfirmation";
+        }
+        services.getQueueManager().deleteAll(mode.equals("discard"));
         model.addAttribute("queue", services.getQueueManager().getSnapshot());
         return "queue";
     }

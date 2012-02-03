@@ -6,6 +6,9 @@
     </head>
     <body>
         <h1>Paul Ingestion Queue Admin</h1>
+        <form method="POST" action="queue">
+        	<button type="submit" name="deleteAll">Delete All</button>
+        </form>
         <ul>
              <c:forEach items="${queue}" var="entry">
                 <li><a href="queue/${entry.id}">Entry # ${entry.id}</a> - 

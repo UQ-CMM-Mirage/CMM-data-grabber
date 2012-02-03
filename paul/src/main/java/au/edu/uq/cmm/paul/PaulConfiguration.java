@@ -47,6 +47,7 @@ public class PaulConfiguration implements Configuration {
     private String proxyHost;
     private boolean useProject;
     private String captureDirectory;
+    private String archiveDirectory;
     private String baseFileUrl;
     private String feedId;
     private String feedTitle;
@@ -113,6 +114,14 @@ public class PaulConfiguration implements Configuration {
 
     public void setCaptureDirectory(String captureDirectory) {
         this.captureDirectory = captureDirectory;
+    }
+
+    public String getArchiveDirectory() {
+        return archiveDirectory;
+    }
+
+    public void setArchiveDirectory(String archiveDirectory) {
+        this.archiveDirectory = archiveDirectory;
     }
 
     public String getBaseFileUrl() {
@@ -271,6 +280,7 @@ public class PaulConfiguration implements Configuration {
             setServerPort(staticConfig.getServerPort());
             setBaseFileUrl(staticConfig.getBaseFileUrl());
             setCaptureDirectory(staticConfig.getCaptureDirectory());
+            setArchiveDirectory(staticConfig.getArchiveDirectory());
             setFeedId(staticConfig.getFeedId());
             setFeedTitle(staticConfig.getFeedTitle());
             setFeedAuthor(staticConfig.getFeedAuthor());
