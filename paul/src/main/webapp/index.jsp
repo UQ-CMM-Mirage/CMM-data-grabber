@@ -2,10 +2,10 @@
 <%@ page session="false" %>
 <html>
     <head>
-        <title>Paul Web Interface</title>
+        <title>Data Grabber Admin Interface</title>
     </head>
     <body>
-        <h1>Paul Web Interface</h1>
+        <h1>Data Grabber Admin Interface</h1>
         <ul>
           <li><a href="config">Configuration</a></li>
           <li><a href="status">Facility Status</a></li>

@@ -8,7 +8,8 @@
         <h1>Paul Ingestion Queue Admin</h1>
         <c:if test="${!empty queue}">
             <form method="POST" action="queue">
-        	    <button type="submit" name="deleteAll">Delete/Archive All</button>
+        	    <button type="submit" name="deleteAll">Delete/Archive all entries</button>
+        	    <button type="submit" name="expire">Expire entries</button>
             </form>
             <ul>
                 <c:forEach items="${queue}" var="entry">

@@ -4,9 +4,11 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
 
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonFactory;
@@ -77,6 +79,25 @@ public class QueueManager {
         }
     }
 
+    public void expire(boolean discard, Date olderThan) {
+        EntityManager em = services.getEntityManagerFactory().createEntityManager();
+        try {
+            em.getTransaction().begin();
+            TypedQuery<DatasetMetadata> query = 
+                    em.createQuery("from DatasetMetadata d " +
+                    		"where d.captureTimestamp < :cutoff", 
+                    DatasetMetadata.class);
+            query.setParameter("cutoff", olderThan);
+            List<DatasetMetadata> datasets = query.getResultList();
+            for (DatasetMetadata dataset : datasets) {
+                doDelete(discard, em, dataset);
+            }
+            em.getTransaction().commit();
+        } finally {
+            em.close();
+        }
+    }
+
     public void deleteAll(boolean discard) {
         EntityManager em = services.getEntityManagerFactory().createEntityManager();
         try {
@@ -95,6 +116,8 @@ public class QueueManager {
 
     private void doDelete(boolean discard, EntityManager entityManager,
             DatasetMetadata dataset) {
+        // FIXME - should we do the file removal after committing the
+        // database update?
         for (DatafileMetadata datafile : dataset.getDatafiles()) {
             disposeOfFile(datafile.getCapturedFilePathname(), discard);
         }

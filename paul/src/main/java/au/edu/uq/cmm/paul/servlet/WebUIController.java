@@ -2,6 +2,7 @@ package au.edu.uq.cmm.paul.servlet;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -9,6 +10,16 @@ import javax.persistence.TypedQuery;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
+import org.joda.time.Days;
+import org.joda.time.Hours;
+import org.joda.time.Minutes;
+import org.joda.time.Months;
+import org.joda.time.Weeks;
+import org.joda.time.Years;
+import org.joda.time.base.BaseSingleFieldPeriod;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -30,6 +41,13 @@ import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 @Controller
 public class WebUIController {
     private static final Logger LOG = Logger.getLogger(WebUIController.class);
+
+    private static DateTimeFormatter[] FORMATS = new DateTimeFormatter[] {
+        ISODateTimeFormat.dateHourMinuteSecond(),
+        ISODateTimeFormat.localTimeParser(),
+        ISODateTimeFormat.localDateOptionalTimeParser(),
+        ISODateTimeFormat.dateTimeParser()
+    };
     
     @Autowired
     Paul services;
@@ -54,7 +72,7 @@ public class WebUIController {
     
     @RequestMapping(value="/queue", method=RequestMethod.POST, 
             params={"deleteAll"})
-    public String confirmedQueueDelete(Model model, 
+    public String deleteAll(Model model, 
             @RequestParam(required=false) String mode, 
             @RequestParam(required=false) String confirmed) {
         if (confirmed == null) {
@@ -65,6 +83,91 @@ public class WebUIController {
         return "queue";
     }
     
+    @RequestMapping(value="/queue", method=RequestMethod.POST, 
+            params={"expire"})
+    public String expire(Model model, 
+            @RequestParam(required=false) String mode, 
+            @RequestParam(required=false) String confirmed,
+            @RequestParam(required=false) String olderThan,
+            @RequestParam(required=false) String period,
+            @RequestParam(required=false) String unit) {
+        Date cutoff = determineCutoff(model, tidy(olderThan), tidy(period), tidy(unit));
+        if (cutoff == null || confirmed == null) {
+            return "queueExpiryForm";
+        }
+        services.getQueueManager().expire(mode.equals("discard"), cutoff);
+        model.addAttribute("queue", services.getQueueManager().getSnapshot());
+        return "queue";
+    }
+    
+    private String tidy(String str) {
+        return str == null ? "" : str.trim();
+    }
+    
+    private Date determineCutoff(Model model, String olderThan, 
+            String period, String unit) {
+        if (olderThan.isEmpty() && period.isEmpty()) {
+            model.addAttribute("errorMessage", 
+                    "Either an expiry date or period must be supplied");
+            return null;
+        }
+        DateTime cutoff;
+        if (olderThan.isEmpty()) {
+            int value;
+            try {
+                value = Integer.parseInt(period);
+            } catch (NumberFormatException ex) {
+                model.addAttribute("errorMessage", "Malformed period");
+                return null;
+            }
+            BaseSingleFieldPeriod p;
+            switch (unit) {
+            case "minute" : case "minutes" :
+                p = Minutes.minutes(value);
+                break;
+            case "hour" : case "hours" :
+                p = Hours.hours(value);
+                break;
+            case "day" : case "days" :
+                p = Days.days(value);
+                break;
+            case "week" : case "weeks" :
+                p = Weeks.weeks(value);
+                break;
+            case "month" : case "months" :
+                p = Months.months(value);
+                break;
+            case "year" : case "years" :
+                p = Years.years(value);
+                break;
+            default :
+                model.addAttribute("errorMessage", "Unrecognized unit");
+                return null;
+            }
+            cutoff = DateTime.now().minus(p);
+        } else {
+            cutoff = null;
+            for (DateTimeFormatter format : FORMATS) {
+                try {
+                    cutoff = format.parseDateTime(olderThan);
+                    break;
+                } catch (IllegalArgumentException ex) {
+                    continue;
+                }
+            }
+            if (cutoff == null) {
+                model.addAttribute("errorMessage", "Unrecognizable expiry date");
+                return null;
+            }
+        }
+        if (cutoff.isAfter(new DateTime())) {
+            model.addAttribute("errorMessage", "Expiry date is in the future");
+            return null;
+        }
+        model.addAttribute("computedDate", FORMATS[0].print(cutoff));
+        return cutoff.toDate();
+    }
+
     @RequestMapping(value="/queue/{entry:.+}", method=RequestMethod.GET)
     public String queueEntry(@PathVariable String entry, Model model, 
             HttpServletResponse response) 
