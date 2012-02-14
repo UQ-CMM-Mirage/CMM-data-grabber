@@ -4,10 +4,11 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
+import javax.persistence.TypedQuery;
 
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonFactory;
@@ -19,6 +20,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
+import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 
 /**
@@ -28,19 +30,19 @@ import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
  */
 public class QueueManager {
     private static final Logger LOG = Logger.getLogger(QueueManager.class);
-    private EntityManagerFactory entityManagerFactory;
+    private Paul services;
 
     public QueueManager(Paul services) {
-        this.entityManagerFactory = services.getEntityManagerFactory();
+        this.services = services;
     }
 
     public List<DatasetMetadata> getSnapshot() {
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        EntityManager em = services.getEntityManagerFactory().createEntityManager();
         try {
-            return entityManager.createQuery("from DatasetMetadata a order by a.id", 
+            return em.createQuery("from DatasetMetadata a order by a.id", 
                     DatasetMetadata.class).getResultList();
         } finally {
-            entityManager.close();
+            em.close();
         }
     }
 
@@ -51,13 +53,13 @@ public class QueueManager {
     }
 
     private void saveToDatabase(DatasetMetadata metadata) {
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        EntityManager em = services.getEntityManagerFactory().createEntityManager();
         try {
-            entityManager.getTransaction().begin();
-            entityManager.persist(metadata);
-            entityManager.getTransaction().commit();
+            em.getTransaction().begin();
+            em.persist(metadata);
+            em.getTransaction().commit();
         } finally {
-            entityManager.close();
+            em.close();
         }
     }
 
@@ -74,6 +76,79 @@ public class QueueManager {
             throw new PaulException(ex);
         } catch (JsonMappingException ex) {
             throw new PaulException(ex);
+        }
+    }
+
+    public void expire(boolean discard, Date olderThan) {
+        EntityManager em = services.getEntityManagerFactory().createEntityManager();
+        try {
+            em.getTransaction().begin();
+            TypedQuery<DatasetMetadata> query = 
+                    em.createQuery("from DatasetMetadata d " +
+                    		"where d.captureTimestamp < :cutoff", 
+                    DatasetMetadata.class);
+            query.setParameter("cutoff", olderThan);
+            List<DatasetMetadata> datasets = query.getResultList();
+            for (DatasetMetadata dataset : datasets) {
+                doDelete(discard, em, dataset);
+            }
+            em.getTransaction().commit();
+        } finally {
+            em.close();
+        }
+    }
+
+    public void deleteAll(boolean discard) {
+        EntityManager em = services.getEntityManagerFactory().createEntityManager();
+        try {
+            em.getTransaction().begin();
+            List<DatasetMetadata> datasets = 
+                    em.createQuery("from DatasetMetadata", 
+                    DatasetMetadata.class).getResultList();
+            for (DatasetMetadata dataset : datasets) {
+                doDelete(discard, em, dataset);
+            }
+            em.getTransaction().commit();
+        } finally {
+            em.close();
+        }
+    }
+
+    private void doDelete(boolean discard, EntityManager entityManager,
+            DatasetMetadata dataset) {
+        // FIXME - should we do the file removal after committing the
+        // database update?
+        for (DatafileMetadata datafile : dataset.getDatafiles()) {
+            disposeOfFile(datafile.getCapturedFilePathname(), discard);
+        }
+        disposeOfFile(dataset.getMetadataFilePathname(), discard);
+        entityManager.remove(dataset);
+    }
+
+    private void disposeOfFile(String pathname, boolean discard) {
+        File file = new File(pathname);
+        if (!file.exists()) {
+            LOG.info("File " + pathname + " no longer exists");
+            return;
+        }
+        if (!discard) {
+            File dest = new File("/tmp/archive", file.getName());
+            if (dest.exists()) {
+                LOG.info("Archived file " + dest + " already exists");
+            } else {
+                if (file.renameTo(dest)) {
+                    LOG.info("File " + file + " archived as " + dest);
+                } else {
+                    LOG.info("File " + file + " count not be archived - " +
+                    		"it remains in the queue area");
+                }
+                return;
+            }
+        }
+        if (file.delete()) {
+            LOG.info("File " + pathname + " deleted from queue area");
+        } else {
+            LOG.info("File " + pathname + " not deleted from queue area");
         }
     }
 

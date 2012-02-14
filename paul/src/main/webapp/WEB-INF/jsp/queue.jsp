@@ -2,24 +2,28 @@
 <%@ page session="false" %>
 <html>
     <head>
-        <title>Paul Ingestion Queue</title>
+        <title>Paul Ingestion Queue Admin</title>
     </head>
     <body>
-        <h1>Paul Ingestion Queue</h1>
-        <ul>
-             <c:forEach items="${queue}" var="entry">
-                <li>Queue entry ${entry.id} :
-                    <ul>
-                    	<li>User / account : ${entry.userName} / ${entry.accountName}</li>
-                    	<li>Session : ${entry.sessionId} 
-                    	    started ${entry.sessionStartTimestamp}</li>
-                    	<li>Original file : ${entry.sourceFilePathname} 
-                    	    written ${entry.fileWriteTimestamp}</li>
-                    	<li>Queue file : ${entry.capturedFilePathname}
-                    	    captured ${entry.captureTimestamp}</li>
-                    </ul>
-                </li>
-             </c:forEach>
-        </ul>
+        <h1>Paul Ingestion Queue Admin</h1>
+        <c:if test="${!empty queue}">
+            <form method="POST" action="queue">
+        	    <button type="submit" name="deleteAll">Delete/Archive all entries</button>
+        	    <button type="submit" name="expire">Expire entries</button>
+            </form>
+            <ul>
+                <c:forEach items="${queue}" var="entry">
+                    <li><a href="queue/${entry.id}">Entry # ${entry.id}</a> - 
+                        facility ${entry.facilityName}, 
+                        user : ${entry.userName}, 
+                        captured: ${entry.captureTimestamp}
+                    </li>
+                 </c:forEach>
+            </ul>
+        </c:if>
+        <c:if test="${empty queue}">
+            Queue is empty
+        </c:if>
+        
     </body>
 </html>
