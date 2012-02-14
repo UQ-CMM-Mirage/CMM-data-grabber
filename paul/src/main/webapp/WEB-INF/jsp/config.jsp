@@ -9,12 +9,19 @@
         <ul>
           <li>Proxy host - ${config.proxyHost} : ${config.proxyPort}</li>
           <li>Server host - ${config.serverHost} : ${config.serverPort}</li>
-          <li>Base file URL - ${config.baseFileUrl}</li>
-          <li>Capture directory - ${config.captureDirectory}</li>
-          <li>Archive directory - ${config.archiveDirectory}</li>
+          <li>Base file URL - ${config.baseFileUrl}</li>  
+          <li>Queue parameters:
+            <ul>
+              <li>Capture / Queue directory - ${config.captureDirectory}</li>
+              <li>Archive directory - ${config.archiveDirectory}</li>
+              <li>Queue expiry time - ${config.queueExpiryTime} (minutes)</li>
+              <li>Queue expiry interval - ${config.queueExpiryInterval} (minutes)</li>
+              <li>Expire by deleting - ${config.expireByDeleting}</li>
+            </ul>
+          </li>
           <li>Clients use 'project' - ${config.useProject}</li>
-          <li>Facility recheck interval - ${config.facilityRecheckInterval}</li>
-          <li>Atom feed parameters for ingestion queue:
+          <li>Facility recheck interval - ${config.facilityRecheckInterval} (minutes)</li>
+          <li>Atom feed parameters for ingestion feed:
             <ul>
               <li>Feed URL - ${config.feedUrl}</li>
               <li>Feed id - ${config.feedId}</li>

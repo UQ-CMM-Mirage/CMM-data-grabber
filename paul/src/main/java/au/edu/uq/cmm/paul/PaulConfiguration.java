@@ -3,9 +3,7 @@ package au.edu.uq.cmm.paul;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -56,6 +54,9 @@ public class PaulConfiguration implements Configuration {
     private String feedUrl;
     private int feedPageSize = 20;
     private long facilityRecheckInterval;
+    private long queueExpiryTime;
+    private long queueExpiryInterval;
+    private boolean expireByDeleting;
     
     
     public int getProxyPort() {
@@ -187,11 +188,35 @@ public class PaulConfiguration implements Configuration {
     public void setFacilityRecheckInterval(long facilityRecheckInterval) {
         this.facilityRecheckInterval = facilityRecheckInterval;
     }
+    
+    public long getQueueExpiryTime() {
+        return queueExpiryTime;
+    }
+
+    public void setQueueExpiryTime(long queueExpiryTime) {
+        this.queueExpiryTime = queueExpiryTime;
+    }
+
+    public long getQueueExpiryInterval() {
+        return queueExpiryInterval;
+    }
+
+    public void setQueueExpiryInterval(long queueExpiryInterval) {
+        this.queueExpiryInterval = queueExpiryInterval;
+    }
+
+    public boolean isExpireByDeleting() {
+        return expireByDeleting;
+    }
+
+    public void setExpireByDeleting(boolean expireByDeleting) {
+        this.expireByDeleting = expireByDeleting;
+    }
 
     public static PaulConfiguration load(EntityManagerFactory entityManagerFactory) {
         return load(entityManagerFactory, false);
     }
-    
+
     public static PaulConfiguration load(EntityManagerFactory entityManagerFactory,
             boolean createIfMissing) {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
@@ -287,6 +312,9 @@ public class PaulConfiguration implements Configuration {
             setFeedAuthorEmail(staticConfig.getFeedAuthorEmail());
             setFeedUrl(staticConfig.getFeedUrl());
             setFeedPageSize(staticConfig.getFeedPageSize());
+            setQueueExpiryInterval(staticConfig.getQueueExpiryInterval());
+            setQueueExpiryTime(staticConfig.getQueueExpiryTime());
+            setExpireByDeleting(staticConfig.isExpireByDeleting());
             for (FacilityConfig facilityConfig: staticConfig.getFacilityConfigs()) {
                 boolean found = false;
                 for (FacilityConfig f : facilities) {

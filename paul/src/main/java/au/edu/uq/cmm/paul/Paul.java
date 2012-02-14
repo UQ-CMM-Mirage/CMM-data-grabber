@@ -12,6 +12,7 @@ import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
 import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
 import au.edu.uq.cmm.aclslib.service.ServiceException;
 import au.edu.uq.cmm.paul.grabber.FileGrabber;
+import au.edu.uq.cmm.paul.queue.QueueExpirer;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
 import au.edu.uq.cmm.paul.status.SessionDetailMapper;
@@ -31,6 +32,7 @@ public class Paul extends CompositeServiceBase {
     private EntityManagerFactory entityManagerFactory;
     private PaulConfiguration config;
     private QueueManager queueManager;
+    private QueueExpirer queueExpirer;
     private SessionDetailMapper sessionDetailMapper;
     
     public Paul(StaticConfiguration staticConfig,
@@ -65,6 +67,7 @@ public class Paul extends CompositeServiceBase {
         fileWatcher = new FileWatcher(this);
         fileGrabber = new FileGrabber(this);
         queueManager = new QueueManager(this);
+        queueExpirer = new QueueExpirer(this);
     }
 
     // FIXME - get rid if this?
@@ -96,6 +99,7 @@ public class Paul extends CompositeServiceBase {
     
     @Override
     protected void doShutdown() throws InterruptedException {
+        queueExpirer.shutdown();
         fileGrabber.shutdown();
         fileWatcher.shutdown();
         proxy.shutdown();
@@ -106,6 +110,7 @@ public class Paul extends CompositeServiceBase {
         proxy.startup();
         fileWatcher.startup();
         fileGrabber.startup();
+        queueExpirer.startup();
     }
 
     public FacilityStatusManager getFacilitySessionManager() {
