@@ -5,6 +5,7 @@
   "serverHost" : "acls.example.com",
   "useProject" : false,
   "captureDirectory" : "/tmp/safe",
+  "archiveDirectory" : "/tmp/archive",
   "baseFileUrl" : "http://xxx.example.com/paul/files/",
   "feedUrl" : "http://xxx.example.com/paul/atom/queue",
   "feedId" : "http://xxx.example.com/paul/atom/queue",
