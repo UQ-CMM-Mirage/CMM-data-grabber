@@ -82,7 +82,9 @@ public class FileGrabber extends CompositeServiceBase
     @Override
     protected void doShutdown() throws InterruptedException {
         executor.shutdown();
-        if (!executor.awaitTermination(20, TimeUnit.SECONDS)) {
+        if (executor.awaitTermination(20, TimeUnit.SECONDS)) {
+            LOG.info("FileGrabber's executor shut down");
+        } else {
             LOG.warn("FileGrabber's executor didn't shut down cleanly");
         }
     }

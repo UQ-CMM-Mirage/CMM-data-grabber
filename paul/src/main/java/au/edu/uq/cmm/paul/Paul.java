@@ -6,6 +6,7 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 
 import org.apache.log4j.Logger;
+import org.springframework.context.Lifecycle;
 
 import au.edu.uq.cmm.aclslib.config.StaticConfiguration;
 import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
@@ -20,7 +21,7 @@ import au.edu.uq.cmm.paul.watcher.FileWatcher;
 import au.edu.uq.cmm.paul.watcher.SambaUncPathnameMapper;
 import au.edu.uq.cmm.paul.watcher.UncPathnameMapper;
 
-public class Paul extends CompositeServiceBase {
+public class Paul extends CompositeServiceBase implements Lifecycle {
     // FIXME - need to do something to hook this class into the servlet lifecycle 
     // so that it gets told when the servlet is being shutdown.
     private static final Logger LOG = Logger.getLogger(Paul.class);
@@ -99,18 +100,22 @@ public class Paul extends CompositeServiceBase {
     
     @Override
     protected void doShutdown() throws InterruptedException {
+        LOG.info("Shutdown started");
         queueExpirer.shutdown();
         fileGrabber.shutdown();
         fileWatcher.shutdown();
         proxy.shutdown();
+        LOG.info("Shutdown completed");
     }
 
     @Override
     protected void doStartup() throws ServiceException {
+        LOG.info("Startup started");
         proxy.startup();
         fileWatcher.startup();
         fileGrabber.startup();
         queueExpirer.startup();
+        LOG.info("Startup completed");
     }
 
     public FacilityStatusManager getFacilitySessionManager() {
@@ -148,4 +153,25 @@ public class Paul extends CompositeServiceBase {
     public SessionDetailMapper getSessionDetailMapper() {
         return sessionDetailMapper;
     }
+
+    @Override
+    public void start() {
+        startup();
+    }
+
+    @Override
+    public void stop() {
+        try {
+            shutdown();
+        } catch (InterruptedException ex) {
+            LOG.warn("Shutdown interrupted", ex);
+        }
+    }
+
+    @Override
+    public boolean isRunning() {
+        return getState() == State.RUNNING;
+    }
+    
+    
 }

@@ -79,7 +79,7 @@ public class QueueManager {
         }
     }
 
-    public void expire(boolean discard, Date olderThan) {
+    public int expire(boolean discard, Date olderThan) {
         EntityManager em = services.getEntityManagerFactory().createEntityManager();
         try {
             em.getTransaction().begin();
@@ -93,12 +93,13 @@ public class QueueManager {
                 doDelete(discard, em, dataset);
             }
             em.getTransaction().commit();
+            return datasets.size();
         } finally {
             em.close();
         }
     }
 
-    public void deleteAll(boolean discard) {
+    public int deleteAll(boolean discard) {
         EntityManager em = services.getEntityManagerFactory().createEntityManager();
         try {
             em.getTransaction().begin();
@@ -109,6 +110,7 @@ public class QueueManager {
                 doDelete(discard, em, dataset);
             }
             em.getTransaction().commit();
+            return datasets.size();
         } finally {
             em.close();
         }

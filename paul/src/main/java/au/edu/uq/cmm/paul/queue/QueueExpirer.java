@@ -2,6 +2,8 @@ package au.edu.uq.cmm.paul.queue;
 
 import java.util.Date;
 
+import org.apache.log4j.Logger;
+
 import au.edu.uq.cmm.aclslib.service.MonitoredThreadServiceBase;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulConfiguration;
@@ -13,6 +15,7 @@ import au.edu.uq.cmm.paul.PaulConfiguration;
  * @author scrawley
  */
 public class QueueExpirer extends MonitoredThreadServiceBase {
+    private static final Logger LOG = Logger.getLogger(QueueExpirer.class);
 
     private Paul services;
 
@@ -28,19 +31,21 @@ public class QueueExpirer extends MonitoredThreadServiceBase {
         boolean expireByDeleting = config.isExpireByDeleting();
         try {
             if (expiryInterval <= 0 || expiryTime <= 0) {
-                // sleep for ever ...
+                LOG.info("Automatic queue expiration is disabled");
                 Object lock = new Object();
                 synchronized (lock) {
                     lock.wait();
                 }
             } else {
                 while (true) {
+                    LOG.info("Running automatic queue expiration");
                     doExpiry(expiryTime, expireByDeleting);
+                    LOG.info("Completed automatic queue expiration");
                     Thread.sleep(expiryInterval * 60 * 1000);
                 }
             }
         } catch (InterruptedException ex) {
-            // time to go away ...
+            LOG.info("Interrupted - we're done");
         }
     }
 
@@ -48,7 +53,9 @@ public class QueueExpirer extends MonitoredThreadServiceBase {
         QueueManager queueManager = services.getQueueManager();
         long millis = System.currentTimeMillis() - expiryTime * 60 * 1000;
         Date cutoff = new Date(millis);
-        queueManager.expire(expireByDeleting, cutoff);
+        LOG.info("Expiry cutoff date/time is " + cutoff);
+        int nosExpired = queueManager.expire(expireByDeleting, cutoff);
+        LOG.info("Expired " + nosExpired + " queue entries");
     }
 
 }
