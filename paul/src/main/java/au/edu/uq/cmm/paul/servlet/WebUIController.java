@@ -78,9 +78,15 @@ public class WebUIController {
         if (confirmed == null) {
             return "queueDeleteConfirmation";
         }
-        services.getQueueManager().deleteAll(mode.equals("discard"));
-        model.addAttribute("queue", services.getQueueManager().getSnapshot());
-        return "queue";
+        boolean discard = mode.equals("discard");
+        int count = services.getQueueManager().deleteAll(discard);
+        String verb = discard ? "deleted" : "archived";
+        model.addAttribute("message",
+                (count == 0 ? "No queue entries " :
+                    count == 1 ? "1 queue entry " :
+                        (count + " queue entries ")) + verb);
+        model.addAttribute("returnTo", "queue");
+        return "ok";
     }
     
     @RequestMapping(value="/queue", method=RequestMethod.POST, 
@@ -95,9 +101,13 @@ public class WebUIController {
         if (cutoff == null || confirmed == null) {
             return "queueExpiryForm";
         }
-        services.getQueueManager().expire(mode.equals("discard"), cutoff);
-        model.addAttribute("queue", services.getQueueManager().getSnapshot());
-        return "queue";
+        int count = services.getQueueManager().expire(mode.equals("discard"), cutoff);
+        model.addAttribute("message",
+                count == 0 ? "No queue entries expired" :
+                    count == 1 ? "1 queue entry expired" :
+                        (count + " queue entries expired"));
+        model.addAttribute("returnTo", "queue");
+        return "ok";
     }
     
     private String tidy(String str) {
@@ -107,7 +117,7 @@ public class WebUIController {
     private Date determineCutoff(Model model, String olderThan, 
             String period, String unit) {
         if (olderThan.isEmpty() && period.isEmpty()) {
-            model.addAttribute("errorMessage", 
+            model.addAttribute("message", 
                     "Either an expiry date or period must be supplied");
             return null;
         }
@@ -117,7 +127,7 @@ public class WebUIController {
             try {
                 value = Integer.parseInt(period);
             } catch (NumberFormatException ex) {
-                model.addAttribute("errorMessage", "Malformed period");
+                model.addAttribute("message", "Malformed period");
                 return null;
             }
             BaseSingleFieldPeriod p;
@@ -141,7 +151,7 @@ public class WebUIController {
                 p = Years.years(value);
                 break;
             default :
-                model.addAttribute("errorMessage", "Unrecognized unit");
+                model.addAttribute("message", "Unrecognized unit");
                 return null;
             }
             cutoff = DateTime.now().minus(p);
@@ -156,12 +166,12 @@ public class WebUIController {
                 }
             }
             if (cutoff == null) {
-                model.addAttribute("errorMessage", "Unrecognizable expiry date");
+                model.addAttribute("message", "Unrecognizable expiry date");
                 return null;
             }
         }
         if (cutoff.isAfter(new DateTime())) {
-            model.addAttribute("errorMessage", "Expiry date is in the future");
+            model.addAttribute("message", "Expiry date is in the future");
             return null;
         }
         model.addAttribute("computedDate", FORMATS[0].print(cutoff));
@@ -188,6 +198,29 @@ public class WebUIController {
         }
         model.addAttribute("entry", metadata);
         return "queueEntry";
+    }
+    
+    @RequestMapping(value="/queue/{entry:.+}", method=RequestMethod.POST, 
+            params={"delete"})
+    public String queueEntryDelete(@PathVariable String entry, Model model, 
+            HttpServletResponse response,
+            @RequestParam(required=false) String mode, 
+            @RequestParam(required=false) String confirmed) 
+            throws IOException {
+        long id;
+        try {
+            id = Long.parseLong(entry);
+        } catch (NumberFormatException ex) {
+            LOG.debug("Rejected request with bad entry id");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return null;
+        }
+        boolean discard = mode.equals("discard");
+        services.getQueueManager().delete(id, discard);
+        model.addAttribute("message",
+                "Queue entry " + (discard ? "deleted" : "archived"));
+        model.addAttribute("returnTo", "../queue");
+        return "ok";
     }
     
     @RequestMapping(value="/files/{fileName:.+}", method=RequestMethod.GET)

@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 
 import org.apache.log4j.Logger;
@@ -115,6 +116,28 @@ public class QueueManager {
             em.close();
         }
     }
+    
+    public boolean delete(long id, boolean discard) {
+        EntityManager em = services.getEntityManagerFactory().createEntityManager();
+        try {
+            em.getTransaction().begin();
+            TypedQuery<DatasetMetadata> query =
+                    em.createQuery("from DatasetMetadata d where d.id = :id", 
+                    DatasetMetadata.class);
+            query.setParameter("id", id);
+            DatasetMetadata dataset = query.getSingleResult();
+            doDelete(discard, em, dataset);
+            em.getTransaction().commit();
+            return true;
+        } catch (NoResultException ex) {
+            LOG.info("Record not deleted", ex);
+            return false;
+        } finally {
+            em.close();
+        }
+    }
+
+    
 
     private void doDelete(boolean discard, EntityManager entityManager,
             DatasetMetadata dataset) {

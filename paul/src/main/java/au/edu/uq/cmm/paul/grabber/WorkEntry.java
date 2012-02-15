@@ -182,7 +182,8 @@ class WorkEntry implements Runnable {
                     "application/octet-stream" : g.getTemplate().getMimeType();
             DatafileMetadata d = new DatafileMetadata(
                     g.getFile().getAbsolutePath(), g.getCopiedFile().getAbsolutePath(), 
-                    g.getFileTimestamp(), g.getCopyTimestamp(), mimeType);
+                    g.getFileTimestamp(), g.getCopyTimestamp(), mimeType,
+                    g.getCopiedFile().length());
             list.add(d);
         }
         DatasetMetadata metadata = new DatasetMetadata(

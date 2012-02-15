@@ -29,20 +29,23 @@ public class DatafileMetadata {
     private Date fileWriteTimestamp;
     private String capturedFilePathname;
     private String mimeType;
-    private Long id;    
+    private Long id;
+    private long fileSize;    
     
     public DatafileMetadata() {
         super();
     }
     
     public DatafileMetadata(String sourceFilePathname, String capturedFilePathname, 
-            Date captureTimestamp, Date fileWriteTimestamp, String mimeType) {
+            Date captureTimestamp, Date fileWriteTimestamp, String mimeType,
+            long fileSize) {
         super();
         this.sourceFilePathname = sourceFilePathname;
         this.capturedFilePathname = capturedFilePathname;
         this.captureTimestamp = captureTimestamp;
         this.fileWriteTimestamp = fileWriteTimestamp;
         this.mimeType = mimeType;
+        this.fileSize = fileSize;
     }
     
     @Id
@@ -97,5 +100,13 @@ public class DatafileMetadata {
 
     public void setMimeType(String mimeType) {
         this.mimeType = mimeType;
+    }
+
+    public long getFileSize() {
+        return fileSize;
+    }
+
+    public void setFileSize(long fileSize) {
+        this.fileSize = fileSize;
     }
 }
