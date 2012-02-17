@@ -7,6 +7,7 @@ import java.util.Date;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
@@ -28,6 +29,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
+import au.edu.uq.cmm.aclslib.service.Service;
+import au.edu.uq.cmm.aclslib.service.Service.State;
+import au.edu.uq.cmm.paul.DataGrabber;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
@@ -40,6 +45,10 @@ import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
  */
 @Controller
 public class WebUIController {
+    public enum Status {
+        ON, OFF, TRANSITIONAL
+    }
+    
     private static final Logger LOG = Logger.getLogger(WebUIController.class);
 
     private static DateTimeFormatter[] FORMATS = new DateTimeFormatter[] {
@@ -51,12 +60,71 @@ public class WebUIController {
     
     @Autowired
     Paul services;
-    
+
     @RequestMapping(value="/control", method=RequestMethod.GET)
     public String control(Model model) {
-        model.addAttribute("grabberStatus", "on");
-        model.addAttribute("proxyStatus", "on");
+        addStateAndStatus(model);
         return "control";
+    }
+
+    @RequestMapping(value="/control", method=RequestMethod.POST)
+    public String controlAction(Model model, HttpServletRequest request) {
+        processStatusChange(getDataGrabber(), request.getParameter("grabber"));
+        processStatusChange(getProxy(), request.getParameter("proxy"));
+        addStateAndStatus(model);
+        return "control";
+    }
+    
+    private void processStatusChange(Service service, String param) {
+        Service.State current = service.getState();
+        if (param == null) {
+            return;
+        }
+        Status target = Status.valueOf(param);
+        if (target == stateToStatus(current) || 
+                stateToStatus(current) == Status.TRANSITIONAL) {
+            return;
+        }
+        try {
+            if (target == Status.ON) {
+                service.startup();
+            } else {
+                service.shutdown();
+            }
+        } catch (InterruptedException ex) {
+            // FIXME ...
+            LOG.error(ex);
+        }
+    }
+    
+    private void addStateAndStatus(Model model) {
+        State gs = getDataGrabber().getState();
+        State ps = getProxy().getState();
+        model.addAttribute("grabberState", gs);
+        model.addAttribute("proxyState", ps);
+        model.addAttribute("grabberStatus", stateToStatus(gs));
+        model.addAttribute("proxyStatus", stateToStatus(ps));
+    }
+    
+    private Status stateToStatus(State state) {
+        switch (state) {
+        case STARTED:
+           return Status.ON;
+        case FAILED:
+        case STOPPED:
+        case INITIAL:
+            return Status.OFF;
+        default:
+            return Status.TRANSITIONAL;
+        }
+    }
+
+    private DataGrabber getDataGrabber() {
+        return services.getDataGrabber();
+    }
+
+    private AclsProxy getProxy() {
+        return services.getProxy();
     }
     
     @RequestMapping(value="/status", method=RequestMethod.GET)

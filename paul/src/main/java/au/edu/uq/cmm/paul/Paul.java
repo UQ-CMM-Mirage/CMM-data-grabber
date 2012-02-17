@@ -12,12 +12,10 @@ import au.edu.uq.cmm.aclslib.config.StaticConfiguration;
 import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
 import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
 import au.edu.uq.cmm.aclslib.service.ServiceException;
-import au.edu.uq.cmm.paul.grabber.FileGrabber;
 import au.edu.uq.cmm.paul.queue.QueueExpirer;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
 import au.edu.uq.cmm.paul.status.SessionDetailMapper;
-import au.edu.uq.cmm.paul.watcher.FileWatcher;
 import au.edu.uq.cmm.paul.watcher.SambaUncPathnameMapper;
 import au.edu.uq.cmm.paul.watcher.UncPathnameMapper;
 
@@ -25,8 +23,6 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
     // FIXME - need to do something to hook this class into the servlet lifecycle 
     // so that it gets told when the servlet is being shutdown.
     private static final Logger LOG = Logger.getLogger(Paul.class);
-    private FileWatcher fileWatcher;
-    private FileGrabber fileGrabber;
     private FacilityStatusManager statusManager;
     private AclsProxy proxy;
     private UncPathnameMapper uncNameMapper;
@@ -35,6 +31,7 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
     private QueueManager queueManager;
     private QueueExpirer queueExpirer;
     private SessionDetailMapper sessionDetailMapper;
+    private DataGrabber dataGrabber;
     
     public Paul(StaticConfiguration staticConfig,
             EntityManagerFactory entityManagerFactory)
@@ -65,8 +62,7 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
         }
         statusManager = new FacilityStatusManager(this);
         this.uncNameMapper = uncNameMapper;
-        fileWatcher = new FileWatcher(this);
-        fileGrabber = new FileGrabber(this);
+        dataGrabber = new DataGrabber(this);
         queueManager = new QueueManager(this);
         queueExpirer = new QueueExpirer(this);
     }
@@ -102,8 +98,7 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
     protected void doShutdown() throws InterruptedException {
         LOG.info("Shutdown started");
         queueExpirer.shutdown();
-        fileGrabber.shutdown();
-        fileWatcher.shutdown();
+        dataGrabber.shutdown();
         proxy.shutdown();
         LOG.info("Shutdown completed");
     }
@@ -112,8 +107,7 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
     protected void doStartup() throws ServiceException {
         LOG.info("Startup started");
         proxy.startup();
-        fileWatcher.startup();
-        fileGrabber.startup();
+        dataGrabber.startup();
         queueExpirer.startup();
         LOG.info("Startup completed");
     }
@@ -130,12 +124,8 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
         return queueManager;
     }
 
-    public FileGrabber getFileGrabber() {
-        return fileGrabber;
-    }
-
-    public FileWatcher getFileWatcher() {
-        return fileWatcher;
+    public DataGrabber getDataGrabber() {
+        return dataGrabber;
     }
 
     public EntityManagerFactory getEntityManagerFactory() {
@@ -170,7 +160,7 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
 
     @Override
     public boolean isRunning() {
-        return getState() == State.RUNNING;
+        return getState() == State.STARTED;
     }
     
     
