@@ -7,6 +7,7 @@ import java.util.Date;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
@@ -28,6 +29,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
+import au.edu.uq.cmm.aclslib.service.Service;
+import au.edu.uq.cmm.aclslib.service.Service.State;
+import au.edu.uq.cmm.paul.DataGrabber;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
@@ -40,6 +45,10 @@ import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
  */
 @Controller
 public class WebUIController {
+    public enum Status {
+        ON, OFF, TRANSITIONAL
+    }
+    
     private static final Logger LOG = Logger.getLogger(WebUIController.class);
 
     private static DateTimeFormatter[] FORMATS = new DateTimeFormatter[] {
@@ -51,6 +60,67 @@ public class WebUIController {
     
     @Autowired
     Paul services;
+
+    @RequestMapping(value="/control", method=RequestMethod.GET)
+    public String control(Model model) {
+        addStateAndStatus(model);
+        return "control";
+    }
+
+    @RequestMapping(value="/control", method=RequestMethod.POST)
+    public String controlAction(Model model, HttpServletRequest request) {
+        processStatusChange(getDataGrabber(), request.getParameter("grabber"));
+        processStatusChange(getProxy(), request.getParameter("proxy"));
+        addStateAndStatus(model);
+        return "control";
+    }
+    
+    private void processStatusChange(Service service, String param) {
+        Service.State current = service.getState();
+        if (param == null) {
+            return;
+        }
+        Status target = Status.valueOf(param);
+        if (target == stateToStatus(current) || 
+                stateToStatus(current) == Status.TRANSITIONAL) {
+            return;
+        }
+        if (target == Status.ON) {
+            service.startStartup();
+        } else {
+            service.startShutdown();
+        }
+    }
+    
+    private void addStateAndStatus(Model model) {
+        State gs = getDataGrabber().getState();
+        State ps = getProxy().getState();
+        model.addAttribute("grabberState", gs);
+        model.addAttribute("proxyState", ps);
+        model.addAttribute("grabberStatus", stateToStatus(gs));
+        model.addAttribute("proxyStatus", stateToStatus(ps));
+    }
+    
+    private Status stateToStatus(State state) {
+        switch (state) {
+        case STARTED:
+           return Status.ON;
+        case FAILED:
+        case STOPPED:
+        case INITIAL:
+            return Status.OFF;
+        default:
+            return Status.TRANSITIONAL;
+        }
+    }
+
+    private DataGrabber getDataGrabber() {
+        return services.getDataGrabber();
+    }
+
+    private AclsProxy getProxy() {
+        return services.getProxy();
+    }
     
     @RequestMapping(value="/status", method=RequestMethod.GET)
     public String status(Model model) {
@@ -78,9 +148,15 @@ public class WebUIController {
         if (confirmed == null) {
             return "queueDeleteConfirmation";
         }
-        services.getQueueManager().deleteAll(mode.equals("discard"));
-        model.addAttribute("queue", services.getQueueManager().getSnapshot());
-        return "queue";
+        boolean discard = mode.equals("discard");
+        int count = services.getQueueManager().deleteAll(discard);
+        String verb = discard ? "deleted" : "archived";
+        model.addAttribute("message",
+                (count == 0 ? "No queue entries " :
+                    count == 1 ? "1 queue entry " :
+                        (count + " queue entries ")) + verb);
+        model.addAttribute("returnTo", "queue");
+        return "ok";
     }
     
     @RequestMapping(value="/queue", method=RequestMethod.POST, 
@@ -95,77 +171,13 @@ public class WebUIController {
         if (cutoff == null || confirmed == null) {
             return "queueExpiryForm";
         }
-        services.getQueueManager().expire(mode.equals("discard"), cutoff);
-        model.addAttribute("queue", services.getQueueManager().getSnapshot());
-        return "queue";
-    }
-    
-    private String tidy(String str) {
-        return str == null ? "" : str.trim();
-    }
-    
-    private Date determineCutoff(Model model, String olderThan, 
-            String period, String unit) {
-        if (olderThan.isEmpty() && period.isEmpty()) {
-            model.addAttribute("errorMessage", 
-                    "Either an expiry date or period must be supplied");
-            return null;
-        }
-        DateTime cutoff;
-        if (olderThan.isEmpty()) {
-            int value;
-            try {
-                value = Integer.parseInt(period);
-            } catch (NumberFormatException ex) {
-                model.addAttribute("errorMessage", "Malformed period");
-                return null;
-            }
-            BaseSingleFieldPeriod p;
-            switch (unit) {
-            case "minute" : case "minutes" :
-                p = Minutes.minutes(value);
-                break;
-            case "hour" : case "hours" :
-                p = Hours.hours(value);
-                break;
-            case "day" : case "days" :
-                p = Days.days(value);
-                break;
-            case "week" : case "weeks" :
-                p = Weeks.weeks(value);
-                break;
-            case "month" : case "months" :
-                p = Months.months(value);
-                break;
-            case "year" : case "years" :
-                p = Years.years(value);
-                break;
-            default :
-                model.addAttribute("errorMessage", "Unrecognized unit");
-                return null;
-            }
-            cutoff = DateTime.now().minus(p);
-        } else {
-            cutoff = null;
-            for (DateTimeFormatter format : FORMATS) {
-                try {
-                    cutoff = format.parseDateTime(olderThan);
-                    break;
-                } catch (IllegalArgumentException ex) {
-                    continue;
-                }
-            }
-            if (cutoff == null) {
-                model.addAttribute("errorMessage", "Unrecognizable expiry date");
-                return null;
-            }
-        }
-        if (cutoff.isAfter(new DateTime())) {
-            model.addAttribute("errorMessage", "Expiry date is in the future");
-            return null;
-        }
-        model.addAttribute("computedDate", FORMATS[0].print(cutoff));
-        return cutoff.toDate();
+        int count = services.getQueueManager().expire(mode.equals("discard"), cutoff);
+        model.addAttribute("message",
+                count == 0 ? "No queue entries expired" :
+                    count == 1 ? "1 queue entry expired" :
+                        (count + " queue entries expired"));
+        model.addAttribute("returnTo", "queue");
+        return "ok";
     }
 
     @RequestMapping(value="/queue/{entry:.+}", method=RequestMethod.GET)
@@ -188,6 +200,29 @@ public class WebUIController {
         }
         model.addAttribute("entry", metadata);
         return "queueEntry";
+    }
+    
+    @RequestMapping(value="/queue/{entry:.+}", method=RequestMethod.POST, 
+            params={"delete"})
+    public String queueEntryDelete(@PathVariable String entry, Model model, 
+            HttpServletResponse response,
+            @RequestParam(required=false) String mode, 
+            @RequestParam(required=false) String confirmed) 
+            throws IOException {
+        long id;
+        try {
+            id = Long.parseLong(entry);
+        } catch (NumberFormatException ex) {
+            LOG.debug("Rejected request with bad entry id");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return null;
+        }
+        boolean discard = mode.equals("discard");
+        services.getQueueManager().delete(id, discard);
+        model.addAttribute("message",
+                "Queue entry " + (discard ? "deleted" : "archived"));
+        model.addAttribute("returnTo", "../queue");
+        return "ok";
     }
     
     @RequestMapping(value="/files/{fileName:.+}", method=RequestMethod.GET)
@@ -245,5 +280,73 @@ public class WebUIController {
         } finally {
             entityManager.close();
         }
+    }
+    
+    private String tidy(String str) {
+        return str == null ? "" : str.trim();
+    }
+    
+    private Date determineCutoff(Model model, String olderThan, 
+            String period, String unit) {
+        if (olderThan.isEmpty() && period.isEmpty()) {
+            model.addAttribute("message", 
+                    "Either an expiry date or period must be supplied");
+            return null;
+        }
+        DateTime cutoff;
+        if (olderThan.isEmpty()) {
+            int value;
+            try {
+                value = Integer.parseInt(period);
+            } catch (NumberFormatException ex) {
+                model.addAttribute("message", "Malformed period");
+                return null;
+            }
+            BaseSingleFieldPeriod p;
+            switch (unit) {
+            case "minute" : case "minutes" :
+                p = Minutes.minutes(value);
+                break;
+            case "hour" : case "hours" :
+                p = Hours.hours(value);
+                break;
+            case "day" : case "days" :
+                p = Days.days(value);
+                break;
+            case "week" : case "weeks" :
+                p = Weeks.weeks(value);
+                break;
+            case "month" : case "months" :
+                p = Months.months(value);
+                break;
+            case "year" : case "years" :
+                p = Years.years(value);
+                break;
+            default :
+                model.addAttribute("message", "Unrecognized unit");
+                return null;
+            }
+            cutoff = DateTime.now().minus(p);
+        } else {
+            cutoff = null;
+            for (DateTimeFormatter format : FORMATS) {
+                try {
+                    cutoff = format.parseDateTime(olderThan);
+                    break;
+                } catch (IllegalArgumentException ex) {
+                    continue;
+                }
+            }
+            if (cutoff == null) {
+                model.addAttribute("message", "Unrecognizable expiry date");
+                return null;
+            }
+        }
+        if (cutoff.isAfter(new DateTime())) {
+            model.addAttribute("message", "Expiry date is in the future");
+            return null;
+        }
+        model.addAttribute("computedDate", FORMATS[0].print(cutoff));
+        return cutoff.toDate();
     }
 }

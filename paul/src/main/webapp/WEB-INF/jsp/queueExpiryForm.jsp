@@ -7,7 +7,7 @@
     <body>
         <h1>Paul Ingestion Queue Expiry</h1>
         
-        ${errorMessage}
+        ${message}
         
         <form name="form" method="POST" action="queue">
           <c:if test="${empty computedDate}">

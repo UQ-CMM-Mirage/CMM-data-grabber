@@ -21,6 +21,7 @@ import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
+import au.edu.uq.cmm.paul.watcher.FileWatcher;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEventListener;
 
@@ -57,9 +58,9 @@ public class FileGrabber extends CompositeServiceBase
     private final EntityManagerFactory entityManagerFactory;
     private final Paul services;
     
-    public FileGrabber(Paul services) {
+    public FileGrabber(Paul services, FileWatcher fileWatcher) {
         this.services = services;
-        services.getFileWatcher().addListener(this);
+        fileWatcher.addListener(this);
         this.statusManager = services.getFacilitySessionManager();
         if (!safeDirectory.exists() || !safeDirectory.isDirectory()) {
             throw new PaulException("The grabber's safe directory doesn't exist");
@@ -82,7 +83,9 @@ public class FileGrabber extends CompositeServiceBase
     @Override
     protected void doShutdown() throws InterruptedException {
         executor.shutdown();
-        if (!executor.awaitTermination(20, TimeUnit.SECONDS)) {
+        if (executor.awaitTermination(20, TimeUnit.SECONDS)) {
+            LOG.info("FileGrabber's executor shut down");
+        } else {
             LOG.warn("FileGrabber's executor didn't shut down cleanly");
         }
     }
