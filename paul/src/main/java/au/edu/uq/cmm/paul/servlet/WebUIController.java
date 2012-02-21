@@ -85,15 +85,10 @@ public class WebUIController {
                 stateToStatus(current) == Status.TRANSITIONAL) {
             return;
         }
-        try {
-            if (target == Status.ON) {
-                service.startup();
-            } else {
-                service.shutdown();
-            }
-        } catch (InterruptedException ex) {
-            // FIXME ...
-            LOG.error(ex);
+        if (target == Status.ON) {
+            service.startStartup();
+        } else {
+            service.startShutdown();
         }
     }
     

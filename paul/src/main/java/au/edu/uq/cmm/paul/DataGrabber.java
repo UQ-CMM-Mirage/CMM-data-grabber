@@ -19,24 +19,12 @@ public class DataGrabber extends CompositeServiceBase {
 
     @Override
     protected void doShutdown() throws InterruptedException {
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
         fileGrabber.shutdown();
         fileWatcher.shutdown();
     }
 
     @Override
     protected void doStartup() {
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
         fileWatcher.startup();
         fileGrabber.startup();
     }
