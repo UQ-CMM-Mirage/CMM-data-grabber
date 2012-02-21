@@ -17,6 +17,12 @@
                         facility ${entry.facilityName}, 
                         user : ${entry.userName}, 
                         captured: ${entry.captureTimestamp}
+                        <form method="POST" action="queue/${entry.id}">
+                        	<button type="submit" name="mode" value="discard">Delete</button>
+                        	<button type="submit" name="mode" value="archive">Archive</button>
+                        	<input type="hidden" name="confirmed">
+                        	<input type="hidden" name="delete">
+                        </form>
                     </li>
                  </c:forEach>
             </ul>

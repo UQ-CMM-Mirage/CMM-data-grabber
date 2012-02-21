@@ -48,7 +48,7 @@ class WorkEntry implements Runnable {
     public WorkEntry(Paul services, FileWatcherEvent event, File baseFile) {
         this.facility = (Facility) event.getFacility();
         this.timestamp = new Date(event.getTimestamp());
-        this.fileGrabber = services.getFileGrabber();
+        this.fileGrabber = services.getDataGrabber().getFileGrabber();
         this.queueManager = services.getQueueManager();
         this.baseFile = baseFile;
         this.files = new ConcurrentHashMap<File, GrabbedFile>();
@@ -182,7 +182,8 @@ class WorkEntry implements Runnable {
                     "application/octet-stream" : g.getTemplate().getMimeType();
             DatafileMetadata d = new DatafileMetadata(
                     g.getFile().getAbsolutePath(), g.getCopiedFile().getAbsolutePath(), 
-                    g.getFileTimestamp(), g.getCopyTimestamp(), mimeType);
+                    g.getFileTimestamp(), g.getCopyTimestamp(), mimeType,
+                    g.getCopiedFile().length());
             list.add(d);
         }
         DatasetMetadata metadata = new DatasetMetadata(
