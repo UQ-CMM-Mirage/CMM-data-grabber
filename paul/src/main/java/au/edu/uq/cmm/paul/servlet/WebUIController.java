@@ -124,8 +124,20 @@ public class WebUIController {
     
     @RequestMapping(value="/status", method=RequestMethod.GET)
     public String status(Model model) {
-        model.addAttribute("facilities", services.getFacilitySessionManager().getSnapshot());
+        model.addAttribute("facilities", 
+                services.getFacilitySessionManager().getSnapshot());
         return "status";
+    }
+    
+    @RequestMapping(value="/status/{sessionUuid:.+}", method=RequestMethod.POST, 
+            params={"endSession"})
+    public String endSession(@PathVariable String sessionUuid, Model model, 
+            HttpServletResponse response, HttpServletRequest request) 
+    throws IOException {
+        services.getFacilitySessionManager().endSession(sessionUuid);
+        response.sendRedirect(response.encodeRedirectURL(
+                request.getContextPath() + "/status"));
+        return null;
     }
     
     @RequestMapping(value="/config", method=RequestMethod.GET)

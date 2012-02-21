@@ -12,9 +12,13 @@
               <li>
                 ${facility.facilityName} is ${facility.inUse ? 'in use' : 'idle'}
                 <c:if test="${facility.inUse}">
-                    - user : ${facility.currentSession.userName},
-                      account : ${facility.currentSession.account},
-                      started : ${facility.currentSession.loginTime}
+                  - user : ${facility.currentSession.userName},
+                    account : ${facility.currentSession.account},
+                    started : ${facility.currentSession.loginTime}
+                  <form action="status/${facility.currentSession.sessionUuid}"
+                        method="post">
+                    <button name="endSession" type="submit">End session</button>
+                  </form>
                 </c:if>
               </li>
             </c:if>

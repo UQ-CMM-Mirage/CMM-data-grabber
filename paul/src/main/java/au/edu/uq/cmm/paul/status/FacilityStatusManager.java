@@ -6,6 +6,7 @@ import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 
 import org.apache.log4j.Logger;
@@ -107,6 +108,26 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
                 return null;
             }
             return facility.getLoginDetails(timestamp);
+        } finally {
+            entityManager.close();
+        }
+    }
+    
+    public void endSession(String sessionUuid) {
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        try {
+            entityManager.getTransaction().begin();
+            TypedQuery<FacilitySession> query = entityManager.createQuery(
+                    "from FacilitySession s where s.sessionUuid = :uuid",
+                    FacilitySession.class);
+            query.setParameter("uuid", sessionUuid);
+            FacilitySession session = query.getSingleResult();
+            if (session.getLogoutTime() == null) {
+                session.setLogoutTime(new Date());
+            }
+            entityManager.getTransaction().commit();
+        } catch (NoResultException ex) {
+            LOG.debug("session doesn't exist", ex);
         } finally {
             entityManager.close();
         }
