@@ -9,7 +9,7 @@
         <ul>
           <li><a href="control">Control Panel</a></li>
           <li><a href="config">Configuration</a></li>
-          <li><a href="status">Facility Status</a></li>
+          <li><a href="sessions">Facility Sessions</a></li>
           <li><a href="atom/queue">Ingestion Queue Feed</a></li>
           <li><a href="queue">Ingestion Queue Admin</a></li>
         </ul>

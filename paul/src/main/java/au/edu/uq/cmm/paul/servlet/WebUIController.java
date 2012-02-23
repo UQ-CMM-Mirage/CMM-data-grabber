@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import au.edu.uq.cmm.aclslib.proxy.AclsLoginException;
 import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
 import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.aclslib.service.Service.State;
@@ -122,22 +123,50 @@ public class WebUIController {
         return services.getProxy();
     }
     
-    @RequestMapping(value="/status", method=RequestMethod.GET)
+    @RequestMapping(value="/sessions", method=RequestMethod.GET)
     public String status(Model model) {
         model.addAttribute("facilities", 
                 services.getFacilitySessionManager().getSnapshot());
-        return "status";
+        return "sessions";
     }
     
-    @RequestMapping(value="/status/{sessionUuid:.+}", method=RequestMethod.POST, 
+    @RequestMapping(value="/sessions/{sessionUuid:.+}", method=RequestMethod.POST, 
             params={"endSession"})
     public String endSession(@PathVariable String sessionUuid, Model model, 
             HttpServletResponse response, HttpServletRequest request) 
     throws IOException {
         services.getFacilitySessionManager().endSession(sessionUuid);
         response.sendRedirect(response.encodeRedirectURL(
-                request.getContextPath() + "/status"));
+                request.getContextPath() + "/sessions"));
         return null;
+    }
+    
+    @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
+            params={"startSession"})
+    public String startSession(@PathVariable String facilityName, 
+            @RequestParam(required=false) String userName, 
+            @RequestParam(required=false) String password,
+            Model model, HttpServletResponse response, HttpServletRequest request) 
+    throws IOException {
+        facilityName = tidy(facilityName);
+        if ((userName = tidy(userName)).isEmpty() ||
+                (password = tidy(password)).isEmpty()) {
+            model.addAttribute("message", "Fill in username and password");
+        } else {
+            try {
+                LOG.debug("Attempting login");
+                services.getFacilitySessionManager().startSession(
+                        facilityName, userName, password);
+                LOG.debug("Login succeeded - redirecting");
+                response.sendRedirect(response.encodeRedirectURL(
+                        request.getContextPath() + "/sessions"));
+                return null;
+            } catch (AclsLoginException ex) {
+                model.addAttribute("message", "Login failed: " + ex.getMessage());
+            }
+        }
+        model.addAttribute("facilityName", facilityName);
+        return "facilityLoginForm";
     }
     
     @RequestMapping(value="/config", method=RequestMethod.GET)
