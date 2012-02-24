@@ -147,10 +147,22 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
         }
     }
 
-    public void startSession(String facilityName, String userName, String password) 
+    public List<String> login(String facilityName, String userName, String password) 
     throws AclsLoginException {
-        EntityManager em = emf.createEntityManager();
+        Facility facility = lookupIdleFacility(facilityName);
+        return proxy.login(facility, userName, password);
+    }
+
+    public void selectAccount (String facilityName, String userName, String account) 
+    throws AclsLoginException {
+        Facility facility = lookupIdleFacility(facilityName);
+        proxy.selectAccount(facility, userName, account);
+    }
+
+    private Facility lookupIdleFacility(String facilityName)
+    throws AclsLoginException {
         Facility facility;
+        EntityManager em = emf.createEntityManager();
         try {
             facility = getFacility(em, facilityName);
         } finally {
@@ -162,6 +174,6 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
         if (facility.isInUse()) {
             throw new AclsLoginException ("Facility " + facilityName + " is in use");
         }
-        proxy.localLogin(facility, userName, password);
+        return facility;
     }
 }
