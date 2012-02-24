@@ -6,10 +6,12 @@ import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 
 import org.apache.log4j.Logger;
 
+import au.edu.uq.cmm.aclslib.proxy.AclsLoginException;
 import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEvent;
 import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEventListener;
 import au.edu.uq.cmm.aclslib.proxy.AclsLoginEvent;
@@ -29,13 +31,13 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
     private static final Logger LOG = Logger.getLogger(FileGrabber.class);
     // FIXME - the facility statuses need to be persisted.
     private AclsProxy proxy;
-    private EntityManagerFactory entityManagerFactory;
+    private EntityManagerFactory emf;
     private SessionDetailMapper aclsAccountMapper;
 
     public FacilityStatusManager(Paul services) {
         this.proxy = services.getProxy();
         this.proxy.addListener(this);
-        this.entityManagerFactory = services.getEntityManagerFactory();
+        this.emf = services.getEntityManagerFactory();
         this.aclsAccountMapper = services.getSessionDetailMapper();
         if (this.aclsAccountMapper == null) {
             this.aclsAccountMapper = new DefaultSessionDetailsMapper();
@@ -43,11 +45,11 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
     }
 
     public void eventOccurred(AclsFacilityEvent event) {
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        EntityManager em = emf.createEntityManager();
         try {
-            entityManager.getTransaction().begin();
+            em.getTransaction().begin();
             String facilityName = event.getFacilityName();
-            Facility facility = getFacility(entityManager, facilityName);
+            Facility facility = getFacility(em, facilityName);
             if (facility == null) {
                 LOG.error("No facility found for facility id " + facilityName);
                 return;
@@ -75,12 +77,12 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
                 }
                 details.setLogoutTime(new Date());
             }
-            entityManager.persist(facility);
-            entityManager.getTransaction().commit();
+            em.persist(facility);
+            em.getTransaction().commit();
         } catch (InvalidSessionException ex) {
             LOG.error("Bad session information - ignoring login/logout event", ex);
         } finally {
-            entityManager.close();
+            em.close();
         }
     }
 
@@ -99,29 +101,79 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
     }
 
     public FacilitySession getLoginDetails(String facilityId, long timestamp) {
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        EntityManager em = emf.createEntityManager();
         try {
-            Facility facility = getFacility(entityManager, facilityId);
+            Facility facility = getFacility(em, facilityId);
             if (facility == null) {
                 LOG.error("No Facility record for facility " + facilityId);
                 return null;
             }
             return facility.getLoginDetails(timestamp);
         } finally {
-            entityManager.close();
+            em.close();
+        }
+    }
+    
+    public void endSession(String sessionUuid) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            em.getTransaction().begin();
+            TypedQuery<FacilitySession> query = em.createQuery(
+                    "from FacilitySession s where s.sessionUuid = :uuid",
+                    FacilitySession.class);
+            query.setParameter("uuid", sessionUuid);
+            FacilitySession session = query.getSingleResult();
+            if (session.getLogoutTime() == null) {
+                session.setLogoutTime(new Date());
+            }
+            em.getTransaction().commit();
+        } catch (NoResultException ex) {
+            LOG.debug("session doesn't exist", ex);
+        } finally {
+            em.close();
         }
     }
 
     public Collection<Facility> getSnapshot() {
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        EntityManager em = emf.createEntityManager();
         try {
-            TypedQuery<Facility> query = entityManager.createQuery(
+            TypedQuery<Facility> query = em.createQuery(
                     "from Facility", Facility.class);
             Collection<Facility> res = query.getResultList();
             LOG.debug("Snapshot contains " + res.size() + " entries");
             return res;
         } finally {
-            entityManager.close();
+            em.close();
         }
+    }
+
+    public List<String> login(String facilityName, String userName, String password) 
+    throws AclsLoginException {
+        Facility facility = lookupIdleFacility(facilityName);
+        return proxy.login(facility, userName, password);
+    }
+
+    public void selectAccount (String facilityName, String userName, String account) 
+    throws AclsLoginException {
+        Facility facility = lookupIdleFacility(facilityName);
+        proxy.selectAccount(facility, userName, account);
+    }
+
+    private Facility lookupIdleFacility(String facilityName)
+    throws AclsLoginException {
+        Facility facility;
+        EntityManager em = emf.createEntityManager();
+        try {
+            facility = getFacility(em, facilityName);
+        } finally {
+            em.close();
+        }
+        if (facility == null) {
+            throw new AclsLoginException ("Unknown facility " + facilityName);
+        }
+        if (facility.isInUse()) {
+            throw new AclsLoginException ("Facility " + facilityName + " is in use");
+        }
+        return facility;
     }
 }

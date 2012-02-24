@@ -3,6 +3,7 @@ package au.edu.uq.cmm.paul.servlet;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import au.edu.uq.cmm.aclslib.proxy.AclsLoginException;
 import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
 import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.aclslib.service.Service.State;
@@ -36,6 +38,7 @@ import au.edu.uq.cmm.paul.DataGrabber;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
+import au.edu.uq.cmm.paul.status.FacilityStatusManager;
 
 /**
  * The MVC controller for Paul's web UI.  This supports the status and configuration
@@ -122,10 +125,83 @@ public class WebUIController {
         return services.getProxy();
     }
     
-    @RequestMapping(value="/status", method=RequestMethod.GET)
+    @RequestMapping(value="/sessions", method=RequestMethod.GET)
     public String status(Model model) {
-        model.addAttribute("facilities", services.getFacilitySessionManager().getSnapshot());
-        return "status";
+        model.addAttribute("facilities", 
+                services.getFacilitySessionManager().getSnapshot());
+        return "sessions";
+    }
+    
+    @RequestMapping(value="/sessions/{sessionUuid:.+}", method=RequestMethod.POST, 
+            params={"endSession"})
+    public String endSession(@PathVariable String sessionUuid, Model model, 
+            HttpServletResponse response, HttpServletRequest request) 
+    throws IOException {
+        services.getFacilitySessionManager().endSession(sessionUuid);
+        response.sendRedirect(response.encodeRedirectURL(
+                request.getContextPath() + "/sessions"));
+        return null;
+    }
+    
+    @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
+            params={"startSession"})
+    public String startSession(@PathVariable String facilityName, 
+            @RequestParam(required=false) String userName, 
+            @RequestParam(required=false) String password,
+            @RequestParam(required=false) String account,
+            Model model, HttpServletResponse response, HttpServletRequest request) 
+    throws IOException {
+        FacilityStatusManager fsm = services.getFacilitySessionManager();
+        facilityName = tidy(facilityName);
+        model.addAttribute("facilityName", facilityName);
+        
+        if ((userName = tidy(userName)).isEmpty() ||
+                (password = tidy(password)).isEmpty()) {
+            // Phase 1 - user must fill in user name and password
+            model.addAttribute("message", "Fill in username and password");
+            return "facilityLoginForm";
+        }
+        if (account == null) {
+            // Phase 2 - validate user credentials and get accounts list
+            List<String> accounts = null;
+            try {
+                LOG.debug("Attempting login");
+                accounts = fsm.login(facilityName, userName, password);
+                LOG.debug("Login succeeded");
+            } catch (AclsLoginException ex) {
+                model.addAttribute("message", "Login failed: " + ex.getMessage());
+            }
+            // If there is only one account, select immediately.
+            try {
+                if (accounts.size() == 1) {
+                    fsm.selectAccount(facilityName, userName, accounts.get(0));
+                    LOG.debug("Account selection succeeded");
+                    response.sendRedirect(response.encodeRedirectURL(
+                            request.getContextPath() + "/sessions"));
+                    return null;
+                } else {
+                    model.addAttribute("accounts", accounts);
+                    model.addAttribute("message", 
+                            "Select an account to complete the login");
+                }
+            } catch (AclsLoginException ex) {
+                model.addAttribute("message",
+                        "Account selection failed: " + ex.getMessage());
+            }
+        } else {
+            // Phase 3 - after user has selected an account
+            try {
+                fsm.selectAccount(facilityName, userName, account);
+                LOG.debug("Account selection succeeded");
+                response.sendRedirect(response.encodeRedirectURL(
+                        request.getContextPath() + "/sessions"));
+                return null;
+            } catch (AclsLoginException ex) {
+                model.addAttribute("message", 
+                        "Account selection failed: " + ex.getMessage());
+            }
+        }
+        return "facilityLoginForm";
     }
     
     @RequestMapping(value="/config", method=RequestMethod.GET)
