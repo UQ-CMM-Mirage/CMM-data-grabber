@@ -8,6 +8,7 @@ import javax.persistence.Persistence;
 import org.apache.log4j.Logger;
 import org.springframework.context.Lifecycle;
 
+import au.edu.uq.cmm.aclslib.config.Configuration.DataGrabberRestartPolicy;
 import au.edu.uq.cmm.aclslib.config.StaticConfiguration;
 import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
 import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
@@ -107,7 +108,11 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
     protected void doStartup() throws ServiceException {
         LOG.info("Startup started");
         proxy.startup();
-        dataGrabber.startup();
+        LOG.error("policy is " + config.getDataGrabberRestartPolicy());
+        if (config.getDataGrabberRestartPolicy() !=
+                DataGrabberRestartPolicy.NO_AUTO_START) {
+            dataGrabber.startup();
+        }
         queueExpirer.startup();
         LOG.info("Startup completed");
     }

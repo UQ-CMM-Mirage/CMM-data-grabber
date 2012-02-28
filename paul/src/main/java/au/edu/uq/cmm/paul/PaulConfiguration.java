@@ -57,6 +57,8 @@ public class PaulConfiguration implements Configuration {
     private long queueExpiryTime;
     private long queueExpiryInterval;
     private boolean expireByDeleting;
+    private DataGrabberRestartPolicy dataGrabberRestartPolicy = 
+            DataGrabberRestartPolicy.NO_AUTO_START;
     
     
     public int getProxyPort() {
@@ -213,6 +215,15 @@ public class PaulConfiguration implements Configuration {
         this.expireByDeleting = expireByDeleting;
     }
 
+    public DataGrabberRestartPolicy getDataGrabberRestartPolicy() {
+        return dataGrabberRestartPolicy;
+    }
+
+    public void setDataGrabberRestartPolicy(
+            DataGrabberRestartPolicy dataGrabberRestartPolicy) {
+        this.dataGrabberRestartPolicy = dataGrabberRestartPolicy;
+    }
+
     public static PaulConfiguration load(EntityManagerFactory entityManagerFactory) {
         return load(entityManagerFactory, false);
     }
@@ -315,6 +326,7 @@ public class PaulConfiguration implements Configuration {
             setQueueExpiryInterval(staticConfig.getQueueExpiryInterval());
             setQueueExpiryTime(staticConfig.getQueueExpiryTime());
             setExpireByDeleting(staticConfig.isExpireByDeleting());
+            setDataGrabberRestartPolicy(staticConfig.getDataGrabberRestartPolicy());
             for (FacilityConfig facilityConfig: staticConfig.getFacilityConfigs()) {
                 boolean found = false;
                 for (FacilityConfig f : facilities) {
