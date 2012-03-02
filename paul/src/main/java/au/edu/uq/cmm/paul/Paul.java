@@ -108,7 +108,6 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
     protected void doStartup() throws ServiceException {
         LOG.info("Startup started");
         proxy.startup();
-        LOG.error("policy is " + config.getDataGrabberRestartPolicy());
         if (config.getDataGrabberRestartPolicy() !=
                 DataGrabberRestartPolicy.NO_AUTO_START) {
             dataGrabber.startup();
