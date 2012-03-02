@@ -53,7 +53,7 @@ public class FileGrabber extends CompositeServiceBase
     private final BlockingQueue<Runnable> work = new LinkedBlockingDeque<Runnable>();
     private final HashMap<File, WorkEntry> workMap = new HashMap<File, WorkEntry>();
     private final FacilityStatusManager statusManager;
-    private File safeDirectory = new File("/tmp/safe");
+    private File safeDirectory;
     private ExecutorService executor;
     private final EntityManagerFactory entityManagerFactory;
     private final Paul services;
@@ -62,8 +62,12 @@ public class FileGrabber extends CompositeServiceBase
         this.services = services;
         fileWatcher.addListener(this);
         this.statusManager = services.getFacilitySessionManager();
+        safeDirectory = new File(
+                services.getConfiguration().getCaptureDirectory());
         if (!safeDirectory.exists() || !safeDirectory.isDirectory()) {
-            throw new PaulException("The grabber's safe directory doesn't exist");
+            throw new PaulException(
+                    "The grabber's safe directory doesn't exist: " + 
+                            safeDirectory);
         }
         this.entityManagerFactory = services.getEntityManagerFactory();
     }
