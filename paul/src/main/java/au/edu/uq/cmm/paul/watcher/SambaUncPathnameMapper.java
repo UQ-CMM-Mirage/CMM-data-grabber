@@ -109,6 +109,7 @@ public class SambaUncPathnameMapper implements UncPathnameMapper {
                             "' is not an existing directory");
                     continue;
                 }
+                LOG.debug("Share '" + section + "' maps to directory " + dir);
                 shareMap.put(section, dir);
             }
         } finally {
