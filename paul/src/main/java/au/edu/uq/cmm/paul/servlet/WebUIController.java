@@ -38,6 +38,7 @@ import au.edu.uq.cmm.paul.DataGrabber;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
+import au.edu.uq.cmm.paul.status.Facility;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
 
 /**
@@ -141,6 +142,14 @@ public class WebUIController {
         response.sendRedirect(response.encodeRedirectURL(
                 request.getContextPath() + "/sessions"));
         return null;
+    }
+    
+    @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.GET)
+    public String facilityConfig(@PathVariable String facilityName, Model model) {
+        Facility facility = (Facility) 
+                services.getConfiguration().lookupFacilityByName(facilityName);
+        model.addAttribute("facility", facility);
+        return "facility";
     }
     
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
