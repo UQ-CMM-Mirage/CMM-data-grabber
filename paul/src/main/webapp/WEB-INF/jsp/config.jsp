@@ -19,6 +19,7 @@
               <li>Expire by deleting - ${config.expireByDeleting}</li>
             </ul>
           </li>
+          <li>Data Grabber restart policy - ${config.dataGrabberRestartPolicy}
           <li>Clients use 'project' - ${config.useProject}</li>
           <li>Facility recheck interval - ${config.facilityRecheckInterval} (minutes)</li>
           <li>Atom feed parameters for ingestion feed:

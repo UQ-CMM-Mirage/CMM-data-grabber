@@ -3,6 +3,7 @@
   "serverPort" : 1024,
   "proxyHost" : "xxx.example.com",
   "serverHost" : "acls.example.com",
+  "facilityRecheckInterval" : 0,
   "useProject" : false,
   "captureDirectory" : "/tmp/safe",
   "archiveDirectory" : "/tmp/archive",
