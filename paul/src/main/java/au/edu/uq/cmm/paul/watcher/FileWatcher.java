@@ -26,17 +26,19 @@ import au.edu.uq.cmm.aclslib.service.MonitoredThreadServiceBase;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.PaulException;
+import au.edu.uq.cmm.paul.status.Facility;
+import au.edu.uq.cmm.paul.status.Facility.Status;
 
 public class FileWatcher extends MonitoredThreadServiceBase {
     private static class WatcherEntry {
         private final Path dir;
-        private final FacilityConfig facility;
+        private final Facility facility;
         private final WatchKey key;
         private final WatcherEntry parent;
         private final Set<WatcherEntry> children;
         
         public WatcherEntry(WatchKey key, WatcherEntry parent, 
-                Path dir, FacilityConfig facility) {
+                Path dir, Facility facility) {
             super();
             this.dir = dir;
             this.facility = facility;
@@ -157,26 +159,44 @@ public class FileWatcher extends MonitoredThreadServiceBase {
     private void configureWatcher() throws IOException {
         FileSystem fs = FileSystems.getDefault();
         watcher = fs.newWatchService();
-        for (FacilityConfig facility : config.getFacilities()) {
-            if (facility.getDriveName() == null) {
+        for (Facility facility : config.getFacilities()) {
+            if (facility.isDummy()) {
+                facility.setStatus(Status.DUMMY);
+                continue;
+            }
+            if (facility.getStatus() == Status.DISABLED) {
                 continue;
             }
             String name = facility.getFolderName();
+            if (name == null) {
+                LOG.info("Facility's folder name is unset");
+                facility.setStatus(Status.MISCONFIGURED);
+                facility.setMessage("Facility's folder name is unset");
+                continue;
+            }
             File local = uncNameMapper.mapUncPathname(name);
             if (local == null) {
-                LOG.info("Facility folder name '" + name + "' does not map to a local path");
+                LOG.info("Facility's folder name (" +
+                        name + ") isn't a Samba share on this host");
+                facility.setStatus(Status.MISCONFIGURED);
+                facility.setMessage("Facility's folder name (" +
+                        name + ") isn't a Samba share on this host");
                 continue;
             }
             if (!local.exists()) {
                 LOG.info("Facility folder name '" + name + 
                         "' maps to non-existent local path '" + local + "'");
+                facility.setStatus(Status.MISCONFIGURED);
+                facility.setMessage("Facility folder name '" + name + 
+                        "' maps to non-existent local path '" + local + "'");
                 continue;
             }
+            facility.setStatus(Status.ENABLED);
             addKeys(facility, local, null);
         }
     }
 
-    private void addKeys(FacilityConfig facility, File local, WatcherEntry parent) 
+    private void addKeys(Facility facility, File local, WatcherEntry parent) 
             throws IOException {
         // If a directory is created while we are recursively adding
         // watcher keys, we may possibly miss it.  However, I think 

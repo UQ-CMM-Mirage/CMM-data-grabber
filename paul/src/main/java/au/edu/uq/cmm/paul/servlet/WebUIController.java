@@ -61,7 +61,7 @@ public class WebUIController {
         ISODateTimeFormat.dateTimeParser()
     };
     
-    @Autowired
+    @Autowired(required=true)
     Paul services;
 
     @RequestMapping(value="/control", method=RequestMethod.GET)

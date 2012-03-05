@@ -56,6 +56,8 @@
                     <li>Uses file locking - ${facility.useFileLocks}</li>
                     <li>Client uses timer - ${facility.useTimer}</li>
                     <li>Client uses full screen - ${facility.useFullScreen}</li>
+                    <li>Facility status - ${facility.status}</li>
+                    <li>Facility configuration diagnostic - ${facility.message}</li>
                     <li>Dummy facility - ${facility.dummy}</li>
                   </ul>
                 </li>

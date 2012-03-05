@@ -16,6 +16,7 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 
+import org.apache.log4j.Logger;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.hibernate.annotations.GenericGenerator;
 
@@ -35,6 +36,9 @@ import au.edu.uq.cmm.aclslib.config.FacilityConfig;
             @UniqueConstraint(columnNames={"address"})})
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public class Facility implements FacilityConfig {
+    public enum Status {
+        ENABLED, DISABLED, MISCONFIGURED, DUMMY
+    }
 
     private List<FacilitySession> sessions = new ArrayList<FacilitySession>();
     private Long id;
@@ -53,6 +57,8 @@ public class Facility implements FacilityConfig {
     private int fileSettlingTime;
     private String address;
     private List<DatafileTemplate> datafileTemplates;
+    private Status status = Status.ENABLED;
+    private String message = "";
     
 
     public Facility() {
@@ -191,6 +197,26 @@ public class Facility implements FacilityConfig {
         this.datafileTemplates = templates;
     }
     
+    public Status getStatus() {
+        Logger.getLogger(this.getClass()).error("Got " + status);
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        Logger.getLogger(this.getClass()).error("Setting status to " + status);
+        this.status = status;
+    }
+
+    @JsonIgnore
+    @Transient
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
     @Id
     @GeneratedValue(generator="increment")
     @GenericGenerator(name="increment", strategy = "increment")
