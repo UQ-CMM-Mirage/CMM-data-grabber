@@ -16,12 +16,12 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 
-import org.apache.log4j.Logger;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.hibernate.annotations.GenericGenerator;
 
 import au.edu.uq.cmm.aclslib.config.DatafileTemplateConfig;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
+import au.edu.uq.cmm.paul.grabber.FileGrabber;
 
 /**
  * The Paul implementation of FacilityConfig persists the configuration data
@@ -59,6 +59,7 @@ public class Facility implements FacilityConfig {
     private List<DatafileTemplate> datafileTemplates;
     private Status status = Status.OFF;
     private String message = "";
+    private FileGrabber fileGrabber;
     
 
     public Facility() {
@@ -270,5 +271,15 @@ public class Facility implements FacilityConfig {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    @JsonIgnore
+    @Transient
+    public FileGrabber getFileGrabber() {
+        return this.fileGrabber;
+    }
+
+    public void setFileGrabber(FileGrabber fileGrabber) {
+        this.fileGrabber = fileGrabber;
     }
 }

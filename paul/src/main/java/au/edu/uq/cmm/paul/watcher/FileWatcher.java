@@ -12,21 +12,19 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
 
-import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.service.MonitoredThreadServiceBase;
 import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.PaulException;
+import au.edu.uq.cmm.paul.grabber.FileGrabber;
 import au.edu.uq.cmm.paul.status.Facility;
 import au.edu.uq.cmm.paul.status.Facility.Status;
 
@@ -75,13 +73,11 @@ public class FileWatcher extends MonitoredThreadServiceBase {
             new HashMap<WatchKey, WatcherEntry>();
     private UncPathnameMapper uncNameMapper;
     private WatchService watcher;
-
-    private List<FileWatcherEventListener> listeners = 
-            new ArrayList<FileWatcherEventListener>();
-    
+    private Paul services;
     
     public FileWatcher(Paul services) 
             throws UnknownHostException {
+        this.services = services;
         this.config = services.getConfiguration();
         this.uncNameMapper = services.getUncNameMapper();
     }
@@ -152,10 +148,11 @@ public class FileWatcher extends MonitoredThreadServiceBase {
         }
     }
     
-    private void notifyEvent(FacilityConfig facility, File file, boolean create) {
+    private void notifyEvent(Facility facility, File file, boolean create) {
         long now = System.currentTimeMillis();
-        for (FileWatcherEventListener listener : listeners) {
-            listener.eventOccurred(new FileWatcherEvent(facility, file, create, now));
+        FileGrabber grabber = facility.getFileGrabber();
+        if (grabber != null) {
+            grabber.eventOccurred(new FileWatcherEvent(facility, file, create, now));
         }
     }
 
@@ -197,6 +194,9 @@ public class FileWatcher extends MonitoredThreadServiceBase {
                     "' maps to non-existent local path '" + local + "'");
         } else {
             try {
+                FileGrabber grabber = new FileGrabber(services, facility);
+                facility.setFileGrabber(grabber);
+                grabber.startStartup();
                 addKeys(facility, local, null);
                 facility.setStatus(Status.ON);
             } catch (IOException ex) {
@@ -213,13 +213,18 @@ public class FileWatcher extends MonitoredThreadServiceBase {
     public void stopFileWatching(Facility facility, boolean disable) {
         LOG.debug("StopFileWatching(" + facility.getFacilityName() + 
                 "," + disable + ")");
-        for (WatcherEntry entry : watchMap.values()) {
-            if (entry.facility == facility && entry.parent == null) {
-                removeKey(entry, true);
-                break;
+        try {
+            facility.getFileGrabber().shutdown();
+            for (WatcherEntry entry : watchMap.values()) {
+                if (entry.facility == facility && entry.parent == null) {
+                    removeKey(entry, true);
+                    break;
+                }
             }
+            facility.setStatus(disable ? Status.DISABLED : Status.OFF);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
         }
-        facility.setStatus(disable ? Status.DISABLED : Status.OFF);
     }
 
     private void addKeys(Facility facility, File local, WatcherEntry parent) 
@@ -273,13 +278,5 @@ public class FileWatcher extends MonitoredThreadServiceBase {
         if (entry.parent != null) {
             entry.parent.children.remove(entry);
         }
-    }
-
-    public void addListener(FileWatcherEventListener listener) {
-        listeners.add(listener);
-    }
-
-    public void removeListener(FileWatcherEventListener listener) {
-        listeners.remove(listener);
     }
 }

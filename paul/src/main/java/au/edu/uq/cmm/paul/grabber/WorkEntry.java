@@ -48,7 +48,7 @@ class WorkEntry implements Runnable {
     public WorkEntry(Paul services, FileWatcherEvent event, File baseFile) {
         this.facility = (Facility) event.getFacility();
         this.timestamp = new Date(event.getTimestamp());
-        this.fileGrabber = services.getDataGrabber().getFileGrabber();
+        this.fileGrabber = facility.getFileGrabber();
         this.queueManager = services.getQueueManager();
         this.baseFile = baseFile;
         this.files = new ConcurrentHashMap<File, GrabbedFile>();

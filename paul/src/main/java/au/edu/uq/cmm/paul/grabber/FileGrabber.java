@@ -20,15 +20,15 @@ import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
+import au.edu.uq.cmm.paul.status.Facility;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
-import au.edu.uq.cmm.paul.watcher.FileWatcher;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEventListener;
 
 /**
- * The FileGrabber service is registered as a listener for FileWatcher events.
- * The first event for a file generates WorkEntry object that is enqueued.  
- * Subsequent events are added to the WorkEntry.
+ * A FileGrabber service is registered as a listener for FileWatcher events
+ * for a particular Facility.  The first event for a file generates WorkEntry 
+ * object that is enqueued.  Subsequent events are added to the WorkEntry.
  * <p>
  * The FileGrabber's thread pulls WorkEntry objects from the queue and processed 
  * them as follows:
@@ -58,9 +58,9 @@ public class FileGrabber extends CompositeServiceBase
     private final EntityManagerFactory entityManagerFactory;
     private final Paul services;
     
-    public FileGrabber(Paul services, FileWatcher fileWatcher) {
+    public FileGrabber(Paul services, Facility facility) {
         this.services = services;
-        fileWatcher.addListener(this);
+        facility.setFileGrabber(this);
         this.statusManager = services.getFacilitySessionManager();
         safeDirectory = new File(
                 services.getConfiguration().getCaptureDirectory());
@@ -96,7 +96,7 @@ public class FileGrabber extends CompositeServiceBase
 
     @Override
     protected void doStartup() {
-        executor = new ThreadPoolExecutor(5, 5, 999, TimeUnit.SECONDS, work);
+        executor = new ThreadPoolExecutor(0, 1, 999, TimeUnit.SECONDS, work);
     }
 
     @Override

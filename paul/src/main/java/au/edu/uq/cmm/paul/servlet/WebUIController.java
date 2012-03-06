@@ -34,12 +34,12 @@ import au.edu.uq.cmm.aclslib.proxy.AclsLoginException;
 import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
 import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.aclslib.service.Service.State;
-import au.edu.uq.cmm.paul.DataGrabber;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 import au.edu.uq.cmm.paul.status.Facility;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
+import au.edu.uq.cmm.paul.watcher.FileWatcher;
 
 /**
  * The MVC controller for Paul's web UI.  This supports the status and configuration
@@ -73,7 +73,7 @@ public class WebUIController {
 
     @RequestMapping(value="/control", method=RequestMethod.POST)
     public String controlAction(Model model, HttpServletRequest request) {
-        processStatusChange(getDataGrabber(), request.getParameter("grabber"));
+        processStatusChange(getFileWatcher(), request.getParameter("watcher"));
         processStatusChange(getProxy(), request.getParameter("proxy"));
         addStateAndStatus(model);
         return "control";
@@ -97,11 +97,11 @@ public class WebUIController {
     }
     
     private void addStateAndStatus(Model model) {
-        State gs = getDataGrabber().getState();
+        State ws = getFileWatcher().getState();
         State ps = getProxy().getState();
-        model.addAttribute("grabberState", gs);
+        model.addAttribute("watcherState", ws);
         model.addAttribute("proxyState", ps);
-        model.addAttribute("grabberStatus", stateToStatus(gs));
+        model.addAttribute("watcherStatus", stateToStatus(ws));
         model.addAttribute("proxyStatus", stateToStatus(ps));
     }
     
@@ -118,12 +118,17 @@ public class WebUIController {
         }
     }
 
-    private DataGrabber getDataGrabber() {
-        return services.getDataGrabber();
-    }
-
     private AclsProxy getProxy() {
         return services.getProxy();
+    }
+    
+    private FileWatcher getFileWatcher() {
+        return services.getFileWatcher();
+    }
+    
+    private Facility lookupFacilityByName(String facilityName) {
+        return (Facility) 
+                services.getConfiguration().lookupFacilityByName(facilityName);
     }
     
     @RequestMapping(value="/sessions", method=RequestMethod.GET)
@@ -146,8 +151,7 @@ public class WebUIController {
     
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.GET)
     public String facilityConfig(@PathVariable String facilityName, Model model) {
-        Facility facility = (Facility) 
-                services.getConfiguration().lookupFacilityByName(facilityName);
+        Facility facility = lookupFacilityByName(facilityName);
         model.addAttribute("facility", facility);
         return "facility";
     }
@@ -155,10 +159,9 @@ public class WebUIController {
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
             params={"enableWatcher"})
     public String enableWatcher(@PathVariable String facilityName, Model model) {
-        Facility facility = (Facility) 
-                services.getConfiguration().lookupFacilityByName(facilityName);
+        Facility facility = lookupFacilityByName(facilityName);
         if (facility != null) {
-            services.getDataGrabber().getFileWatcher().startFileWatching(facility, true);
+            getFileWatcher().startFileWatching(facility, true);
         }
         model.addAttribute("facility", facility);
         return "facility";
@@ -167,10 +170,9 @@ public class WebUIController {
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
             params={"disableWatcher"})
     public String disableWatcher(@PathVariable String facilityName, Model model) {
-        Facility facility = (Facility) 
-                services.getConfiguration().lookupFacilityByName(facilityName);
+        Facility facility = lookupFacilityByName(facilityName);
         if (facility != null) {
-            services.getDataGrabber().getFileWatcher().stopFileWatching(facility, true);
+            getFileWatcher().stopFileWatching(facility, true);
         }
         model.addAttribute("facility", facility);
         return "facility";
@@ -179,10 +181,9 @@ public class WebUIController {
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
             params={"pauseWatcher"})
     public String pauseWatcher(@PathVariable String facilityName, Model model) {
-        Facility facility = (Facility) 
-                services.getConfiguration().lookupFacilityByName(facilityName);
+        Facility facility = lookupFacilityByName(facilityName);
         if (facility != null) {
-            services.getDataGrabber().getFileWatcher().stopFileWatching(facility, false);
+            getFileWatcher().stopFileWatching(facility, false);
         }
         model.addAttribute("facility", facility);
         return "facility";
