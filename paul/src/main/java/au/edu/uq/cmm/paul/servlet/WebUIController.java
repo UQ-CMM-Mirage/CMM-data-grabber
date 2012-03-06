@@ -153,6 +153,42 @@ public class WebUIController {
     }
     
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
+            params={"enableWatcher"})
+    public String enableWatcher(@PathVariable String facilityName, Model model) {
+        Facility facility = (Facility) 
+                services.getConfiguration().lookupFacilityByName(facilityName);
+        if (facility != null) {
+            services.getDataGrabber().getFileWatcher().startFileWatching(facility, true);
+        }
+        model.addAttribute("facility", facility);
+        return "facility";
+    }
+    
+    @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
+            params={"disableWatcher"})
+    public String disableWatcher(@PathVariable String facilityName, Model model) {
+        Facility facility = (Facility) 
+                services.getConfiguration().lookupFacilityByName(facilityName);
+        if (facility != null) {
+            services.getDataGrabber().getFileWatcher().stopFileWatching(facility, true);
+        }
+        model.addAttribute("facility", facility);
+        return "facility";
+    }
+    
+    @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
+            params={"pauseWatcher"})
+    public String pauseWatcher(@PathVariable String facilityName, Model model) {
+        Facility facility = (Facility) 
+                services.getConfiguration().lookupFacilityByName(facilityName);
+        if (facility != null) {
+            services.getDataGrabber().getFileWatcher().stopFileWatching(facility, false);
+        }
+        model.addAttribute("facility", facility);
+        return "facility";
+    }
+    
+    @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
             params={"startSession"})
     public String startSession(@PathVariable String facilityName, 
             @RequestParam(required=false) String userName, 

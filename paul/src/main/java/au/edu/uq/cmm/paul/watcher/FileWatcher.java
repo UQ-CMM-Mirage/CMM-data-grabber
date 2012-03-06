@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.service.MonitoredThreadServiceBase;
+import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.PaulException;
@@ -115,6 +116,8 @@ public class FileWatcher extends MonitoredThreadServiceBase {
                     watcher.close();
                 } catch (IOException ex) {
                     LOG.debug("Exception in watcher close", ex);
+                } finally {
+                    watcher = null;
                 }
             }
         }
@@ -145,7 +148,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
             }
         } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
             LOG.debug("Deleted - " + path);
-            removeKeyForPath(entry, path, false);
+            removeKeyForPath(entry, path);
         }
     }
     
@@ -160,40 +163,63 @@ public class FileWatcher extends MonitoredThreadServiceBase {
         FileSystem fs = FileSystems.getDefault();
         watcher = fs.newWatchService();
         for (Facility facility : config.getFacilities()) {
-            if (facility.isDummy()) {
-                facility.setStatus(Status.DUMMY);
-                continue;
-            }
-            if (facility.getStatus() == Status.DISABLED) {
-                continue;
-            }
-            String name = facility.getFolderName();
-            if (name == null) {
-                LOG.info("Facility's folder name is unset");
-                facility.setStatus(Status.MISCONFIGURED);
-                facility.setMessage("Facility's folder name is unset");
-                continue;
-            }
-            File local = uncNameMapper.mapUncPathname(name);
-            if (local == null) {
-                LOG.info("Facility's folder name (" +
-                        name + ") isn't a Samba share on this host");
-                facility.setStatus(Status.MISCONFIGURED);
-                facility.setMessage("Facility's folder name (" +
-                        name + ") isn't a Samba share on this host");
-                continue;
-            }
-            if (!local.exists()) {
-                LOG.info("Facility folder name '" + name + 
-                        "' maps to non-existent local path '" + local + "'");
-                facility.setStatus(Status.MISCONFIGURED);
-                facility.setMessage("Facility folder name '" + name + 
-                        "' maps to non-existent local path '" + local + "'");
-                continue;
-            }
-            facility.setStatus(Status.ENABLED);
-            addKeys(facility, local, null);
+            startFileWatching(facility, false);
         }
+    }
+
+    public void startFileWatching(Facility facility, boolean enable) {
+        LOG.debug("StartFileWatching(" + facility.getFacilityName() + 
+                "," + enable + ")");
+        String name = facility.getFolderName();
+        File local;
+        if (getState() != Service.State.STARTED) {
+            facility.setStatus(Status.OFF);
+            facility.setMessage("File watcher service is not running");
+        } else if (facility.isDummy()) {
+            facility.setStatus(Status.DUMMY);
+        } else if (facility.getStatus() == Status.DISABLED && !enable) {
+            // leave it disabled
+        } else if (name == null) {
+            LOG.info("Facility's folder name is unset");
+            facility.setStatus(Status.OFF);
+            facility.setMessage("Facility's folder name is unset");
+        } else if ((local = uncNameMapper.mapUncPathname(name)) == null) {
+            LOG.info("Facility's folder name (" +
+                    name + ") isn't a Samba share on this host");
+            facility.setStatus(Status.OFF);
+            facility.setMessage("Facility's folder name (" +
+                    name + ") isn't a Samba share on this host");
+        } else if (!local.exists()) {
+            LOG.info("Facility folder name '" + name + 
+                    "' maps to non-existent local path '" + local + "'");
+            facility.setStatus(Status.OFF);
+            facility.setMessage("Facility folder name '" + name + 
+                    "' maps to non-existent local path '" + local + "'");
+        } else {
+            try {
+                addKeys(facility, local, null);
+                facility.setStatus(Status.ON);
+            } catch (IOException ex) {
+                LOG.error("IOException occured while enabling watcher for '" + 
+                        name + "'", ex);
+                facility.setStatus(Status.OFF);
+                facility.setMessage(
+                        "An IO exception occured while enabling watcher for '" + 
+                                name + "' - see logs for details");
+            }
+        }
+    }
+    
+    public void stopFileWatching(Facility facility, boolean disable) {
+        LOG.debug("StopFileWatching(" + facility.getFacilityName() + 
+                "," + disable + ")");
+        for (WatcherEntry entry : watchMap.values()) {
+            if (entry.facility == facility && entry.parent == null) {
+                removeKey(entry, true);
+                break;
+            }
+        }
+        facility.setStatus(disable ? Status.DISABLED : Status.OFF);
     }
 
     private void addKeys(Facility facility, File local, WatcherEntry parent) 
@@ -220,12 +246,12 @@ public class FileWatcher extends MonitoredThreadServiceBase {
         }
     }
 
-    private void removeKeyForPath(WatcherEntry entry, Path path, boolean force) {
+    private void removeKeyForPath(WatcherEntry entry, Path path) {
         // Potentially inefficient ... if directory corresponding to 'entry'
         // has many subdirectories.
         for (WatcherEntry child : entry.children) {
             if (child.dir.equals(path)) {
-                removeKey(child, force);
+                removeKey(child, false);
                 break;
             }
         }
@@ -240,12 +266,12 @@ public class FileWatcher extends MonitoredThreadServiceBase {
             entry.key.cancel();
             LOG.debug("Cancelled directory watcher for " + entry.dir + 
                     " for facility " + entry.facility.getFacilityName());
-            if (entry.parent != null) {
-                entry.parent.children.remove(entry);
-            }
         }
         for (WatcherEntry child : entry.children) {
             removeKey(child, true);
+        }
+        if (entry.parent != null) {
+            entry.parent.children.remove(entry);
         }
     }
 

@@ -19,9 +19,11 @@
 			'none' : ''}
 			<ul>
 				<c:forEach items="${facility.datafileTemplates}" var="template">
-					<li>Pattern - '${template.filePattern}', mimeType -
-						'${template.mimeType}', suffix - '${template.suffix}', optional -
-						${template.optional}</li>
+					<li>Pattern - '${template.filePattern}', 
+					    mimeType - '${template.mimeType}', 
+					    suffix - '${template.suffix}', 
+					    optional - ${template.optional}
+					</li>
 				</c:forEach>
 			</ul>
 		</li>
@@ -33,5 +35,15 @@
 		<li>Facility configuration diagnostic - ${facility.message}</li>
 		<li>Dummy facility - ${facility.dummy}</li>
 	</ul>
+	<c:if test="${facility.status == 'ON'}">
+	    <form action="${facility.facilityName}" method="post">
+			<button type="submit" name="disableWatcher">Disable File Watching</button>
+		</form>
+	</c:if>
+	<c:if test="${facility.status == 'DISABLED' || facility.status == 'OFF'}">
+		<form action="${facility.facilityName}" method="post">
+			<button type="submit" name="enableWatcher">Enable File Watching</button>
+		</form>
+	</c:if>
 </body>
 </html>

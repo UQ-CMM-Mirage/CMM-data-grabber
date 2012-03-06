@@ -37,7 +37,7 @@ import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public class Facility implements FacilityConfig {
     public enum Status {
-        ENABLED, DISABLED, MISCONFIGURED, DUMMY
+        ON, DISABLED, OFF, DUMMY
     }
 
     private List<FacilitySession> sessions = new ArrayList<FacilitySession>();
@@ -57,7 +57,7 @@ public class Facility implements FacilityConfig {
     private int fileSettlingTime;
     private String address;
     private List<DatafileTemplate> datafileTemplates;
-    private Status status = Status.ENABLED;
+    private Status status = Status.OFF;
     private String message = "";
     
 
@@ -198,12 +198,10 @@ public class Facility implements FacilityConfig {
     }
     
     public Status getStatus() {
-        Logger.getLogger(this.getClass()).error("Got " + status);
         return status;
     }
 
     public void setStatus(Status status) {
-        Logger.getLogger(this.getClass()).error("Setting status to " + status);
         this.status = status;
     }
 
