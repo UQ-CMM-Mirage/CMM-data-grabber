@@ -1,5 +1,6 @@
 package au.edu.uq.cmm.paul.status;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,6 +61,7 @@ public class Facility implements FacilityConfig {
     private Status status = Status.OFF;
     private String message = "";
     private FileGrabber fileGrabber;
+    private File localDirectory;
     
 
     public Facility() {
@@ -281,5 +283,15 @@ public class Facility implements FacilityConfig {
 
     public void setFileGrabber(FileGrabber fileGrabber) {
         this.fileGrabber = fileGrabber;
+    }
+
+    @JsonIgnore
+    @Transient
+    public File getLocalDirectory() {
+        return localDirectory;
+    }
+    
+    public void setLocalDirectory(File localDirectory) {
+        this.localDirectory = localDirectory;
     }
 }

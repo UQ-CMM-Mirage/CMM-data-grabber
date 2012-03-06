@@ -194,6 +194,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
                     "' maps to non-existent local path '" + local + "'");
         } else {
             try {
+                facility.setLocalDirectory(local);
                 FileGrabber grabber = new FileGrabber(services, facility);
                 facility.setFileGrabber(grabber);
                 grabber.startStartup();
