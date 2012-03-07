@@ -48,7 +48,7 @@ class WorkEntry implements Runnable {
     public WorkEntry(Paul services, FileWatcherEvent event, File baseFile) {
         this.facility = (Facility) event.getFacility();
         this.timestamp = new Date(event.getTimestamp());
-        this.fileGrabber = services.getDataGrabber().getFileGrabber();
+        this.fileGrabber = facility.getFileGrabber();
         this.queueManager = services.getQueueManager();
         this.baseFile = baseFile;
         this.files = new ConcurrentHashMap<File, GrabbedFile>();
@@ -189,7 +189,7 @@ class WorkEntry implements Runnable {
         DatasetMetadata metadata = new DatasetMetadata(
                 baseFile.getAbsolutePath(), metadataFile.getAbsolutePath(), 
                 session.getUserName(), facility.getFacilityName(), 
-                session.getAccount(), session.getEmailAddress(), 
+                facility.getId(), session.getAccount(), session.getEmailAddress(), 
                 now, session.getSessionUuid(), session.getLoginTime(), list);
         queueManager.addEntry(metadata, metadataFile);
     }

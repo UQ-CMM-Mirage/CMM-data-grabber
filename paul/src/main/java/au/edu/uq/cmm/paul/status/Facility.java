@@ -1,5 +1,6 @@
 package au.edu.uq.cmm.paul.status;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +22,7 @@ import org.hibernate.annotations.GenericGenerator;
 
 import au.edu.uq.cmm.aclslib.config.DatafileTemplateConfig;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
+import au.edu.uq.cmm.paul.grabber.FileGrabber;
 
 /**
  * The Paul implementation of FacilityConfig persists the configuration data
@@ -35,6 +37,9 @@ import au.edu.uq.cmm.aclslib.config.FacilityConfig;
             @UniqueConstraint(columnNames={"address"})})
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public class Facility implements FacilityConfig {
+    public enum Status {
+        ON, DISABLED, OFF, DUMMY
+    }
 
     private List<FacilitySession> sessions = new ArrayList<FacilitySession>();
     private Long id;
@@ -53,6 +58,10 @@ public class Facility implements FacilityConfig {
     private int fileSettlingTime;
     private String address;
     private List<DatafileTemplate> datafileTemplates;
+    private Status status = Status.OFF;
+    private String message = "";
+    private FileGrabber fileGrabber;
+    private File localDirectory;
     
 
     public Facility() {
@@ -191,6 +200,24 @@ public class Facility implements FacilityConfig {
         this.datafileTemplates = templates;
     }
     
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    @JsonIgnore
+    @Transient
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
     @Id
     @GeneratedValue(generator="increment")
     @GenericGenerator(name="increment", strategy = "increment")
@@ -246,5 +273,25 @@ public class Facility implements FacilityConfig {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    @JsonIgnore
+    @Transient
+    public FileGrabber getFileGrabber() {
+        return this.fileGrabber;
+    }
+
+    public void setFileGrabber(FileGrabber fileGrabber) {
+        this.fileGrabber = fileGrabber;
+    }
+
+    @JsonIgnore
+    @Transient
+    public File getLocalDirectory() {
+        return localDirectory;
+    }
+    
+    public void setLocalDirectory(File localDirectory) {
+        this.localDirectory = localDirectory;
     }
 }
