@@ -31,6 +31,7 @@ import org.hibernate.annotations.GenericGenerator;
         uniqueConstraints=@UniqueConstraint(columnNames={"recordUuid"}))
 public class DatasetMetadata {
     private String userName;
+    private Long facilityId;
     private String facilityName;
     private String accountName;
     private String sourceFilePathnameBase;
@@ -49,7 +50,8 @@ public class DatasetMetadata {
     }
     
     public DatasetMetadata(String sourceFilePathnameBase, 
-            String metadataFilePathname, String userName, String facilityName,
+            String metadataFilePathname, String userName, 
+            String facilityName, Long facilityId,
             String accountName, String emailAddress, Date captureTimestamp,
             String sessionUuid, Date sessionStartTimestamp,
             List<DatafileMetadata> datafiles) {
@@ -58,6 +60,7 @@ public class DatasetMetadata {
         this.metadataFilePathname = metadataFilePathname;
         this.userName = userName;
         this.facilityName = facilityName;
+        this.facilityId = facilityId;
         this.accountName = accountName;
         this.emailAddress = emailAddress;
         this.captureTimestamp = captureTimestamp;
@@ -169,5 +172,13 @@ public class DatasetMetadata {
 
     public void setDatafiles(List<DatafileMetadata> datafiles) {
         this.datafiles = datafiles;
+    }
+
+    public Long getFacilityId() {
+        return facilityId;
+    }
+
+    public void setFacilityId(Long facilityId) {
+        this.facilityId = facilityId;
     }
 }

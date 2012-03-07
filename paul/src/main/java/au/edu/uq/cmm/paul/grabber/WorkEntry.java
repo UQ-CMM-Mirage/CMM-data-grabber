@@ -189,7 +189,7 @@ class WorkEntry implements Runnable {
         DatasetMetadata metadata = new DatasetMetadata(
                 baseFile.getAbsolutePath(), metadataFile.getAbsolutePath(), 
                 session.getUserName(), facility.getFacilityName(), 
-                session.getAccount(), session.getEmailAddress(), 
+                facility.getId(), session.getAccount(), session.getEmailAddress(), 
                 now, session.getSessionUuid(), session.getLoginTime(), list);
         queueManager.addEntry(metadata, metadataFile);
     }
