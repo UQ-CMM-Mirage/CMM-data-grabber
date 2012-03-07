@@ -218,21 +218,23 @@ public class WebUIController {
                 model.addAttribute("message", "Login failed: " + ex.getMessage());
             }
             // If there is only one account, select immediately.
-            try {
-                if (accounts.size() == 1) {
-                    fsm.selectAccount(facilityName, userName, accounts.get(0));
-                    LOG.debug("Account selection succeeded");
-                    response.sendRedirect(response.encodeRedirectURL(
-                            request.getContextPath() + "/sessions"));
-                    return null;
-                } else {
-                    model.addAttribute("accounts", accounts);
-                    model.addAttribute("message", 
-                            "Select an account to complete the login");
+            if (accounts != null) {
+                try {
+                    if (accounts.size() == 1) {
+                        fsm.selectAccount(facilityName, userName, accounts.get(0));
+                        LOG.debug("Account selection succeeded");
+                        response.sendRedirect(response.encodeRedirectURL(
+                                request.getContextPath() + "/sessions"));
+                        return null;
+                    } else {
+                        model.addAttribute("accounts", accounts);
+                        model.addAttribute("message", 
+                                "Select an account to complete the login");
+                    }
+                } catch (AclsLoginException ex) {
+                    model.addAttribute("message",
+                            "Account selection failed: " + ex.getMessage());
                 }
-            } catch (AclsLoginException ex) {
-                model.addAttribute("message",
-                        "Account selection failed: " + ex.getMessage());
             }
         } else {
             // Phase 3 - after user has selected an account
