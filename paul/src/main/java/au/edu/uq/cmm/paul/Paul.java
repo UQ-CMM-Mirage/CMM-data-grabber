@@ -17,6 +17,7 @@ import au.edu.uq.cmm.paul.queue.QueueExpirer;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
 import au.edu.uq.cmm.paul.status.SessionDetailMapper;
+import au.edu.uq.cmm.paul.watcher.FileWatcher;
 import au.edu.uq.cmm.paul.watcher.SambaUncPathnameMapper;
 import au.edu.uq.cmm.paul.watcher.UncPathnameMapper;
 
@@ -32,7 +33,7 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
     private QueueManager queueManager;
     private QueueExpirer queueExpirer;
     private SessionDetailMapper sessionDetailMapper;
-    private DataGrabber dataGrabber;
+    private FileWatcher fileWatcher;
     
     public Paul(StaticConfiguration staticConfig,
             EntityManagerFactory entityManagerFactory)
@@ -63,7 +64,7 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
         }
         statusManager = new FacilityStatusManager(this);
         this.uncNameMapper = uncNameMapper;
-        dataGrabber = new DataGrabber(this);
+        fileWatcher = new FileWatcher(this);
         queueManager = new QueueManager(this);
         queueExpirer = new QueueExpirer(this);
     }
@@ -99,7 +100,7 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
     protected void doShutdown() throws InterruptedException {
         LOG.info("Shutdown started");
         queueExpirer.shutdown();
-        dataGrabber.shutdown();
+        fileWatcher.shutdown();
         proxy.shutdown();
         LOG.info("Shutdown completed");
     }
@@ -110,7 +111,7 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
         proxy.startup();
         if (config.getDataGrabberRestartPolicy() !=
                 DataGrabberRestartPolicy.NO_AUTO_START) {
-            dataGrabber.startup();
+            fileWatcher.startup();
         }
         queueExpirer.startup();
         LOG.info("Startup completed");
@@ -128,8 +129,8 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
         return queueManager;
     }
 
-    public DataGrabber getDataGrabber() {
-        return dataGrabber;
+    public FileWatcher getFileWatcher() {
+        return fileWatcher;
     }
 
     public EntityManagerFactory getEntityManagerFactory() {

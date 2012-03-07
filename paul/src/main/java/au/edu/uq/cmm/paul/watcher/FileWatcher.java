@@ -12,31 +12,32 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
 
-import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.service.MonitoredThreadServiceBase;
+import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.PaulException;
+import au.edu.uq.cmm.paul.grabber.FileGrabber;
+import au.edu.uq.cmm.paul.status.Facility;
+import au.edu.uq.cmm.paul.status.Facility.Status;
 
 public class FileWatcher extends MonitoredThreadServiceBase {
     private static class WatcherEntry {
         private final Path dir;
-        private final FacilityConfig facility;
+        private final Facility facility;
         private final WatchKey key;
         private final WatcherEntry parent;
         private final Set<WatcherEntry> children;
         
         public WatcherEntry(WatchKey key, WatcherEntry parent, 
-                Path dir, FacilityConfig facility) {
+                Path dir, Facility facility) {
             super();
             this.dir = dir;
             this.facility = facility;
@@ -72,13 +73,11 @@ public class FileWatcher extends MonitoredThreadServiceBase {
             new HashMap<WatchKey, WatcherEntry>();
     private UncPathnameMapper uncNameMapper;
     private WatchService watcher;
-
-    private List<FileWatcherEventListener> listeners = 
-            new ArrayList<FileWatcherEventListener>();
-    
+    private Paul services;
     
     public FileWatcher(Paul services) 
             throws UnknownHostException {
+        this.services = services;
         this.config = services.getConfiguration();
         this.uncNameMapper = services.getUncNameMapper();
     }
@@ -113,6 +112,8 @@ public class FileWatcher extends MonitoredThreadServiceBase {
                     watcher.close();
                 } catch (IOException ex) {
                     LOG.debug("Exception in watcher close", ex);
+                } finally {
+                    watcher = null;
                 }
             }
         }
@@ -143,40 +144,91 @@ public class FileWatcher extends MonitoredThreadServiceBase {
             }
         } else if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
             LOG.debug("Deleted - " + path);
-            removeKeyForPath(entry, path, false);
+            removeKeyForPath(entry, path);
         }
     }
     
-    private void notifyEvent(FacilityConfig facility, File file, boolean create) {
+    private void notifyEvent(Facility facility, File file, boolean create) {
         long now = System.currentTimeMillis();
-        for (FileWatcherEventListener listener : listeners) {
-            listener.eventOccurred(new FileWatcherEvent(facility, file, create, now));
+        FileGrabber grabber = facility.getFileGrabber();
+        if (grabber != null) {
+            grabber.eventOccurred(new FileWatcherEvent(facility, file, create, now));
         }
     }
 
     private void configureWatcher() throws IOException {
         FileSystem fs = FileSystems.getDefault();
         watcher = fs.newWatchService();
-        for (FacilityConfig facility : config.getFacilities()) {
-            if (facility.getDriveName() == null) {
-                continue;
-            }
-            String name = facility.getFolderName();
-            File local = uncNameMapper.mapUncPathname(name);
-            if (local == null) {
-                LOG.info("Facility folder name '" + name + "' does not map to a local path");
-                continue;
-            }
-            if (!local.exists()) {
-                LOG.info("Facility folder name '" + name + 
-                        "' maps to non-existent local path '" + local + "'");
-                continue;
-            }
-            addKeys(facility, local, null);
+        for (Facility facility : config.getFacilities()) {
+            startFileWatching(facility, false);
         }
     }
 
-    private void addKeys(FacilityConfig facility, File local, WatcherEntry parent) 
+    public void startFileWatching(Facility facility, boolean enable) {
+        LOG.debug("StartFileWatching(" + facility.getFacilityName() + 
+                "," + enable + ")");
+        String name = facility.getFolderName();
+        File local;
+        if (getState() != Service.State.STARTED) {
+            facility.setStatus(Status.OFF);
+            facility.setMessage("File watcher service is not running");
+        } else if (facility.isDummy()) {
+            facility.setStatus(Status.DUMMY);
+        } else if (facility.getStatus() == Status.DISABLED && !enable) {
+            // leave it disabled
+        } else if (name == null) {
+            LOG.info("Facility's folder name is unset");
+            facility.setStatus(Status.OFF);
+            facility.setMessage("Facility's folder name is unset");
+        } else if ((local = uncNameMapper.mapUncPathname(name)) == null) {
+            LOG.info("Facility's folder name (" +
+                    name + ") isn't a Samba share on this host");
+            facility.setStatus(Status.OFF);
+            facility.setMessage("Facility's folder name (" +
+                    name + ") isn't a Samba share on this host");
+        } else if (!local.exists()) {
+            LOG.info("Facility folder name '" + name + 
+                    "' maps to non-existent local path '" + local + "'");
+            facility.setStatus(Status.OFF);
+            facility.setMessage("Facility folder name '" + name + 
+                    "' maps to non-existent local path '" + local + "'");
+        } else {
+            try {
+                facility.setLocalDirectory(local);
+                FileGrabber grabber = new FileGrabber(services, facility);
+                facility.setFileGrabber(grabber);
+                grabber.startStartup();
+                addKeys(facility, local, null);
+                facility.setStatus(Status.ON);
+            } catch (IOException ex) {
+                LOG.error("IOException occured while enabling watcher for '" + 
+                        name + "'", ex);
+                facility.setStatus(Status.OFF);
+                facility.setMessage(
+                        "An IO exception occured while enabling watcher for '" + 
+                                name + "' - see logs for details");
+            }
+        }
+    }
+    
+    public void stopFileWatching(Facility facility, boolean disable) {
+        LOG.debug("StopFileWatching(" + facility.getFacilityName() + 
+                "," + disable + ")");
+        try {
+            facility.getFileGrabber().shutdown();
+            for (WatcherEntry entry : watchMap.values()) {
+                if (entry.facility == facility && entry.parent == null) {
+                    removeKey(entry, true);
+                    break;
+                }
+            }
+            facility.setStatus(disable ? Status.DISABLED : Status.OFF);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private void addKeys(Facility facility, File local, WatcherEntry parent) 
             throws IOException {
         // If a directory is created while we are recursively adding
         // watcher keys, we may possibly miss it.  However, I think 
@@ -200,12 +252,12 @@ public class FileWatcher extends MonitoredThreadServiceBase {
         }
     }
 
-    private void removeKeyForPath(WatcherEntry entry, Path path, boolean force) {
+    private void removeKeyForPath(WatcherEntry entry, Path path) {
         // Potentially inefficient ... if directory corresponding to 'entry'
         // has many subdirectories.
         for (WatcherEntry child : entry.children) {
             if (child.dir.equals(path)) {
-                removeKey(child, force);
+                removeKey(child, false);
                 break;
             }
         }
@@ -220,20 +272,12 @@ public class FileWatcher extends MonitoredThreadServiceBase {
             entry.key.cancel();
             LOG.debug("Cancelled directory watcher for " + entry.dir + 
                     " for facility " + entry.facility.getFacilityName());
-            if (entry.parent != null) {
-                entry.parent.children.remove(entry);
-            }
         }
         for (WatcherEntry child : entry.children) {
             removeKey(child, true);
         }
-    }
-
-    public void addListener(FileWatcherEventListener listener) {
-        listeners.add(listener);
-    }
-
-    public void removeListener(FileWatcherEventListener listener) {
-        listeners.remove(listener);
+        if (entry.parent != null) {
+            entry.parent.children.remove(entry);
+        }
     }
 }

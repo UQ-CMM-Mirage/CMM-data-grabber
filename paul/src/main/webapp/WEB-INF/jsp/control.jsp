@@ -3,24 +3,24 @@
 <html>
     <head>
         <title>Control Panel</title>
-        <c:if test="${proxyStatus == 'TRANSITIONAL' || grabberStatus == 'TRANSITIONAL'}">
+        <c:if test="${proxyStatus == 'TRANSITIONAL' || watcherStatus == 'TRANSITIONAL'}">
         	<meta http-equiv="refresh" content="2">
         </c:if>
     </head>
     <body>
         <h1>Control Panel</h1>
         <form method="post" action="control">
-        	Login: status - ${proxyState}
+        	ACLS Login Proxy: status - ${proxyState}
         	<button ${proxyStatus == 'OFF' ? '' : 'disabled="disabled"'}
         		    name="proxy" value="ON">Enable</button>
         	<button ${proxyStatus == 'ON' ? '' : 'disabled="disabled"'}
         		    name="proxy" value="OFF">Disable</button>
         	<br>
-        	Grabber: status - ${grabberState}
-        	<button ${grabberStatus == 'OFF' ? '' : 'disabled="disabled"'}
-        		    name="grabber" value="ON">Start</button>
-        	<button ${grabberStatus == 'ON' ? '' : 'disabled="disabled"'}
-        		    name="grabber" value="OFF">Stop</button>
+        	File Watcher: status - ${watcherState}
+        	<button ${watcherStatus == 'OFF' ? '' : 'disabled="disabled"'}
+        		    name="watcher" value="ON">Start</button>
+        	<button ${watcherStatus == 'ON' ? '' : 'disabled="disabled"'}
+        		    name="watcher" value="OFF">Stop</button>
         </form>
     </body>
 </html>
