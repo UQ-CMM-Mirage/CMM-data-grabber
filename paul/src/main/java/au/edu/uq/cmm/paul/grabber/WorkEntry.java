@@ -44,6 +44,7 @@ class WorkEntry implements Runnable {
     private final Map<File, GrabbedFile> files;
     private final Facility facility;
     private final Date timestamp;
+    private final boolean holdDatasetsWithNoUser;
     
     public WorkEntry(Paul services, FileWatcherEvent event, File baseFile) {
         this.facility = (Facility) event.getFacility();
@@ -53,6 +54,8 @@ class WorkEntry implements Runnable {
         this.baseFile = baseFile;
         this.files = new ConcurrentHashMap<File, GrabbedFile>();
         this.events = new LinkedBlockingDeque<FileWatcherEvent>();
+        this.holdDatasetsWithNoUser = 
+                services.getConfiguration().isHoldDatasetsWithNoUser();
         addEvent(event);
     }
 
@@ -128,9 +131,6 @@ class WorkEntry implements Runnable {
         Date now = new Date();
         FacilitySession session = fileGrabber.getStatusManager().
                 getLoginDetails(facility.getFacilityName(), timestamp.getTime());
-        if (session == null) {
-            session = FacilitySession.makeDummySession(facility, now);
-        }
         // Optionally lock the files, then grab them.
         // FIXME - note that we may not see all of the files ... see above.
         for (GrabbedFile file : files.values()) {
@@ -174,7 +174,14 @@ class WorkEntry implements Runnable {
 
     private void saveMetadata(Date now,FacilitySession session)
             throws IOException, JsonGenerationException {
-        // FIXME - support multiple files properly ...
+        if (session == null && !holdDatasetsWithNoUser) {
+            session = FacilitySession.makeDummySession(facility, now);
+        }
+        String userName = session == null ? null : session.getUserName();
+        String account = session == null ? null : session.getAccount();
+        String sessionUuid = session == null ? null : session.getSessionUuid();
+        String emailAddress = session == null ? null : session.getEmailAddress();
+        Date loginTime = session == null ? null : session.getLoginTime();
         File metadataFile = generateUniqueFile(".admin");
         List<DatafileMetadata> list = new ArrayList<DatafileMetadata>(files.size());
         for (GrabbedFile g : files.values()) {
@@ -188,9 +195,8 @@ class WorkEntry implements Runnable {
         }
         DatasetMetadata metadata = new DatasetMetadata(
                 baseFile.getAbsolutePath(), metadataFile.getAbsolutePath(), 
-                session.getUserName(), facility.getFacilityName(), 
-                facility.getId(), session.getAccount(), session.getEmailAddress(), 
-                now, session.getSessionUuid(), session.getLoginTime(), list);
+                userName, facility.getFacilityName(), facility.getId(), 
+                account, emailAddress, now, sessionUuid, loginTime, list);
         queueManager.addEntry(metadata, metadataFile);
     }
 

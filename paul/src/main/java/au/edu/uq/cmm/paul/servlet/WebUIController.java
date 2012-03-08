@@ -37,6 +37,8 @@ import au.edu.uq.cmm.aclslib.service.Service.State;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
+import au.edu.uq.cmm.paul.queue.QueueManager;
+import au.edu.uq.cmm.paul.queue.QueueManager.Slice;
 import au.edu.uq.cmm.paul.status.Facility;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
 import au.edu.uq.cmm.paul.watcher.FileWatcher;
@@ -258,49 +260,64 @@ public class WebUIController {
         return "config";
     }
     
-    @RequestMapping(value="/queue", method=RequestMethod.GET)
+    @RequestMapping(value="/queue/held", method=RequestMethod.GET)
+    public String held(Model model) {
+        model.addAttribute("queue", 
+                services.getQueueManager().getSnapshot(Slice.HELD));
+        return "held";
+    }
+    
+    @RequestMapping(value="/queue/ingestible", method=RequestMethod.GET)
     public String queue(Model model) {
-        model.addAttribute("queue", services.getQueueManager().getSnapshot());
+        model.addAttribute("queue", 
+                services.getQueueManager().getSnapshot(Slice.INGESTIBLE));
         return "queue";
     }
     
-    @RequestMapping(value="/queue", method=RequestMethod.POST, 
+    @RequestMapping(value="/queue/{sliceName:held|ingestible}", 
+            method=RequestMethod.POST, 
             params={"deleteAll"})
     public String deleteAll(Model model, 
+            @PathVariable String sliceName,
             @RequestParam(required=false) String mode, 
             @RequestParam(required=false) String confirmed) {
+        model.addAttribute("returnTo", sliceName);
         if (confirmed == null) {
             return "queueDeleteConfirmation";
         }
         boolean discard = mode.equals("discard");
-        int count = services.getQueueManager().deleteAll(discard);
+        QueueManager.Slice slice = QueueManager.Slice.valueOf(sliceName.toUpperCase());
+        int count = services.getQueueManager().deleteAll(discard, slice);
         String verb = discard ? "deleted" : "archived";
         model.addAttribute("message",
                 (count == 0 ? "No queue entries " :
                     count == 1 ? "1 queue entry " :
                         (count + " queue entries ")) + verb);
-        model.addAttribute("returnTo", "queue");
         return "ok";
     }
     
-    @RequestMapping(value="/queue", method=RequestMethod.POST, 
+    @RequestMapping(value="/queue/{sliceName:held|ingestible}", 
+            method=RequestMethod.POST, 
             params={"expire"})
     public String expire(Model model, 
+            @PathVariable String sliceName,
             @RequestParam(required=false) String mode, 
             @RequestParam(required=false) String confirmed,
             @RequestParam(required=false) String olderThan,
             @RequestParam(required=false) String period,
             @RequestParam(required=false) String unit) {
         Date cutoff = determineCutoff(model, tidy(olderThan), tidy(period), tidy(unit));
+        model.addAttribute("returnTo", sliceName);
         if (cutoff == null || confirmed == null) {
             return "queueExpiryForm";
         }
-        int count = services.getQueueManager().expire(mode.equals("discard"), cutoff);
+        QueueManager.Slice slice = QueueManager.Slice.valueOf(sliceName.toUpperCase());
+        int count = services.getQueueManager().expireAll(
+                mode.equals("discard"), slice, cutoff);
         model.addAttribute("message",
                 count == 0 ? "No queue entries expired" :
                     count == 1 ? "1 queue entry expired" :
                         (count + " queue entries expired"));
-        model.addAttribute("returnTo", "queue");
         return "ok";
     }
 

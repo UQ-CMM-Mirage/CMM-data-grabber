@@ -59,6 +59,7 @@ public class PaulConfiguration implements Configuration {
     private boolean expireByDeleting;
     private DataGrabberRestartPolicy dataGrabberRestartPolicy = 
             DataGrabberRestartPolicy.NO_AUTO_START;
+    private boolean holdDatasetsWithNoUser = true;
     
     
     public int getProxyPort() {
@@ -224,6 +225,14 @@ public class PaulConfiguration implements Configuration {
         this.dataGrabberRestartPolicy = dataGrabberRestartPolicy;
     }
 
+    public boolean isHoldDatasetsWithNoUser() {
+        return holdDatasetsWithNoUser;
+    }
+
+    public void setHoldDatasetsWithNoUser(boolean holdDatasetsWithNoUser) {
+        this.holdDatasetsWithNoUser = holdDatasetsWithNoUser;
+    }
+
     public static PaulConfiguration load(EntityManagerFactory entityManagerFactory) {
         return load(entityManagerFactory, false);
     }
@@ -327,6 +336,7 @@ public class PaulConfiguration implements Configuration {
             setQueueExpiryTime(staticConfig.getQueueExpiryTime());
             setExpireByDeleting(staticConfig.isExpireByDeleting());
             setDataGrabberRestartPolicy(staticConfig.getDataGrabberRestartPolicy());
+            setHoldDatasetsWithNoUser(staticConfig.isHoldDatasetsWithNoUser());
             for (FacilityConfig facilityConfig: staticConfig.getFacilityConfigs()) {
                 boolean found = false;
                 for (FacilityConfig f : facilities) {
