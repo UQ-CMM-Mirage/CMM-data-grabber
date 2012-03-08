@@ -2,10 +2,10 @@
 <%@ page session="false" %>
 <html>
     <head>
-        <title>Facility Login</title>
+        <title>Data Grabber - Facility Login</title>
     </head>
     <body>
-        <h1>Facility Login for the "${facilityName}" facility</h1>
+        <h1>ACLS Facility Login for "${facilityName}"</h1>
         
         ${message}
         

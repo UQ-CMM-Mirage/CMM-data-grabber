@@ -2,10 +2,10 @@
 <%@ page session="false" %>
 <html>
     <head>
-        <title>Paul Configuration</title>
+        <title>Data Grabber Configuration</title>
     </head>
     <body>
-        <h1>Paul Configuration</h1>
+        <h1>Data Grabber Configuration</h1>
         <ul>
           <li>Proxy host - ${config.proxyHost} : ${config.proxyPort}</li>
           <li>Server host - ${config.serverHost} : ${config.serverPort}</li>

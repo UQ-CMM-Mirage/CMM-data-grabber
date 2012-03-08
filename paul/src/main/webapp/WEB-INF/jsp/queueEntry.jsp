@@ -2,10 +2,10 @@
 <%@ page session="false" %>
 <html>
     <head>
-        <title>Paul Ingestion Queue Entry</title>
+        <title>Data Grabber Ingestion Queue Entry</title>
     </head>
     <body>
-        <h1>Paul Ingestion Queue Entry # ${entry.id}</h1>
+        <h1>Data Grabber Ingestion Queue Entry # ${entry.id}</h1>
         <ul>
              <li>Facility : ${entry.facilityName}</li>
              <li>User : ${entry.userName}</li>

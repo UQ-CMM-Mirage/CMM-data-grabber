@@ -2,10 +2,10 @@
 <%@ page session="false" %>
 <html>
     <head>
-        <title>Paul Queue Deletion</title>
+        <title>Data Grabber Queue Deletion</title>
     </head>
     <body>
-        <h1>Paul Queue Deletion</h1>
+        <h1>Data Grabber Queue Deletion</h1>
         <form name="form" method="POST" action="${returnTo}">
             Archive files <input id="archive" name="mode" type="radio" value="archive" checked="checked"
             	onclick="document.form.archive.checked = true; document.form.discard.checked = false;">

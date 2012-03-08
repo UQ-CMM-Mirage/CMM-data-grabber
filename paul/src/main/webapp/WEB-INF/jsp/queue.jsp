@@ -2,10 +2,10 @@
 <%@ page session="false" %>
 <html>
     <head>
-        <title>Paul Ingestion Queue Admin</title>
+        <title>Data Grabber Ingestion Queue Admin</title>
     </head>
     <body>
-        <h1>Paul Ingestion Queue Admin</h1>
+        <h1>Data Grabber Ingestion Queue Admin</h1>
         <c:if test="${!empty queue}">
             <form method="POST" action="ingestible">
         	    <button type="submit" name="deleteAll">Delete/Archive all entries</button>

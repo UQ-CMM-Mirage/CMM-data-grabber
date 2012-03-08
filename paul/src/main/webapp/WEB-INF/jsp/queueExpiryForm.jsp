@@ -2,10 +2,10 @@
 <%@ page session="false" %>
 <html>
     <head>
-        <title>Paul Queue Expiry</title>
+        <title>Data Grabber Queue Expiry</title>
     </head>
     <body>
-        <h1>Paul Queue Expiry</h1>
+        <h1>Data Grabber Queue Expiry</h1>
         
         ${message}
         

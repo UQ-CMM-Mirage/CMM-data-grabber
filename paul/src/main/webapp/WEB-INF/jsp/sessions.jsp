@@ -2,7 +2,7 @@
 <%@ page session="false" %>
 <html>
   <head>
-    <title>Facility Sessions</title>
+    <title>Data Grabber - ACLS Facility Sessions</title>
   </head>
   <body>
     <h1>ACLS Facility Sessions</h1>
