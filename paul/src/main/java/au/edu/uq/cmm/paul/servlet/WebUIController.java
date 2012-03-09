@@ -41,6 +41,7 @@ import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.queue.QueueManager.Slice;
 import au.edu.uq.cmm.paul.status.Facility;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
+import au.edu.uq.cmm.paul.status.UnknownUserException;
 import au.edu.uq.cmm.paul.watcher.FileWatcher;
 
 /**
@@ -321,8 +322,10 @@ public class WebUIController {
         return "ok";
     }
 
-    @RequestMapping(value="/queue/{entry:.+}", method=RequestMethod.GET)
+    @RequestMapping(value="/queue/{sliceName:held|ingestible}/{entry:.+}", 
+            method=RequestMethod.GET)
     public String queueEntry(@PathVariable String entry, Model model, 
+            @PathVariable String sliceName,
             HttpServletResponse response) 
             throws IOException {
         long id;
@@ -340,13 +343,17 @@ public class WebUIController {
             return null;
         }
         model.addAttribute("entry", metadata);
+        model.addAttribute("returnTo", sliceName);
+        model.addAttribute("userNames", services.getUserDetailsManager().getUserNames());
         return "queueEntry";
     }
     
-    @RequestMapping(value="/queue/{entry:.+}", method=RequestMethod.POST, 
+    @RequestMapping(value="/queue/{sliceName:held|ingestible}/{entry:.+}",
+            method=RequestMethod.POST, 
             params={"delete"})
-    public String queueEntryDelete(@PathVariable String entry, Model model, 
+    public String deleteQueueEntry(@PathVariable String entry, Model model, 
             HttpServletResponse response,
+            @PathVariable String sliceName,
             @RequestParam(required=false) String mode, 
             @RequestParam(required=false) String confirmed) 
             throws IOException {
@@ -362,7 +369,32 @@ public class WebUIController {
         services.getQueueManager().delete(id, discard);
         model.addAttribute("message",
                 "Queue entry " + (discard ? "deleted" : "archived"));
-        model.addAttribute("returnTo", "../queue");
+        model.addAttribute("returnTo", sliceName);
+        return "ok";
+    }
+    
+    @RequestMapping(value="/queue/{sliceName:held|ingestible}/{entry:.+}", 
+            method=RequestMethod.POST, 
+            params={"assign"})
+    public String assignQueueEntry(@PathVariable String entry, Model model, 
+            @PathVariable String sliceName,
+            HttpServletResponse response, @RequestParam String userName) 
+            throws IOException {
+        long id;
+        try {
+            id = Long.parseLong(entry);
+        } catch (NumberFormatException ex) {
+            LOG.debug("Rejected request with bad entry id");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return null;
+        }
+        if (userName.trim().isEmpty()) {
+            model.addAttribute("message", "Set the user name");
+            return "queueEntry";
+        }
+        services.getQueueManager().assignToUser(id, userName);
+        model.addAttribute("message", "Queue entry assigned to " + userName);
+        model.addAttribute("returnTo", ".");
         return "ok";
     }
     
@@ -389,6 +421,26 @@ public class WebUIController {
         model.addAttribute("contentType", 
                 metadata == null ? "application/octet-stream" : metadata.getMimeType());
         return "fileView";
+    }
+    
+    @RequestMapping(value="/users", method=RequestMethod.GET)
+    public String users(Model model) {
+        model.addAttribute("userNames", services.getUserDetailsManager().getUserNames());
+        return "users";
+    }
+
+    @RequestMapping(value="/users/{userName:.+}", method=RequestMethod.GET)
+    public String user(@PathVariable String userName, Model model,
+            HttpServletResponse response) 
+            throws IOException {
+        try {
+            model.addAttribute("user", services.getUserDetailsManager().lookupUser(userName));
+        } catch (UnknownUserException e) {
+            LOG.debug("Rejected request for security reasons");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return null;
+        }
+        return "user";
     }
     
     private DatafileMetadata fetchMetadata(File file) {

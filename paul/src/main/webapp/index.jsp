@@ -13,6 +13,7 @@
           <li><a href="atom/queue">Ingestion Queue Feed</a></li>
           <li><a href="queue/ingestible">Ingestion Queue Admin</a></li>
           <li><a href="queue/held">Hold Queue Admin</a></li>
+          <li><a href="users">Known Users</a></li>
         </ul>
     </body>
 </html>

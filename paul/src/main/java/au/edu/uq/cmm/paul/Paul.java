@@ -17,6 +17,7 @@ import au.edu.uq.cmm.paul.queue.QueueExpirer;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
 import au.edu.uq.cmm.paul.status.SessionDetailMapper;
+import au.edu.uq.cmm.paul.status.UserDetailsManager;
 import au.edu.uq.cmm.paul.watcher.FileWatcher;
 import au.edu.uq.cmm.paul.watcher.SambaUncPathnameMapper;
 import au.edu.uq.cmm.paul.watcher.UncPathnameMapper;
@@ -34,6 +35,7 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
     private QueueExpirer queueExpirer;
     private SessionDetailMapper sessionDetailMapper;
     private FileWatcher fileWatcher;
+    private UserDetailsManager userDetailsManager;
     
     public Paul(StaticConfiguration staticConfig,
             EntityManagerFactory entityManagerFactory)
@@ -67,6 +69,7 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
         fileWatcher = new FileWatcher(this);
         queueManager = new QueueManager(this);
         queueExpirer = new QueueExpirer(this);
+        userDetailsManager = new UserDetailsManager(this);
     }
 
     // FIXME - get rid if this?
@@ -147,6 +150,10 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
 
     public SessionDetailMapper getSessionDetailMapper() {
         return sessionDetailMapper;
+    }
+
+    public UserDetailsManager getUserDetailsManager() {
+        return userDetailsManager;
     }
 
     @Override

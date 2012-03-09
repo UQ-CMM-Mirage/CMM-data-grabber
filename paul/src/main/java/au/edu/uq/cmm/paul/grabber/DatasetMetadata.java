@@ -36,6 +36,7 @@ public class DatasetMetadata {
     private String accountName;
     private String sourceFilePathnameBase;
     private Date captureTimestamp;
+    private Date updateTimestamp;
     private Date sessionStartTimestamp;
     private String metadataFilePathname;
     private Long id;
@@ -180,5 +181,13 @@ public class DatasetMetadata {
 
     public void setFacilityId(Long facilityId) {
         this.facilityId = facilityId;
+    }
+
+    public Date getUpdateTimestamp() {
+        return updateTimestamp;
+    }
+
+    public void setUpdateTimestamp(Date updateTimestamp) {
+        this.updateTimestamp = updateTimestamp;
     }
 }

@@ -13,11 +13,11 @@
             </form>
             <ul>
                 <c:forEach items="${queue}" var="entry">
-                    <li><a href="${entry.id}">Entry # ${entry.id}</a> - 
+                    <li><a href="held/${entry.id}">Entry # ${entry.id}</a> - 
                         facility ${entry.facilityName}, 
                         base pathname ${entry.sourceFilePathnameBase}
                         captured: ${entry.captureTimestamp}
-                        <form method="POST" action="queue/${entry.id}">
+                        <form method="POST" action="held/${entry.id}">
                         	<button type="submit" name="mode" value="discard">Delete</button>
                         	<button type="submit" name="mode" value="archive">Archive</button>
                         	<input type="hidden" name="confirmed">

@@ -169,8 +169,6 @@ public class QueueManager {
         }
     }
 
-    
-
     private void doDelete(boolean discard, EntityManager entityManager,
             DatasetMetadata dataset) {
         // FIXME - should we do the file removal after committing the
@@ -206,6 +204,25 @@ public class QueueManager {
             LOG.info("File " + pathname + " deleted from queue area");
         } else {
             LOG.info("File " + pathname + " not deleted from queue area");
+        }
+    }
+
+    public void assignToUser(long id, String userName) {
+        EntityManager em = services.getEntityManagerFactory().createEntityManager();
+        try {
+            em.getTransaction().begin();
+            TypedQuery<DatasetMetadata> query =
+                    em.createQuery("from DatasetMetadata d where d.id = :id", 
+                    DatasetMetadata.class);
+            query.setParameter("id", id);
+            DatasetMetadata dataset = query.getSingleResult();
+            dataset.setUserName(userName);
+            dataset.setUpdateTimestamp(new Date());
+            em.getTransaction().commit();
+        } catch (NoResultException ex) {
+            LOG.info("Record not found", ex);
+        } finally {
+            em.close();
         }
     }
 
