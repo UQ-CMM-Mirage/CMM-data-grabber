@@ -200,6 +200,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
                 grabber.startStartup();
                 addKeys(facility, local, null);
                 facility.setStatus(Status.ON);
+                facility.setMessage("");
             } catch (IOException ex) {
                 LOG.error("IOException occured while enabling watcher for '" + 
                         name + "'", ex);
@@ -223,6 +224,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
                 }
             }
             facility.setStatus(disable ? Status.DISABLED : Status.OFF);
+            facility.setMessage("");
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
         }
