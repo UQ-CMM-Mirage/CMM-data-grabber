@@ -7,8 +7,9 @@
     <body>
         <h1>Data Grabber Configuration</h1>
         <ul>
-          <li>Proxy host - ${config.proxyHost} : ${config.proxyPort}</li>
-          <li>Server host - ${config.serverHost} : ${config.serverPort}</li>
+          <li>ACLS Proxy host (i.e. this one) - ${config.proxyHost} : ${config.proxyPort}</li>
+          <li>ACLS Server host - ${config.serverHost} : ${config.serverPort}</li>
+          <li>Use vMFL with ACLS Server - ${config.useVmfl}</li>
           <li>Base file URL - ${config.baseFileUrl}</li>  
           <li>Queue parameters:
             <ul>

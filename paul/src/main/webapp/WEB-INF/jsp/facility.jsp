@@ -8,6 +8,7 @@
 	<h1>Facility Configuration / Controls for ${facility.facilityName}</h1>
 	<ul>
 		<li>DNS name / IP address - ${facility.address}</li>
+		<li>Local Host ID - ${facility.localHostId}</li>
 		<li>Drive name - ${facility.driveName}</li>
 		<li>Folder name - ${facility.folderName}</li>
 		<li>Access name - ${facility.accessName}</li>
