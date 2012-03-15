@@ -2,14 +2,14 @@
 <%@ page session="false" %>
 <html>
     <head>
-        <title>Paul Ingestion Queue Expiry</title>
+        <title>Data Grabber Queue Expiry</title>
     </head>
     <body>
-        <h1>Paul Ingestion Queue Expiry</h1>
+        <h1>Data Grabber Queue Expiry</h1>
         
         ${message}
         
-        <form name="form" method="POST" action="queue">
+        <form name="form" method="POST" action="${returnTo}">
           <c:if test="${empty computedDate}">
         	Older than :
             <input name="olderThan" type="text" value="${param.olderThan}">
@@ -30,14 +30,14 @@
               <br>
             
               <button type="submit" name="expire">Submit</button>
-        	  <button type="button" onclick="window.location = 'queue'">Cancel</button>
+        	  <button type="button" onclick="window.location = '${returnTo}'">Cancel</button>
             </c:if>
         	<c:if test="${!empty computedDate}">
         	  Confirmation - expire all files captured before ${computedDate}.
         	  <br>
               <button type="submit" name="expire">
         		  Yes - do it now</button>
-        	  <button type="button" onclick="window.location = 'queue'">
+        	  <button type="button" onclick="window.location = '${returnTo}'">
         	  	  No - get me out of here</button>
         	  <input type="hidden" name="confirmed">
         	  <input type="hidden" name="olderThan" value="${param.olderThan}">

@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
 
-  <context-param>
-    <param-name>contextConfigLocation</param-name>
-    <param-value>/WEB-INF/spring/persistence-context.xml</param-value>
-  </context-param>
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>/WEB-INF/spring/persistence-context.xml</param-value>
+	</context-param>
 
-  <listener>
-    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
-  </listener>
+	<listener>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
 
-  <servlet>
+	<servlet>
 		<servlet-name>Paul</servlet-name>
 		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
 		<init-param>
@@ -20,22 +20,31 @@
 			<param-value>/WEB-INF/spring/paul-context.xml</param-value>
 		</init-param>
 		<load-on-startup>1</load-on-startup>
-  </servlet>
-  
-  <servlet-mapping>
-	    <servlet-name>Paul</servlet-name>
-		<url-pattern>/</url-pattern>
-  </servlet-mapping>
-	
+	</servlet>
 
-  <servlet id="abdera">
-    <servlet-name>Abdera</servlet-name>  
-    <servlet-class>au.edu.uq.cmm.paul.queue.QueueFeedServlet</servlet-class>
-  </servlet>
-  <servlet-mapping id="abdera-mapping">
-    <servlet-name>Abdera</servlet-name>
-    <url-pattern>/atom/*</url-pattern>
-  </servlet-mapping>
-	
+	<servlet-mapping>
+		<servlet-name>Paul</servlet-name>
+		<url-pattern>/</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>default</servlet-name>
+		<url-pattern>/js/*</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>default</servlet-name>
+		<url-pattern>/css/*</url-pattern>
+	</servlet-mapping>
+
+	<servlet id="abdera">
+		<servlet-name>Abdera</servlet-name>
+		<servlet-class>au.edu.uq.cmm.paul.queue.QueueFeedServlet</servlet-class>
+	</servlet>
+	<servlet-mapping id="abdera-mapping">
+		<servlet-name>Abdera</servlet-name>
+		<url-pattern>/atom/*</url-pattern>
+	</servlet-mapping>
+
 	<display-name>Paul the file grabber</display-name>
 </web-app>

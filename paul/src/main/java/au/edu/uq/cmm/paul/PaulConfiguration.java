@@ -59,6 +59,8 @@ public class PaulConfiguration implements Configuration {
     private boolean expireByDeleting;
     private DataGrabberRestartPolicy dataGrabberRestartPolicy = 
             DataGrabberRestartPolicy.NO_AUTO_START;
+    private boolean holdDatasetsWithNoUser = true;
+    private boolean useVmfl = true;
     
     
     public int getProxyPort() {
@@ -224,6 +226,22 @@ public class PaulConfiguration implements Configuration {
         this.dataGrabberRestartPolicy = dataGrabberRestartPolicy;
     }
 
+    public boolean isHoldDatasetsWithNoUser() {
+        return holdDatasetsWithNoUser;
+    }
+
+    public void setHoldDatasetsWithNoUser(boolean holdDatasetsWithNoUser) {
+        this.holdDatasetsWithNoUser = holdDatasetsWithNoUser;
+    }
+
+    public boolean isUseVmfl() {
+        return this.useVmfl;
+    }
+
+    public void setUseVmfl(boolean useVmfl) {
+        this.useVmfl = useVmfl;
+    }
+
     public static PaulConfiguration load(EntityManagerFactory entityManagerFactory) {
         return load(entityManagerFactory, false);
     }
@@ -288,6 +306,15 @@ public class PaulConfiguration implements Configuration {
         }
         return null;
     }
+    
+    public FacilityConfig lookupFacilityByLocalHostId(String localHostId) {
+        for (FacilityConfig f : facilities) {
+            if (localHostId.equals(f.getLocalHostId())) {
+                return f;
+            }
+        }
+        return null;
+    }
 
     @Transient
     public boolean isEmpty() {
@@ -327,6 +354,8 @@ public class PaulConfiguration implements Configuration {
             setQueueExpiryTime(staticConfig.getQueueExpiryTime());
             setExpireByDeleting(staticConfig.isExpireByDeleting());
             setDataGrabberRestartPolicy(staticConfig.getDataGrabberRestartPolicy());
+            setHoldDatasetsWithNoUser(staticConfig.isHoldDatasetsWithNoUser());
+            setUseVmfl(staticConfig.isUseVmfl());
             for (FacilityConfig facilityConfig: staticConfig.getFacilityConfigs()) {
                 boolean found = false;
                 for (FacilityConfig f : facilities) {
@@ -360,5 +389,4 @@ public class PaulConfiguration implements Configuration {
     public void setId(Long id) {
         this.id = id;
     }
-
 }
