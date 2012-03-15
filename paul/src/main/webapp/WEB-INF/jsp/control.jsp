@@ -2,13 +2,13 @@
 <%@ page session="false" %>
 <html>
     <head>
-        <title>Control Panel</title>
+        <title>Data Grabber Control Panel</title>
         <c:if test="${proxyStatus == 'TRANSITIONAL' || watcherStatus == 'TRANSITIONAL'}">
         	<meta http-equiv="refresh" content="2">
         </c:if>
     </head>
     <body>
-        <h1>Control Panel</h1>
+        <h1>Data Grabber Control Panel</h1>
         <form method="post" action="control">
         	ACLS Login Proxy: status - ${proxyState}
         	<button ${proxyStatus == 'OFF' ? '' : 'disabled="disabled"'}

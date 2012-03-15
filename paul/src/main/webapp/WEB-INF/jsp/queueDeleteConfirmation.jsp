@@ -2,11 +2,11 @@
 <%@ page session="false" %>
 <html>
     <head>
-        <title>Paul Ingestion Queue Deletion</title>
+        <title>Data Grabber Queue Deletion</title>
     </head>
     <body>
-        <h1>Paul Ingestion Queue Deletion</h1>
-        <form name="form" method="POST" action="queue">
+        <h1>Data Grabber Queue Deletion</h1>
+        <form name="form" method="POST" action="${returnTo}">
             Archive files <input id="archive" name="mode" type="radio" value="archive" checked="checked"
             	onclick="document.form.archive.checked = true; document.form.discard.checked = false;">
             <br>
@@ -15,7 +15,7 @@
             <br>
         	<button type="submit" name="deleteAll">
         		Yes - do it now</button>
-        	<button type="button" onclick="window.location = 'queue'">
+        	<button type="button" onclick="window.location = '${returnTo}'">
         		No - get me out of here</button>
         	<input type="hidden" name="confirmed">
         </form>

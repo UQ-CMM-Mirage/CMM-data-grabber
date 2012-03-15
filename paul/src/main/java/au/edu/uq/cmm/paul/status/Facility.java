@@ -50,6 +50,7 @@ public class Facility implements FacilityConfig {
     private String accessName;
     private String folderName;
     private String facilityName;
+    private String localHostId;
     private boolean useTimer;
     private String facilityDescription;
     private boolean dummy;
@@ -74,6 +75,7 @@ public class Facility implements FacilityConfig {
         accessPassword = facilityConfig.getAccessPassword();
         accessName = facilityConfig.getAccessName();
         facilityName = facilityConfig.getFacilityName();
+        localHostId = facilityConfig.getLocalHostId();
         folderName = facilityConfig.getFolderName();
         useTimer = facilityConfig.isUseTimer();
         facilityDescription = facilityConfig.getFacilityDescription();
@@ -152,6 +154,14 @@ public class Facility implements FacilityConfig {
 
     public void setFacilityName(String name) {
         this.facilityName = name;
+    }
+
+    public String getLocalHostId() {
+        return localHostId;
+    }
+
+    public void setLocalHostId(String localHostId) {
+        this.localHostId = localHostId;
     }
 
     public void setFacilityDescription(String desc) {

@@ -2,22 +2,22 @@
 <%@ page session="false" %>
 <html>
     <head>
-        <title>Data Grabber Ingestion Queue Admin</title>
+        <title>Data Grabber Hold Queue Admin</title>
     </head>
     <body>
-        <h1>Data Grabber Ingestion Queue Admin</h1>
+        <h1>Data Grabber Hold Queue Admin</h1>
         <c:if test="${!empty queue}">
-            <form method="POST" action="ingestible">
+            <form method="POST" action="held">
         	    <button type="submit" name="deleteAll">Delete/Archive all entries</button>
         	    <button type="submit" name="expire">Expire entries</button>
             </form>
             <ul>
                 <c:forEach items="${queue}" var="entry">
-                    <li><a href="ingestible/${entry.id}">Entry # ${entry.id}</a> - 
+                    <li><a href="held/${entry.id}">Entry # ${entry.id}</a> - 
                         facility ${entry.facilityName}, 
-                        user : ${entry.userName}, 
+                        base pathname ${entry.sourceFilePathnameBase}
                         captured: ${entry.captureTimestamp}
-                        <form method="POST" action="ingestible/${entry.id}">
+                        <form method="POST" action="held/${entry.id}">
                         	<button type="submit" name="mode" value="discard">Delete</button>
                         	<button type="submit" name="mode" value="archive">Archive</button>
                         	<input type="hidden" name="confirmed">
@@ -28,8 +28,7 @@
             </ul>
         </c:if>
         <c:if test="${empty queue}">
-            Ingestion queue is empty
+            Hold queue is empty
         </c:if>
-        
     </body>
 </html>

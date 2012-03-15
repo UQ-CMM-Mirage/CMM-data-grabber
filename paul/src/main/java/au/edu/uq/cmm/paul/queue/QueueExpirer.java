@@ -54,7 +54,8 @@ public class QueueExpirer extends MonitoredThreadServiceBase {
         long millis = System.currentTimeMillis() - expiryTime * 60 * 1000;
         Date cutoff = new Date(millis);
         LOG.info("Expiry cutoff date/time is " + cutoff);
-        int nosExpired = queueManager.expire(expireByDeleting, cutoff);
+        int nosExpired = queueManager.expireAll(
+                expireByDeleting, QueueManager.Slice.ALL, cutoff);
         LOG.info("Expired " + nosExpired + " queue entries");
     }
 

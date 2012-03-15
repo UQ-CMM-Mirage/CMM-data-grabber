@@ -2,13 +2,14 @@
 <%@ page session="false" %>
 <html>
     <head>
-        <title>Paul Configuration</title>
+        <title>Data Grabber Configuration</title>
     </head>
     <body>
-        <h1>Paul Configuration</h1>
+        <h1>Data Grabber Configuration</h1>
         <ul>
-          <li>Proxy host - ${config.proxyHost} : ${config.proxyPort}</li>
-          <li>Server host - ${config.serverHost} : ${config.serverPort}</li>
+          <li>ACLS Proxy host (i.e. this one) - ${config.proxyHost} : ${config.proxyPort}</li>
+          <li>ACLS Server host - ${config.serverHost} : ${config.serverPort}</li>
+          <li>Use vMFL with ACLS Server - ${config.useVmfl}</li>
           <li>Base file URL - ${config.baseFileUrl}</li>  
           <li>Queue parameters:
             <ul>
@@ -19,7 +20,8 @@
               <li>Expire by deleting - ${config.expireByDeleting}</li>
             </ul>
           </li>
-          <li>Data Grabber restart policy - ${config.dataGrabberRestartPolicy}
+          <li>Data Grabber restart policy - ${config.dataGrabberRestartPolicy}</li>
+          <li>Hold datasets with no user information - ${config.holdDatasetsWithNoUser}
           <li>Clients use 'project' - ${config.useProject}</li>
           <li>Facility recheck interval - ${config.facilityRecheckInterval} (minutes)</li>
           <li>Atom feed parameters for ingestion feed:

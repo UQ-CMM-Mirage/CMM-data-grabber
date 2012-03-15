@@ -2,10 +2,10 @@
 <%@ page session="false" %>
 <html>
     <head>
-        <title>Operation Succeeded</title>
+        <title>Data Grabber Operation Succeeded</title>
     </head>
     <body>
-        <h1>Operation Succeeded</h1>
+        <h1>Data Grabber Operation Succeeded</h1>
         ${message}
         <br>
         <button onclick="window.location = '${returnTo}'">OK</button>

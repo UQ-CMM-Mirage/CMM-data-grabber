@@ -39,16 +39,18 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
     private static final String ID_PREFIX = "urn:uuid:";
 
     private EntityManagerFactory entityManagerFactory;
-    private PaulConfiguration configuration;
+    private PaulConfiguration config;
+    private boolean holdDatasetsWithNoUser;
     
     public QueueFeedAdapter(EntityManagerFactory entityManagerFactory) {
         this.entityManagerFactory = entityManagerFactory;
-        this.configuration = PaulConfiguration.load(entityManagerFactory);
+        config = PaulConfiguration.load(entityManagerFactory);
+        holdDatasetsWithNoUser = config.isHoldDatasetsWithNoUser();
     }
     
     @Override
     public String getTitle(RequestContext request) {
-        return configuration.getFeedTitle();
+        return config.getFeedTitle();
     }
 
     @Override
@@ -82,17 +84,21 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
             if (id != null) {
                 LOG.debug("Fetching from id " + id);
                 query = entityManager.createQuery(
-                        "from DatasetMetadata a where a.id <= :id order by a.id desc", 
+                        "from DatasetMetadata m where m.id <= :id " +
+                        (holdDatasetsWithNoUser ? "and m.userName is not null " : "") +
+                        "order by m.updateTimestamp desc, m.captureTimestamp desc", 
                         DatasetMetadata.class).setParameter("id", id);
             } else {
                 LOG.debug("Fetching from start of queue");
                 query = entityManager.createQuery(
-                        "from DatasetMetadata a order by a.id desc", 
+                        "from DatasetMetadata m " +
+                        (holdDatasetsWithNoUser ? "where m.userName is not null " : "") +
+                        "order m.updateTimestamp desc, m.captureTimestamp desc", 
                         DatasetMetadata.class);
             }
-            query.setMaxResults(configuration.getFeedPageSize() + 1);
+            query.setMaxResults(config.getFeedPageSize() + 1);
             List<DatasetMetadata> res = new ArrayList<DatasetMetadata>(query.getResultList());
-            LOG.debug("Max page size " + configuration.getFeedPageSize() +
+            LOG.debug("Max page size " + config.getFeedPageSize() +
                       ", fetched " + res.size());
             return res;
         } finally {
@@ -156,7 +162,7 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
     @Override
     public String getAuthor(RequestContext rc)
             throws ResponseContextException {
-        return configuration.getFeedAuthor();
+        return config.getFeedAuthor();
     }
     
     @Override
@@ -176,13 +182,13 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
             throws ResponseContextException {
         String res = super.addEntryDetails(request, entry, feedIri, record);
         for (DatafileMetadata datafile : record.getDatafiles()) {
-            entry.addLink(configuration.getBaseFileUrl() + 
+            entry.addLink(config.getBaseFileUrl() + 
                     new File(datafile.getCapturedFilePathname()).getName(),
                     "enclosure", datafile.getMimeType(), 
                     datafile.getSourceFilePathname(),
                     "en", datafile.getFileSize());
         }
-        entry.addLink(configuration.getBaseFileUrl() + 
+        entry.addLink(config.getBaseFileUrl() + 
                 new File(record.getMetadataFilePathname()).getName(),
                 "enclosure");
         return res;
@@ -190,7 +196,7 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
 
     @Override
     public String getId(RequestContext rc) {
-        return configuration.getFeedId();
+        return config.getFeedId();
     }
     
     /**
@@ -204,10 +210,10 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
         Feed feed = factory.newFeed();
         feed.setId(getId(request));
         feed.setTitle(getTitle(request));
-        feed.addLink(configuration.getFeedUrl(), "self");
+        feed.addLink(config.getFeedUrl(), "self");
         Person author = factory.newAuthor();
         author.setName(getAuthor(request));
-        String email = configuration.getFeedAuthorEmail();
+        String email = config.getFeedAuthorEmail();
         if (email != null && !email.isEmpty()) {
             author.setEmail(email);
         }
@@ -230,8 +236,8 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
             int count = 0;
             for (DatasetMetadata record : entries) {
                 LOG.debug("count = " + count + ", entry id = " + record.getId());
-                if (++count > configuration.getFeedPageSize()) {
-                    String nextPageUrl = configuration.getFeedUrl() +
+                if (++count > config.getFeedPageSize()) {
+                    String nextPageUrl = config.getFeedUrl() +
                             "?from=" + record.getId();
                     LOG.debug("Adding 'next' link - " + nextPageUrl);
                     feed.addLink(nextPageUrl, "next");

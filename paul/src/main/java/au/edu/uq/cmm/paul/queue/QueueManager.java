@@ -30,6 +30,10 @@ import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
  * @author scrawley
  */
 public class QueueManager {
+    public static enum Slice {
+        HELD, INGESTIBLE, ALL
+    }
+    
     private static final Logger LOG = Logger.getLogger(QueueManager.class);
     private Paul services;
 
@@ -37,10 +41,20 @@ public class QueueManager {
         this.services = services;
     }
 
-    public List<DatasetMetadata> getSnapshot() {
+    public List<DatasetMetadata> getSnapshot(Slice slice) {
         EntityManager em = services.getEntityManagerFactory().createEntityManager();
         try {
-            return em.createQuery("from DatasetMetadata a order by a.id", 
+            String whereClause = "";
+            switch (slice) {
+            case HELD:
+                whereClause = "where m.userName is null ";
+                break;
+            case INGESTIBLE:
+                whereClause = "where m.userName is not null ";
+                break;
+            }
+            return em.createQuery("from DatasetMetadata m " +
+            		whereClause + "order by m.id", 
                     DatasetMetadata.class).getResultList();
         } finally {
             em.close();
@@ -80,13 +94,22 @@ public class QueueManager {
         }
     }
 
-    public int expire(boolean discard, Date olderThan) {
+    public int expireAll(boolean discard, Slice slice, Date olderThan) {
         EntityManager em = services.getEntityManagerFactory().createEntityManager();
         try {
             em.getTransaction().begin();
+            String andPart = "";
+            switch (slice) {
+            case HELD:
+                andPart = " and m.userName is null";
+                break;
+            case INGESTIBLE:
+                andPart = " and m.userName is not null";
+                break;
+            }
             TypedQuery<DatasetMetadata> query = 
                     em.createQuery("from DatasetMetadata d " +
-                    		"where d.captureTimestamp < :cutoff", 
+                    		"where d.captureTimestamp < :cutoff" + andPart, 
                     DatasetMetadata.class);
             query.setParameter("cutoff", olderThan);
             List<DatasetMetadata> datasets = query.getResultList();
@@ -100,12 +123,21 @@ public class QueueManager {
         }
     }
 
-    public int deleteAll(boolean discard) {
+    public int deleteAll(boolean discard, Slice slice) {
         EntityManager em = services.getEntityManagerFactory().createEntityManager();
         try {
             em.getTransaction().begin();
+            String whereClause = "";
+            switch (slice) {
+            case HELD:
+                whereClause = " where m.userName is null";
+                break;
+            case INGESTIBLE:
+                whereClause = " where m.userName is not null";
+                break;
+            }
             List<DatasetMetadata> datasets = 
-                    em.createQuery("from DatasetMetadata", 
+                    em.createQuery("from DatasetMetadata m" + whereClause, 
                     DatasetMetadata.class).getResultList();
             for (DatasetMetadata dataset : datasets) {
                 doDelete(discard, em, dataset);
@@ -136,8 +168,6 @@ public class QueueManager {
             em.close();
         }
     }
-
-    
 
     private void doDelete(boolean discard, EntityManager entityManager,
             DatasetMetadata dataset) {
@@ -174,6 +204,25 @@ public class QueueManager {
             LOG.info("File " + pathname + " deleted from queue area");
         } else {
             LOG.info("File " + pathname + " not deleted from queue area");
+        }
+    }
+
+    public void assignToUser(long id, String userName) {
+        EntityManager em = services.getEntityManagerFactory().createEntityManager();
+        try {
+            em.getTransaction().begin();
+            TypedQuery<DatasetMetadata> query =
+                    em.createQuery("from DatasetMetadata d where d.id = :id", 
+                    DatasetMetadata.class);
+            query.setParameter("id", id);
+            DatasetMetadata dataset = query.getSingleResult();
+            dataset.setUserName(userName);
+            dataset.setUpdateTimestamp(new Date());
+            em.getTransaction().commit();
+        } catch (NoResultException ex) {
+            LOG.info("Record not found", ex);
+        } finally {
+            em.close();
         }
     }
 
