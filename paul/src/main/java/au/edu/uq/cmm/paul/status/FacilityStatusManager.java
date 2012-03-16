@@ -11,10 +11,10 @@ import javax.persistence.TypedQuery;
 
 import org.apache.log4j.Logger;
 
-import au.edu.uq.cmm.aclslib.proxy.AclsLoginException;
 import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEvent;
 import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEventListener;
 import au.edu.uq.cmm.aclslib.proxy.AclsLoginEvent;
+import au.edu.uq.cmm.aclslib.proxy.AclsLoginException;
 import au.edu.uq.cmm.aclslib.proxy.AclsLogoutEvent;
 import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
 import au.edu.uq.cmm.paul.Paul;
