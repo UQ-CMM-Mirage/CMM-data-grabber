@@ -196,7 +196,6 @@ public class WebUIController {
             params={"startSession"})
     public String startSession(@PathVariable String facilityName, 
             @RequestParam(required=false) String userName, 
-            @RequestParam(required=false) String password,
             @RequestParam(required=false) String account,
             Model model, HttpServletResponse response, HttpServletRequest request) 
     throws IOException {
@@ -204,6 +203,7 @@ public class WebUIController {
         facilityName = tidy(facilityName);
         model.addAttribute("facilityName", facilityName);
         
+        String password = request.getParameter("password");
         if ((userName = tidy(userName)).isEmpty() ||
                 (password = tidy(password)).isEmpty()) {
             // Phase 1 - user must fill in user name and password
