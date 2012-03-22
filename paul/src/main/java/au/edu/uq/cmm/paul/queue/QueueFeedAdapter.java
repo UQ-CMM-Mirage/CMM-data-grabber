@@ -93,7 +93,7 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
                 query = entityManager.createQuery(
                         "from DatasetMetadata m " +
                         (holdDatasetsWithNoUser ? "where m.userName is not null " : "") +
-                        "order m.updateTimestamp desc, m.captureTimestamp desc", 
+                        "order by m.updateTimestamp desc, m.captureTimestamp desc", 
                         DatasetMetadata.class);
             }
             query.setMaxResults(config.getFeedPageSize() + 1);

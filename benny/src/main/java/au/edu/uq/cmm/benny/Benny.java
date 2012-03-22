@@ -92,7 +92,7 @@ public class Benny extends HttpServlet {
             password = credentials[1];
         }
         try {
-            LOG.debug("checking user='" + user + "', password='" + password + "'");
+            LOG.debug("checking user='" + user + "', password='XXXXXX'");
             boolean ok = authenticator.authenticate(user, password);
             if (ok) {
                 respond(resp, HttpServletResponse.SC_OK, "Credentials accepted");
