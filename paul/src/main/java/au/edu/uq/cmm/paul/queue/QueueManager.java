@@ -11,7 +11,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 
-import org.apache.log4j.Logger;
+import org.slf4j.*;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonGenerator;
@@ -34,7 +34,7 @@ public class QueueManager {
         HELD, INGESTIBLE, ALL
     }
     
-    private static final Logger LOG = Logger.getLogger(QueueManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(QueueManager.class);
     private Paul services;
 
     public QueueManager(Paul services) {

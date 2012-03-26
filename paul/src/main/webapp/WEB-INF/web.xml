@@ -26,6 +26,45 @@
 		<servlet-name>Paul</servlet-name>
 		<url-pattern>/</url-pattern>
 	</servlet-mapping>
+	
+	<login-config>
+		<auth-method>FORM</auth-method>
+		<realm-name>CombinedRealm</realm-name>
+		<form-login-config>
+			<form-login-page>/login</form-login-page>
+			<form-error-page>/login</form-error-page>
+		</form-login-config>
+	</login-config>
+		
+	<security-constraint>
+		<web-resource-collection>
+			<web-resource-name>Admin Interfaces</web-resource-name>
+			<url-pattern>/admin</url-pattern>
+			<url-pattern>/config</url-pattern>
+			<url-pattern>/control</url-pattern>
+			<url-pattern>/facilities/*</url-pattern>
+			<url-pattern>/sessions</url-pattern>
+			<url-pattern>/queue/ingestible</url-pattern>
+			<url-pattern>/queue/held</url-pattern>
+			<url-pattern>/users</url-pattern>
+			<url-pattern>/users/*</url-pattern>
+		</web-resource-collection>
+		<auth-constraint>
+			<role-name>ROLE_ADMIN</role-name>
+		</auth-constraint>
+	</security-constraint>
+		
+	<security-constraint>
+		<web-resource-collection>
+			<web-resource-name>User Interfaces</web-resource-name>
+			<url-pattern>/sessions</url-pattern>
+			<url-pattern>/queue/held</url-pattern>
+			<url-pattern>/claim</url-pattern>
+		</web-resource-collection>
+		<auth-constraint>
+			<role-name>ROLE_USER</role-name>
+		</auth-constraint>
+	</security-constraint>
 
 	<servlet-mapping>
 		<servlet-name>default</servlet-name>

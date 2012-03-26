@@ -11,7 +11,7 @@ import javax.persistence.TypedQuery;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
+import org.slf4j.*;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
 import org.joda.time.Hours;
@@ -56,7 +56,8 @@ public class WebUIController {
         ON, OFF, TRANSITIONAL
     }
     
-    private static final Logger LOG = Logger.getLogger(WebUIController.class);
+    private static final Logger LOG = 
+            LoggerFactory.getLogger(WebUIController.class);
 
     private static DateTimeFormatter[] FORMATS = new DateTimeFormatter[] {
         ISODateTimeFormat.dateHourMinuteSecond(),
@@ -252,7 +253,23 @@ public class WebUIController {
                         "Account selection failed: " + ex.getMessage());
             }
         }
-        return "facilityLoginForm";
+        return "facilityLogin";
+    }
+    
+//    @RequestMapping(value="/mirage", method=RequestMethod.GET)
+//    public String mirage(Model model, HttpServletResponse response) {
+//        response.sendRedirect(services.getConfiguration().getMirageUrl());
+//        return null;
+//    }
+    
+    @RequestMapping(value="/login", method=RequestMethod.GET)
+    public String login(Model model) {
+        return "grabberLogin";
+    }
+    
+    @RequestMapping(value="/admin", method=RequestMethod.GET)
+    public String admin(Model model) {
+        return "admin";
     }
     
     @RequestMapping(value="/config", method=RequestMethod.GET)

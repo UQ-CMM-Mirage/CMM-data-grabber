@@ -9,7 +9,7 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 
-import org.apache.log4j.Logger;
+import org.slf4j.*;
 
 import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEvent;
 import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEventListener;
@@ -28,7 +28,7 @@ import au.edu.uq.cmm.paul.grabber.FileGrabber;
  * @author scrawley
  */
 public class FacilityStatusManager implements AclsFacilityEventListener {
-    private static final Logger LOG = Logger.getLogger(FileGrabber.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FileGrabber.class);
     // FIXME - the facility statuses need to be persisted.
     private AclsProxy proxy;
     private EntityManagerFactory emf;

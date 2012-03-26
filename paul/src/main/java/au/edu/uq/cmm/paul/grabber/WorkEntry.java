@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.slf4j.*;
 import org.codehaus.jackson.JsonGenerationException;
 
 import au.edu.uq.cmm.paul.Paul;
@@ -35,7 +35,7 @@ import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
  * @author scrawley
  */
 class WorkEntry implements Runnable {
-    private static final Logger LOG = Logger.getLogger(WorkEntry.class);
+    private static final Logger LOG = LoggerFactory.getLogger(WorkEntry.class);
 
     private final FileGrabber fileGrabber;
     private final QueueManager queueManager;

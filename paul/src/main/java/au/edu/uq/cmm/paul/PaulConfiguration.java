@@ -18,7 +18,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import org.apache.log4j.Logger;
+import org.slf4j.*;
 import org.hibernate.annotations.GenericGenerator;
 
 import au.edu.uq.cmm.aclslib.config.Configuration;
@@ -34,7 +34,7 @@ import au.edu.uq.cmm.paul.status.Facility;
 @Entity
 @Table(name = "CONFIGURATION")
 public class PaulConfiguration implements Configuration {
-    private static final Logger LOG = Logger.getLogger(PaulConfiguration.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PaulConfiguration.class);
     
     private Long id;
     private List<Facility> facilities = new ArrayList<Facility>();

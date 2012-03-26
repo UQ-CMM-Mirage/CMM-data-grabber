@@ -2,7 +2,7 @@ package au.edu.uq.cmm.paul.queue;
 
 import java.util.Date;
 
-import org.apache.log4j.Logger;
+import org.slf4j.*;
 
 import au.edu.uq.cmm.aclslib.service.MonitoredThreadServiceBase;
 import au.edu.uq.cmm.paul.Paul;
@@ -15,7 +15,7 @@ import au.edu.uq.cmm.paul.PaulConfiguration;
  * @author scrawley
  */
 public class QueueExpirer extends MonitoredThreadServiceBase {
-    private static final Logger LOG = Logger.getLogger(QueueExpirer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(QueueExpirer.class);
 
     private Paul services;
 
