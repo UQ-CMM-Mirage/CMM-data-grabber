@@ -256,11 +256,13 @@ public class WebUIController {
         return "facilityLogin";
     }
     
-//    @RequestMapping(value="/mirage", method=RequestMethod.GET)
-//    public String mirage(Model model, HttpServletResponse response) {
-//        response.sendRedirect(services.getConfiguration().getMirageUrl());
-//        return null;
-//    }
+    @RequestMapping(value="/mirage", method=RequestMethod.GET)
+    public String mirage(Model model, HttpServletResponse response) 
+            throws IOException {
+        response.sendRedirect(
+                services.getConfiguration().getPrimaryRepositoryUrl());
+        return null;
+    }
     
     @RequestMapping(value="/login", method=RequestMethod.GET)
     public String login(Model model) {

@@ -60,6 +60,7 @@ public class PaulConfiguration implements Configuration {
     private DataGrabberRestartPolicy dataGrabberRestartPolicy = 
             DataGrabberRestartPolicy.NO_AUTO_START;
     private boolean holdDatasetsWithNoUser = true;
+    private String primaryRepositoryUrl;
     
     
     public int getProxyPort() {
@@ -233,6 +234,14 @@ public class PaulConfiguration implements Configuration {
         this.holdDatasetsWithNoUser = holdDatasetsWithNoUser;
     }
 
+    public String getPrimaryRepositoryUrl() {
+        return primaryRepositoryUrl;
+    }
+
+    public void setPrimaryRepositoryUrl(String primaryRepositoryUrl) {
+        this.primaryRepositoryUrl = primaryRepositoryUrl;
+    }
+
     public static PaulConfiguration load(EntityManagerFactory entityManagerFactory) {
         return load(entityManagerFactory, false);
     }
@@ -346,6 +355,7 @@ public class PaulConfiguration implements Configuration {
             setExpireByDeleting(staticConfig.isExpireByDeleting());
             setDataGrabberRestartPolicy(staticConfig.getDataGrabberRestartPolicy());
             setHoldDatasetsWithNoUser(staticConfig.isHoldDatasetsWithNoUser());
+            setPrimaryRepositoryUrl(staticConfig.getPrimaryRepositoryUrl());
             for (FacilityConfig facilityConfig: staticConfig.getFacilityConfigs()) {
                 boolean found = false;
                 for (FacilityConfig f : facilities) {
