@@ -17,7 +17,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.*;
 
 import au.edu.uq.cmm.aclslib.service.MonitoredThreadServiceBase;
 import au.edu.uq.cmm.aclslib.service.Service;
@@ -66,7 +66,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
         }
     }
     
-    private static final Logger LOG = Logger.getLogger(FileWatcher.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FileWatcher.class);
     
     private PaulConfiguration config;
     private Map<WatchKey, WatcherEntry> watchMap = 

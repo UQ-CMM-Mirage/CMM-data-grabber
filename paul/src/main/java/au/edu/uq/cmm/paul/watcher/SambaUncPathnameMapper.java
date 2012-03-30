@@ -13,7 +13,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.slf4j.*;
 import org.ini4j.Ini;
 import org.ini4j.InvalidFileFormatException;
 
@@ -27,7 +27,8 @@ import org.ini4j.InvalidFileFormatException;
 public class SambaUncPathnameMapper implements UncPathnameMapper {
     public static final String DEFAULT_SMB_CONF_PATHNAME = "/etc/samba/smb.conf";
     
-    private static final Logger LOG = Logger.getLogger(SambaUncPathnameMapper.class);
+    private static final Logger LOG = 
+            LoggerFactory.getLogger(SambaUncPathnameMapper.class);
     private static final Pattern UNC_PATTERN = 
             Pattern.compile("//([^/]+)/([^/]+)(?:/+(.*))?");
     private Map<String, File> shareMap = new HashMap<String, File>();

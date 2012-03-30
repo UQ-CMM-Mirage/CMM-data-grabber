@@ -3,6 +3,7 @@
   "serverPort" : 1024,
   "proxyHost" : "xxx.example.com",
   "serverHost" : "acls.example.com",
+  "primaryRepositoryUrl" : "http://repo.example.com",
   "facilityRecheckInterval" : 0,
   "useProject" : false,
   "captureDirectory" : "/tmp/safe",

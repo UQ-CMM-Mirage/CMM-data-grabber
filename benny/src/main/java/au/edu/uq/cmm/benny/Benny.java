@@ -15,7 +15,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+import org.slf4j.*;
 
 import au.edu.uq.cmm.aclslib.authenticator.Authenticator;
 
@@ -42,7 +42,7 @@ import au.edu.uq.cmm.aclslib.authenticator.Authenticator;
  */
 @SuppressWarnings("serial")
 public class Benny extends HttpServlet {
-    private static final Logger LOG = Logger.getLogger(Authenticator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Authenticator.class);
     private static final String PROPS_RESOURCE = "/benny.properties";
     private static final Pattern BASIC_AUTH_PATTERN =
             Pattern.compile("Basic\\s+([a-z0-9+/=]+)\\s*", Pattern.CASE_INSENSITIVE);

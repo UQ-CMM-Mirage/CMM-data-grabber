@@ -20,7 +20,7 @@ import org.apache.abdera.model.Person;
 import org.apache.abdera.protocol.server.RequestContext;
 import org.apache.abdera.protocol.server.context.ResponseContextException;
 import org.apache.abdera.protocol.server.impl.AbstractEntityCollectionAdapter;
-import org.apache.log4j.Logger;
+import org.slf4j.*;
 
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
@@ -35,7 +35,7 @@ import au.edu.uq.cmm.paul.status.FacilitySession;
  * @author scrawley
  */
 public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMetadata> {
-    private static final Logger LOG = Logger.getLogger(QueueFeedAdapter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(QueueFeedAdapter.class);
     private static final String ID_PREFIX = "urn:uuid:";
 
     private EntityManagerFactory entityManagerFactory;
