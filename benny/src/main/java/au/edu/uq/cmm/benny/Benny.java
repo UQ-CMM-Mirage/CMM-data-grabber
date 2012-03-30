@@ -70,7 +70,8 @@ public class Benny extends HttpServlet {
             authenticator = new Authenticator(
                     props.getProperty("benny.serverHost"), 
                     Integer.parseInt(props.getProperty("benny.serverPort")),
-                    props.getProperty("benny.dummyFacility"));
+                    props.getProperty("benny.dummyFacility"),
+                    props.getProperty("benny.localHostId"));
         } catch (Exception ex) {
             throw new ServletException("Cannot instantiate the authenticator");
         }
