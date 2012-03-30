@@ -18,7 +18,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import org.apache.log4j.Logger;
+import org.slf4j.*;
 import org.hibernate.annotations.GenericGenerator;
 
 import au.edu.uq.cmm.aclslib.config.Configuration;
@@ -34,7 +34,7 @@ import au.edu.uq.cmm.paul.status.Facility;
 @Entity
 @Table(name = "CONFIGURATION")
 public class PaulConfiguration implements Configuration {
-    private static final Logger LOG = Logger.getLogger(PaulConfiguration.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PaulConfiguration.class);
     
     private Long id;
     private List<Facility> facilities = new ArrayList<Facility>();
@@ -60,6 +60,7 @@ public class PaulConfiguration implements Configuration {
     private DataGrabberRestartPolicy dataGrabberRestartPolicy = 
             DataGrabberRestartPolicy.NO_AUTO_START;
     private boolean holdDatasetsWithNoUser = true;
+    private String primaryRepositoryUrl;
     
     
     public int getProxyPort() {
@@ -233,6 +234,14 @@ public class PaulConfiguration implements Configuration {
         this.holdDatasetsWithNoUser = holdDatasetsWithNoUser;
     }
 
+    public String getPrimaryRepositoryUrl() {
+        return primaryRepositoryUrl;
+    }
+
+    public void setPrimaryRepositoryUrl(String primaryRepositoryUrl) {
+        this.primaryRepositoryUrl = primaryRepositoryUrl;
+    }
+
     public static PaulConfiguration load(EntityManagerFactory entityManagerFactory) {
         return load(entityManagerFactory, false);
     }
@@ -346,6 +355,7 @@ public class PaulConfiguration implements Configuration {
             setExpireByDeleting(staticConfig.isExpireByDeleting());
             setDataGrabberRestartPolicy(staticConfig.getDataGrabberRestartPolicy());
             setHoldDatasetsWithNoUser(staticConfig.isHoldDatasetsWithNoUser());
+            setPrimaryRepositoryUrl(staticConfig.getPrimaryRepositoryUrl());
             for (FacilityConfig facilityConfig: staticConfig.getFacilityConfigs()) {
                 boolean found = false;
                 for (FacilityConfig f : facilities) {

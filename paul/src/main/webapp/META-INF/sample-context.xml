@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context>
+    <Realm className="au.edu.uq.cmm.realm.ACLSRealm" 
+           serverHost="acls.example.com" serverPort="1024" 
+           dummyFacility="The Proxy" />
+</Context>

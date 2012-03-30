@@ -18,7 +18,7 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 
-import org.apache.log4j.Logger;
+import org.slf4j.*;
 
 import au.edu.uq.cmm.aclslib.config.DatafileTemplateConfig;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
@@ -53,7 +53,7 @@ import au.edu.uq.cmm.paul.watcher.FileWatcherEventListener;
  */
 public class FileGrabber extends CompositeServiceBase 
         implements FileWatcherEventListener {
-    static final Logger LOG = Logger.getLogger(FileGrabber.class);
+    static final Logger LOG = LoggerFactory.getLogger(FileGrabber.class);
     static final int DEFAULT_FILE_SETTLING_TIME = 2000;  // 2 seconds
     
     private final BlockingQueue<Runnable> work = new LinkedBlockingDeque<Runnable>();

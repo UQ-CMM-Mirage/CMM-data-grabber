@@ -7,6 +7,17 @@
     <body>
         <h1>ACLS Facility Login for "${facilityName}"</h1>
         
+        <p>
+        This page can be used to "login" to a facility (e.g. a microscope) when
+        the ACLS login program on the application is not working properly.  If
+        you are not logged in to the facility when you save files, you will 
+        need to manually "claim" them so that they can be transferred to Mirage.
+        </p>
+        <p>
+        Enter your normal ACLS username and password.  (You will be prompted for
+        your ACLS account name if you have multiple ACLS accounts.)
+        </p>
+        
         ${message}
         
         <form name="form" method="POST" method="post"

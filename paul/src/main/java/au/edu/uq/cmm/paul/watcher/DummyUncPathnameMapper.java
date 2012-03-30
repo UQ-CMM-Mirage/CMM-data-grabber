@@ -4,8 +4,7 @@ import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
-
+import org.slf4j.*;
 
 /**
  * An UNC path mapper for use in testing.  It ignores the hostname part of the
@@ -15,7 +14,8 @@ import org.apache.log4j.Logger;
  * @author scrawley
  */
 public class DummyUncPathnameMapper implements UncPathnameMapper {
-    private static final Logger LOG = Logger.getLogger(DummyUncPathnameMapper.class);
+    private static final Logger LOG = 
+            LoggerFactory.getLogger(DummyUncPathnameMapper.class);
     private static final Pattern UNC_PATTERN = 
             Pattern.compile("//([^/]+)/([^/]+)(?:/+(.*))?");
     private File baseDirectory;

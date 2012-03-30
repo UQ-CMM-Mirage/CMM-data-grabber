@@ -2,18 +2,17 @@
 <%@ page session="false" %>
 <html>
     <head>
-        <title>Data Grabber Admin Interface</title>
+        <title>Data Grabber</title>
     </head>
     <body>
-        <h1>Data Grabber Admin Interface</h1>
+        <h1>Data Grabber</h1>
         <ul>
-          <li><a href="control">Control Panel</a></li>
-          <li><a href="config">Configuration</a></li>
-          <li><a href="sessions">Facility Sessions</a></li>
-          <li><a href="atom/queue">Ingestion Queue Feed</a></li>
-          <li><a href="queue/ingestible">Ingestion Queue Admin</a></li>
-          <li><a href="queue/held">Hold Queue Admin</a></li>
-          <li><a href="users">Known Users</a></li>
+          <li><a href="admin">Data Grabber Administration</a></li>
+          <li><a href="loggedIn">Data Grabber login</a></li>
+          <li><a href="logout">Data Grabber logout</a></li>
+          <li><a href="aclsLogin">Login to a Lab Facility</a></li>
+          <li><a href="claim">Claim files</a></li>
+          <li><a href="mirage">Go to the Mirage Repository</a></li>
         </ul>
     </body>
 </html>

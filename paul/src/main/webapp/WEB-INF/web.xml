@@ -26,16 +26,70 @@
 		<servlet-name>Paul</servlet-name>
 		<url-pattern>/</url-pattern>
 	</servlet-mapping>
+	
+	<login-config>
+		<auth-method>FORM</auth-method>
+		<realm-name>CombinedRealm</realm-name>
+		<form-login-config>
+			<form-login-page>/login</form-login-page>
+			<form-error-page>/loginFailed</form-error-page>
+		</form-login-config>
+	</login-config>
+	
+	<security-role>
+		<description>Data Grabber Administrator</description>
+		<role-name>ROLE_ADMIN</role-name>
+	</security-role>
+	
+	<security-role>
+		<description>Data Grabber / ACLS / Mirage User</description>
+		<role-name>ROLE_USER</role-name>
+	</security-role>
+		
+	<security-constraint>
+		<web-resource-collection>
+			<web-resource-name>Admin Interfaces</web-resource-name>
+			<url-pattern>/admin</url-pattern>
+			<url-pattern>/config</url-pattern>
+			<url-pattern>/control</url-pattern>
+			<url-pattern>/facilities/*</url-pattern>
+			<url-pattern>/sessions</url-pattern>
+			<url-pattern>/queue/ingestible</url-pattern>
+			<url-pattern>/queue/held</url-pattern>
+			<url-pattern>/users</url-pattern>
+			<url-pattern>/users/*</url-pattern>
+		</web-resource-collection>
+		<auth-constraint>
+			<role-name>ROLE_ADMIN</role-name>
+		</auth-constraint>
+	</security-constraint>
+		
+	<security-constraint>
+		<web-resource-collection>
+			<web-resource-name>User Interfaces</web-resource-name>
+			<url-pattern>/sessions</url-pattern>
+			<url-pattern>/queue/held</url-pattern>
+			<url-pattern>/claim</url-pattern>
+			<url-pattern>/loggedIn</url-pattern>
+		</web-resource-collection>
+		<auth-constraint>
+			<role-name>ROLE_USER</role-name>
+			<role-name>ROLE_ADMIN</role-name>
+		</auth-constraint>
+	</security-constraint>
 
 	<servlet-mapping>
 		<servlet-name>default</servlet-name>
 		<url-pattern>/js/*</url-pattern>
 	</servlet-mapping>
-
 	<servlet-mapping>
 		<servlet-name>default</servlet-name>
 		<url-pattern>/css/*</url-pattern>
 	</servlet-mapping>
+	<servlet-mapping>  
+        <servlet-name>default</servlet-name>  
+        <url-pattern>/j_security_check</url-pattern>  
+    </servlet-mapping>
 
 	<servlet id="abdera">
 		<servlet-name>Abdera</servlet-name>

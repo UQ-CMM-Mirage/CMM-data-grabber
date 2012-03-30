@@ -10,7 +10,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
+import org.slf4j.*;
 import org.springframework.web.servlet.view.AbstractView;
 
 /**
@@ -22,7 +22,7 @@ import org.springframework.web.servlet.view.AbstractView;
  * @author scrawley
  */
 public class FileView extends AbstractView {
-    private static final Logger LOG = Logger.getLogger(FileView.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FileView.class);
 
     @Override
     protected void renderMergedOutputModel(Map<String, Object> model,

@@ -5,7 +5,7 @@ import java.io.IOException;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 
-import org.apache.log4j.Logger;
+import org.slf4j.*;
 import org.springframework.context.Lifecycle;
 
 import au.edu.uq.cmm.aclslib.config.Configuration.DataGrabberRestartPolicy;
@@ -25,7 +25,7 @@ import au.edu.uq.cmm.paul.watcher.UncPathnameMapper;
 public class Paul extends CompositeServiceBase implements Lifecycle {
     // FIXME - need to do something to hook this class into the servlet lifecycle 
     // so that it gets told when the servlet is being shutdown.
-    private static final Logger LOG = Logger.getLogger(Paul.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Paul.class);
     private FacilityStatusManager statusManager;
     private AclsProxy proxy;
     private UncPathnameMapper uncNameMapper;
