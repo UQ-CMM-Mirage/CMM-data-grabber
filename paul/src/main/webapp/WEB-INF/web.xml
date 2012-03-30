@@ -32,9 +32,19 @@
 		<realm-name>CombinedRealm</realm-name>
 		<form-login-config>
 			<form-login-page>/login</form-login-page>
-			<form-error-page>/login</form-error-page>
+			<form-error-page>/loginFailed</form-error-page>
 		</form-login-config>
 	</login-config>
+	
+	<security-role>
+		<description>Data Grabber Administrator</description>
+		<role-name>ROLE_ADMIN</role-name>
+	</security-role>
+	
+	<security-role>
+		<description>Data Grabber / ACLS / Mirage User</description>
+		<role-name>ROLE_USER</role-name>
+	</security-role>
 		
 	<security-constraint>
 		<web-resource-collection>
@@ -60,9 +70,11 @@
 			<url-pattern>/sessions</url-pattern>
 			<url-pattern>/queue/held</url-pattern>
 			<url-pattern>/claim</url-pattern>
+			<url-pattern>/loggedIn</url-pattern>
 		</web-resource-collection>
 		<auth-constraint>
 			<role-name>ROLE_USER</role-name>
+			<role-name>ROLE_ADMIN</role-name>
 		</auth-constraint>
 	</security-constraint>
 
@@ -70,11 +82,14 @@
 		<servlet-name>default</servlet-name>
 		<url-pattern>/js/*</url-pattern>
 	</servlet-mapping>
-
 	<servlet-mapping>
 		<servlet-name>default</servlet-name>
 		<url-pattern>/css/*</url-pattern>
 	</servlet-mapping>
+	<servlet-mapping>  
+        <servlet-name>default</servlet-name>  
+        <url-pattern>/j_security_check</url-pattern>  
+    </servlet-mapping>
 
 	<servlet id="abdera">
 		<servlet-name>Abdera</servlet-name>

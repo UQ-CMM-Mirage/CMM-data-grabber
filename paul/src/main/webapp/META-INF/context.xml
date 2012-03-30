@@ -5,13 +5,11 @@
          configured in "$CATALINA_HOME/conf/tomcat-users.xml".  Ordinary user 
          accounts are typically taken from ACLS ... via the custom ACLSRealm. 
     -->
-    <Realm className="org.apache.catalina.realm.CombinedRealm">
-        
+    <Realm className="org.apache.catalina.realm.LockOutRealm">
         <Realm className="org.apache.catalina.realm.MemoryRealm"/>
-        
     	<Realm className="au.edu.uq.cmm.tomcat.realm.ACLSRealm" 
            serverHost="acls-uat.cmm.uq.edu.au" serverPort="1024" 
-           dummyFacility="The Proxy" />
+           dummyFacility="The Proxy" localHostId="FISH"/>
     </Realm>
     
 </Context>

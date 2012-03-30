@@ -266,7 +266,22 @@ public class WebUIController {
     
     @RequestMapping(value="/login", method=RequestMethod.GET)
     public String login(Model model) {
-        return "grabberLogin";
+        return "login";
+    }
+    
+    @RequestMapping(value="/loginFailed")
+    public String loginFailed(Model model) {
+        return "loginFailed";
+    }
+    
+    @RequestMapping(value="/loggedIn", method=RequestMethod.GET)
+    public String loggedIn(Model model) {
+        return "loggedIn";
+    }
+    
+    @RequestMapping(value="/logout", method=RequestMethod.GET)
+    public String logout(Model model) {
+        return "logout";
     }
     
     @RequestMapping(value="/admin", method=RequestMethod.GET)

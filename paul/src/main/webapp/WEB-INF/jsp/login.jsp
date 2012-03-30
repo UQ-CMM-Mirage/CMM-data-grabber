@@ -2,12 +2,12 @@
 <%@ page session="false" %>
 <html>
     <head>
-        <title>Data Grabber Login</title>
+        <h1>Data Grabber Access Control</h1>
     </head>
     <body>
         <h1>Data Grabber Login</h1>
         <p>
-        This page allows you to login to the Data Grabber to claim files, view the
+        Login to the Data Grabber to claim files, view the
         queues and perform other tasks.  Use your normal ACLS user name and password,
         or administrator credentials.
         </p>
@@ -15,7 +15,7 @@
         ${message}
         
         <form name="form" method="POST" method="post"
-              action="j_security_check">
+              action='<%= response.encodeURL("j_security_check") %>'>
           <c:if test="${empty accounts}">
               User name: <input type="text" name="j_username" value="${param.userName}">
               <br>
