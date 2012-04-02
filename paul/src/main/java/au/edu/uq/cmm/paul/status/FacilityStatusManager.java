@@ -14,7 +14,7 @@ import org.slf4j.*;
 import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEvent;
 import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEventListener;
 import au.edu.uq.cmm.aclslib.proxy.AclsLoginEvent;
-import au.edu.uq.cmm.aclslib.proxy.AclsLoginException;
+import au.edu.uq.cmm.aclslib.proxy.AclsAuthenticationException;
 import au.edu.uq.cmm.aclslib.proxy.AclsLogoutEvent;
 import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
 import au.edu.uq.cmm.paul.Paul;
@@ -114,7 +114,7 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
         }
     }
     
-    public void endSession(String sessionUuid) {
+    public void logout(String sessionUuid) throws AclsAuthenticationException {
         EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
@@ -126,6 +126,8 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
             if (session.getLogoutTime() == null) {
                 session.setLogoutTime(new Date());
             }
+            proxy.logout(session.getFacility(), session.getUserName(), 
+                    session.getAccount());
             em.getTransaction().commit();
         } catch (NoResultException ex) {
             LOG.debug("session doesn't exist", ex);
@@ -148,19 +150,19 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
     }
 
     public List<String> login(String facilityName, String userName, String password) 
-    throws AclsLoginException {
+    throws AclsAuthenticationException {
         Facility facility = lookupIdleFacility(facilityName);
         return proxy.login(facility, userName, password);
     }
 
     public void selectAccount (String facilityName, String userName, String account) 
-    throws AclsLoginException {
+    throws AclsAuthenticationException {
         Facility facility = lookupIdleFacility(facilityName);
         proxy.selectAccount(facility, userName, account);
     }
 
     private Facility lookupIdleFacility(String facilityName)
-    throws AclsLoginException {
+    throws AclsAuthenticationException {
         Facility facility;
         EntityManager em = emf.createEntityManager();
         try {
@@ -169,10 +171,10 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
             em.close();
         }
         if (facility == null) {
-            throw new AclsLoginException ("Unknown facility " + facilityName);
+            throw new AclsAuthenticationException ("Unknown facility " + facilityName);
         }
         if (facility.isInUse()) {
-            throw new AclsLoginException ("Facility " + facilityName + " is in use");
+            throw new AclsAuthenticationException ("Facility " + facilityName + " is in use");
         }
         return facility;
     }

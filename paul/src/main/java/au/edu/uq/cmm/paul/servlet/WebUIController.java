@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import au.edu.uq.cmm.aclslib.proxy.AclsLoginException;
+import au.edu.uq.cmm.aclslib.proxy.AclsAuthenticationException;
 import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
 import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.aclslib.service.Service.State;
@@ -146,8 +146,8 @@ public class WebUIController {
             params={"endSession"})
     public String endSession(@PathVariable String sessionUuid, Model model, 
             HttpServletResponse response, HttpServletRequest request) 
-    throws IOException {
-        services.getFacilitySessionManager().endSession(sessionUuid);
+    throws IOException, AclsAuthenticationException {
+        services.getFacilitySessionManager().logout(sessionUuid);
         response.sendRedirect(response.encodeRedirectURL(
                 request.getContextPath() + "/sessions"));
         return null;
@@ -209,7 +209,7 @@ public class WebUIController {
                 (password = tidy(password)).isEmpty()) {
             // Phase 1 - user must fill in user name and password
             model.addAttribute("message", "Fill in username and password");
-            return "facilityLoginForm";
+            return "facilityLogin";
         }
         if (account == null) {
             // Phase 2 - validate user credentials and get accounts list
@@ -218,7 +218,7 @@ public class WebUIController {
                 LOG.debug("Attempting login");
                 accounts = fsm.login(facilityName, userName, password);
                 LOG.debug("Login succeeded");
-            } catch (AclsLoginException ex) {
+            } catch (AclsAuthenticationException ex) {
                 model.addAttribute("message", "Login failed: " + ex.getMessage());
             }
             // If there is only one account, select immediately.
@@ -235,7 +235,7 @@ public class WebUIController {
                         model.addAttribute("message", 
                                 "Select an account to complete the login");
                     }
-                } catch (AclsLoginException ex) {
+                } catch (AclsAuthenticationException ex) {
                     model.addAttribute("message",
                             "Account selection failed: " + ex.getMessage());
                 }
@@ -248,7 +248,7 @@ public class WebUIController {
                 response.sendRedirect(response.encodeRedirectURL(
                         request.getContextPath() + "/sessions"));
                 return null;
-            } catch (AclsLoginException ex) {
+            } catch (AclsAuthenticationException ex) {
                 model.addAttribute("message", 
                         "Account selection failed: " + ex.getMessage());
             }
