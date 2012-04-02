@@ -13,9 +13,10 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.slf4j.*;
 import org.ini4j.Ini;
 import org.ini4j.InvalidFileFormatException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
