@@ -2,7 +2,7 @@
 <%@ page session="false" %>
 <html>
     <head>
-        <h1>Data Grabber Access Control</h1>
+        <title>Data Grabber Access Control</title>
     </head>
     <body>
         <h1>Data Grabber Login</h1>
