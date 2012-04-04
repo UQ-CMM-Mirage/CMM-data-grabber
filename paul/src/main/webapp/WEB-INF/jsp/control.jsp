@@ -21,6 +21,11 @@
         		    name="watcher" value="ON">Start</button>
         	<button ${watcherStatus == 'ON' ? '' : 'disabled="disabled"'}
         		    name="watcher" value="OFF">Stop</button>
+            <br>
+            <c:if test="${! empty restartRequired}">
+            	A restart is required to enact configuration changes:
+            	<button name="restart">Restart now</button>
+            </c:if>
         </form>
     </body>
 </html>

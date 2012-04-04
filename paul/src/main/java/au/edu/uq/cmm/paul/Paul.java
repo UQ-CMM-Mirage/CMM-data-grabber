@@ -16,6 +16,7 @@ import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
 import au.edu.uq.cmm.aclslib.service.ServiceException;
 import au.edu.uq.cmm.paul.queue.QueueExpirer;
 import au.edu.uq.cmm.paul.queue.QueueManager;
+import au.edu.uq.cmm.paul.servlet.ConfigurationManager;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
 import au.edu.uq.cmm.paul.status.SessionDetailMapper;
 import au.edu.uq.cmm.paul.status.UserDetailsManager;
@@ -31,12 +32,12 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
     private AclsProxy proxy;
     private UncPathnameMapper uncNameMapper;
     private EntityManagerFactory entityManagerFactory;
-    private PaulConfiguration config;
     private QueueManager queueManager;
     private QueueExpirer queueExpirer;
     private SessionDetailMapper sessionDetailMapper;
     private FileWatcher fileWatcher;
     private UserDetailsManager userDetailsManager;
+    private ConfigurationManager configManager;
     
     public Paul(StaticConfiguration staticConfig,
             EntityManagerFactory entityManagerFactory)
@@ -51,14 +52,10 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
     throws IOException {
         this.entityManagerFactory = entityManagerFactory;
         this.sessionDetailMapper = sessionDetailMapper;
-        config = PaulConfiguration.load(entityManagerFactory, true);
-        
-        if (config.isEmpty() && staticConfig != null) {
-            config = config.merge(entityManagerFactory, staticConfig);
-        }
+        configManager = new ConfigurationManager(entityManagerFactory, staticConfig);
         // Testing ...
         PaulConfiguration.load(entityManagerFactory);
-        proxy = new AclsProxy(config);
+        proxy = new AclsProxy(getConfiguration());
         try {
             proxy.probeServer();
         } catch (ServiceException ex) {
@@ -113,7 +110,7 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
     protected void doStartup() throws ServiceException {
         LOG.info("Startup started");
         proxy.startup();
-        if (config.getDataGrabberRestartPolicy() !=
+        if (getConfiguration().getDataGrabberRestartPolicy() !=
                 DataGrabberRestartPolicy.NO_AUTO_START) {
             fileWatcher.startup();
         }
@@ -126,11 +123,15 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
     }
 
     public PaulConfiguration getConfiguration() {
-        return config;
+        return configManager.getActiveConfig();
     }
 
     public QueueManager getQueueManager() {
         return queueManager;
+    }
+
+    public ConfigurationManager getConfigManager() {
+        return configManager;
     }
 
     public FileWatcher getFileWatcher() {
@@ -175,6 +176,4 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
     public boolean isRunning() {
         return getState() == State.STARTED;
     }
-    
-    
 }

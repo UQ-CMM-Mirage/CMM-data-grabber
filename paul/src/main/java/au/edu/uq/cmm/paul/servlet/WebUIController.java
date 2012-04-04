@@ -36,6 +36,7 @@ import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
 import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.aclslib.service.Service.State;
 import au.edu.uq.cmm.paul.Paul;
+import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 import au.edu.uq.cmm.paul.queue.QueueManager;
@@ -108,6 +109,9 @@ public class WebUIController {
         model.addAttribute("proxyState", ps);
         model.addAttribute("watcherStatus", stateToStatus(ws));
         model.addAttribute("proxyStatus", stateToStatus(ps));
+        model.addAttribute("resetRequired", 
+                services.getConfigManager().getLatestConfig() != 
+                services.getConfigManager().getActiveConfig());
     }
     
     private Status stateToStatus(State state) {
@@ -131,9 +135,12 @@ public class WebUIController {
         return services.getFileWatcher();
     }
     
+    private PaulConfiguration getLatestConfig() {
+        return services.getConfigManager().getLatestConfig();
+    }
+    
     private Facility lookupFacilityByName(String facilityName) {
-        return (Facility) 
-                services.getConfiguration().lookupFacilityByName(facilityName);
+        return (Facility) getLatestConfig().lookupFacilityByName(facilityName);
     }
     
     @RequestMapping(value="/sessions", method=RequestMethod.GET)
@@ -292,8 +299,23 @@ public class WebUIController {
     
     @RequestMapping(value="/config", method=RequestMethod.GET)
     public String config(Model model) {
-        model.addAttribute("config", services.getConfiguration());
+        model.addAttribute("config", getLatestConfig());
         return "config";
+    }
+    
+    @RequestMapping(value="/config", method=RequestMethod.POST, params={"reset"})
+    public String configReset(Model model,
+            @RequestParam(required=false) String confirmed) {
+        model.addAttribute("returnTo", "config");
+        if (confirmed == null) {
+            return "resetConfirmation";
+        } else {
+            services.getConfigManager().resetConfiguration();
+            model.addAttribute("message", 
+                    "Configuration reset succeeded.  " +
+                    "Please restart the webapp to use the updated configs");
+            return "ok";
+        }
     }
     
     @RequestMapping(value="/queue/held", method=RequestMethod.GET)

@@ -23,7 +23,7 @@
           <li>Hold datasets with no user information - ${config.holdDatasetsWithNoUser}
           <li>Clients use 'project' - ${config.useProject}</li>
           <li>Facility recheck interval - ${config.facilityRecheckInterval} (minutes)</li>
-          <li>Atom feed parameters for ingestion feed:
+          <li>Atom feed parameters for the Ingestion feed:
             <ul>
               <li>Feed URL - ${config.feedUrl}</li>
               <li>Feed id - ${config.feedId}</li>
@@ -45,5 +45,11 @@
             </ul>
           </li>
         </ul>
+        <br><br>
+        <form action="config" method="post">
+        	<button type="submit" name="reset">
+        		Reset to default configuration settings
+        	</button>
+        </form>
     </body>
 </html>
