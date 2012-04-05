@@ -11,7 +11,6 @@ import javax.persistence.TypedQuery;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.slf4j.*;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
 import org.joda.time.Hours;
@@ -22,6 +21,8 @@ import org.joda.time.Years;
 import org.joda.time.base.BaseSingleFieldPeriod;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -30,11 +31,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import au.edu.uq.cmm.aclslib.proxy.AclsLoginException;
+import au.edu.uq.cmm.aclslib.proxy.AclsAuthenticationException;
 import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
 import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.aclslib.service.Service.State;
 import au.edu.uq.cmm.paul.Paul;
+import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 import au.edu.uq.cmm.paul.queue.QueueManager;
@@ -107,6 +109,9 @@ public class WebUIController {
         model.addAttribute("proxyState", ps);
         model.addAttribute("watcherStatus", stateToStatus(ws));
         model.addAttribute("proxyStatus", stateToStatus(ps));
+        model.addAttribute("resetRequired", 
+                services.getConfigManager().getLatestConfig() != 
+                services.getConfigManager().getActiveConfig());
     }
     
     private Status stateToStatus(State state) {
@@ -130,9 +135,12 @@ public class WebUIController {
         return services.getFileWatcher();
     }
     
+    private PaulConfiguration getLatestConfig() {
+        return services.getConfigManager().getLatestConfig();
+    }
+    
     private Facility lookupFacilityByName(String facilityName) {
-        return (Facility) 
-                services.getConfiguration().lookupFacilityByName(facilityName);
+        return (Facility) getLatestConfig().lookupFacilityByName(facilityName);
     }
     
     @RequestMapping(value="/sessions", method=RequestMethod.GET)
@@ -146,8 +154,8 @@ public class WebUIController {
             params={"endSession"})
     public String endSession(@PathVariable String sessionUuid, Model model, 
             HttpServletResponse response, HttpServletRequest request) 
-    throws IOException {
-        services.getFacilitySessionManager().endSession(sessionUuid);
+    throws IOException, AclsAuthenticationException {
+        services.getFacilitySessionManager().logout(sessionUuid);
         response.sendRedirect(response.encodeRedirectURL(
                 request.getContextPath() + "/sessions"));
         return null;
@@ -209,7 +217,7 @@ public class WebUIController {
                 (password = tidy(password)).isEmpty()) {
             // Phase 1 - user must fill in user name and password
             model.addAttribute("message", "Fill in username and password");
-            return "facilityLoginForm";
+            return "facilityLogin";
         }
         if (account == null) {
             // Phase 2 - validate user credentials and get accounts list
@@ -218,7 +226,7 @@ public class WebUIController {
                 LOG.debug("Attempting login");
                 accounts = fsm.login(facilityName, userName, password);
                 LOG.debug("Login succeeded");
-            } catch (AclsLoginException ex) {
+            } catch (AclsAuthenticationException ex) {
                 model.addAttribute("message", "Login failed: " + ex.getMessage());
             }
             // If there is only one account, select immediately.
@@ -235,7 +243,7 @@ public class WebUIController {
                         model.addAttribute("message", 
                                 "Select an account to complete the login");
                     }
-                } catch (AclsLoginException ex) {
+                } catch (AclsAuthenticationException ex) {
                     model.addAttribute("message",
                             "Account selection failed: " + ex.getMessage());
                 }
@@ -248,7 +256,7 @@ public class WebUIController {
                 response.sendRedirect(response.encodeRedirectURL(
                         request.getContextPath() + "/sessions"));
                 return null;
-            } catch (AclsLoginException ex) {
+            } catch (AclsAuthenticationException ex) {
                 model.addAttribute("message", 
                         "Account selection failed: " + ex.getMessage());
             }
@@ -261,6 +269,14 @@ public class WebUIController {
             throws IOException {
         response.sendRedirect(
                 services.getConfiguration().getPrimaryRepositoryUrl());
+        return null;
+    }
+    
+    @RequestMapping(value="/acls", method=RequestMethod.GET)
+    public String acls(Model model, HttpServletResponse response) 
+            throws IOException {
+        response.sendRedirect(
+                services.getConfiguration().getAclsUrl());
         return null;
     }
     
@@ -291,8 +307,23 @@ public class WebUIController {
     
     @RequestMapping(value="/config", method=RequestMethod.GET)
     public String config(Model model) {
-        model.addAttribute("config", services.getConfiguration());
+        model.addAttribute("config", getLatestConfig());
         return "config";
+    }
+    
+    @RequestMapping(value="/config", method=RequestMethod.POST, params={"reset"})
+    public String configReset(Model model,
+            @RequestParam(required=false) String confirmed) {
+        model.addAttribute("returnTo", "config");
+        if (confirmed == null) {
+            return "resetConfirmation";
+        } else {
+            services.getConfigManager().resetConfiguration();
+            model.addAttribute("message", 
+                    "Configuration reset succeeded.  " +
+                    "Please restart the webapp to use the updated configs");
+            return "ok";
+        }
     }
     
     @RequestMapping(value="/queue/held", method=RequestMethod.GET)

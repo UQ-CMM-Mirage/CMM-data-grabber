@@ -2,7 +2,8 @@ package au.edu.uq.cmm.paul.queue;
 
 import java.util.Date;
 
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import au.edu.uq.cmm.aclslib.service.MonitoredThreadServiceBase;
 import au.edu.uq.cmm.paul.Paul;

@@ -4,20 +4,16 @@
 <html lang="en">
 <head>
 <%@ include file="/WEB-INF/jsp/commonHead.jspFrag"%>
-<title>Data Grabber Queue Deletion</title>
+<title>Data Grabber Configuration Reset</title>
 </head>
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container">
-		<h1>Data Grabber Queue Deletion</h1>
+		<h1>Data Grabber Configuration Reset</h1>
 		<form name="form" method="POST" action="${returnTo}">
-			Archive files <input id="archive" name="mode" type="radio"
-				value="archive" checked="checked"
-				onclick="document.form.archive.checked = true; document.form.discard.checked = false;">
-			<br> Permanently delete files <input id="discard" name="mode"
-				type="radio" value="discard"
-				onclick="document.form.archive.checked = false; document.form.discard.checked = true;">
-			<br>
+			Resetting the configuration will permanently delete any manual
+			configuration changes. <br> <input type="hidden" name="reset">
+			<input type="hidden" name="confirmed">
 			<button type="submit" name="deleteAll">Yes - do it now</button>
 			<button type="button" onclick="window.location = '${returnTo}'">
 				No - get me out of here</button>
