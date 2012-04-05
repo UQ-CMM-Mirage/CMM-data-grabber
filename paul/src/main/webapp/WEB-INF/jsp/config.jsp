@@ -42,6 +42,12 @@
 					<li>Feed author email - ${config.feedAuthorEmail}</li>
 				</ul>
 			</li>
+			<li>Links:
+			    <ul>
+			    	<li>ACLS Booking System - ${config.aclsUrl}</li>
+			    	<li>Primary Downstream Repository - ${config.primaryRepositoryUrl}</li>
+			    </ul>
+			</li>
 			<li>Facilities:
 				<ul>
 					<c:forEach items="${config.facilities}" var="facility">

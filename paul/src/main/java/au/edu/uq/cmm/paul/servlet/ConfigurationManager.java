@@ -78,6 +78,7 @@ public class ConfigurationManager {
             config.setDataGrabberRestartPolicy(staticConfig.getDataGrabberRestartPolicy());
             config.setHoldDatasetsWithNoUser(staticConfig.isHoldDatasetsWithNoUser());
             config.setPrimaryRepositoryUrl(staticConfig.getPrimaryRepositoryUrl());
+            config.setAclsUrl(staticConfig.getAclsUrl());
             for (FacilityConfig facilityConfig: staticConfig.getFacilityConfigs()) {
                 config.getFacilities().add(new Facility(facilityConfig));
             }

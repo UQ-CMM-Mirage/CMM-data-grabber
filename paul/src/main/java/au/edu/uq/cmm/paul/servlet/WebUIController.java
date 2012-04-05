@@ -272,6 +272,14 @@ public class WebUIController {
         return null;
     }
     
+    @RequestMapping(value="/acls", method=RequestMethod.GET)
+    public String acls(Model model, HttpServletResponse response) 
+            throws IOException {
+        response.sendRedirect(
+                services.getConfiguration().getAclsUrl());
+        return null;
+    }
+    
     @RequestMapping(value="/login", method=RequestMethod.GET)
     public String login(Model model) {
         return "login";
