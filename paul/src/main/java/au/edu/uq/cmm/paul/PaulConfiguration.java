@@ -18,7 +18,6 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import org.slf4j.*;
 import org.hibernate.annotations.GenericGenerator;
 
 import au.edu.uq.cmm.aclslib.config.Configuration;
@@ -34,7 +33,6 @@ import au.edu.uq.cmm.paul.status.Facility;
 @Entity
 @Table(name = "CONFIGURATION")
 public class PaulConfiguration implements Configuration {
-    private static final Logger LOG = LoggerFactory.getLogger(PaulConfiguration.class);
     
     private Long id;
     private List<Facility> facilities = new ArrayList<Facility>();
@@ -61,6 +59,7 @@ public class PaulConfiguration implements Configuration {
             DataGrabberRestartPolicy.NO_AUTO_START;
     private boolean holdDatasetsWithNoUser = true;
     private String primaryRepositoryUrl;
+    private String aclsUrl;
     
     
     public int getProxyPort() {
@@ -242,6 +241,14 @@ public class PaulConfiguration implements Configuration {
         this.primaryRepositoryUrl = primaryRepositoryUrl;
     }
 
+    public String getAclsUrl() {
+        return aclsUrl;
+    }
+
+    public void setAclsUrl(String aclsUrl) {
+        this.aclsUrl = aclsUrl;
+    }
+
     public static PaulConfiguration load(EntityManagerFactory entityManagerFactory) {
         return load(entityManagerFactory, false);
     }
@@ -321,64 +328,6 @@ public class PaulConfiguration implements Configuration {
         return facilities.isEmpty();
     }
 
-    /**
-     * Merge configuration details from a static configuration to the 
-     * persistent configuration.  The merging process is pretty crude, as
-     * this is only intended as a bootstrapping mechanism.  If the merge 
-     * succeeds, the result updates the persistent configuration.
-     * 
-     * @param entityManagerFactory
-     * @param staticConfig
-     * @return the merged/persisted configuration
-     */
-    public PaulConfiguration merge(EntityManagerFactory entityManagerFactory,
-            Configuration staticConfig) {
-        LOG.info("Merging details from static Configuration");
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
-        try {
-            entityManager.getTransaction().begin();
-            setProxyHost(staticConfig.getProxyHost());
-            setServerHost(staticConfig.getServerHost());
-            setProxyPort(staticConfig.getProxyPort());
-            setServerPort(staticConfig.getServerPort());
-            setBaseFileUrl(staticConfig.getBaseFileUrl());
-            setCaptureDirectory(staticConfig.getCaptureDirectory());
-            setArchiveDirectory(staticConfig.getArchiveDirectory());
-            setFeedId(staticConfig.getFeedId());
-            setFeedTitle(staticConfig.getFeedTitle());
-            setFeedAuthor(staticConfig.getFeedAuthor());
-            setFeedAuthorEmail(staticConfig.getFeedAuthorEmail());
-            setFeedUrl(staticConfig.getFeedUrl());
-            setFeedPageSize(staticConfig.getFeedPageSize());
-            setQueueExpiryInterval(staticConfig.getQueueExpiryInterval());
-            setQueueExpiryTime(staticConfig.getQueueExpiryTime());
-            setExpireByDeleting(staticConfig.isExpireByDeleting());
-            setDataGrabberRestartPolicy(staticConfig.getDataGrabberRestartPolicy());
-            setHoldDatasetsWithNoUser(staticConfig.isHoldDatasetsWithNoUser());
-            setPrimaryRepositoryUrl(staticConfig.getPrimaryRepositoryUrl());
-            for (FacilityConfig facilityConfig: staticConfig.getFacilityConfigs()) {
-                boolean found = false;
-                for (FacilityConfig f : facilities) {
-                    if (f.getFacilityName().equals(facilityConfig.getFacilityName()) ||
-                            f.getAddress().equals(facilityConfig.getAddress())) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    facilities.add(new Facility(facilityConfig));
-                    LOG.info("Added facility '" + facilityConfig.getFacilityName() + 
-                            "' with address '" + facilityConfig.getAddress() + "'");
-                }
-            }
-            PaulConfiguration res = entityManager.merge(this);
-            entityManager.getTransaction().commit();
-            return res;
-        } finally {
-            entityManager.close();
-        }
-    }
-
     @Id
     @GeneratedValue(generator="increment")
     @GenericGenerator(name="increment", strategy = "increment")
@@ -388,5 +337,184 @@ public class PaulConfiguration implements Configuration {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime
+                * result
+                + ((archiveDirectory == null) ? 0 : archiveDirectory.hashCode());
+        result = prime * result
+                + ((baseFileUrl == null) ? 0 : baseFileUrl.hashCode());
+        result = prime
+                * result
+                + ((captureDirectory == null) ? 0 : captureDirectory.hashCode());
+        result = prime
+                * result
+                + ((dataGrabberRestartPolicy == null) ? 0
+                        : dataGrabberRestartPolicy.hashCode());
+        result = prime * result + (expireByDeleting ? 1231 : 1237);
+        result = prime * result
+                + ((facilities == null) ? 0 : facilities.hashCode());
+        result = prime
+                * result
+                + (int) (facilityRecheckInterval ^ (facilityRecheckInterval >>> 32));
+        result = prime * result
+                + ((feedAuthor == null) ? 0 : feedAuthor.hashCode());
+        result = prime * result
+                + ((feedAuthorEmail == null) ? 0 : feedAuthorEmail.hashCode());
+        result = prime * result + ((feedId == null) ? 0 : feedId.hashCode());
+        result = prime * result + feedPageSize;
+        result = prime * result
+                + ((feedTitle == null) ? 0 : feedTitle.hashCode());
+        result = prime * result + ((feedUrl == null) ? 0 : feedUrl.hashCode());
+        result = prime * result + (holdDatasetsWithNoUser ? 1231 : 1237);
+        result = prime
+                * result
+                + ((primaryRepositoryUrl == null) ? 0 : primaryRepositoryUrl
+                        .hashCode());
+        result = prime * result
+                + ((proxyHost == null) ? 0 : proxyHost.hashCode());
+        result = prime * result + proxyPort;
+        result = prime * result
+                + (int) (queueExpiryInterval ^ (queueExpiryInterval >>> 32));
+        result = prime * result
+                + (int) (queueExpiryTime ^ (queueExpiryTime >>> 32));
+        result = prime * result
+                + ((serverHost == null) ? 0 : serverHost.hashCode());
+        result = prime * result + serverPort;
+        result = prime * result + (useProject ? 1231 : 1237);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        PaulConfiguration other = (PaulConfiguration) obj;
+        if (archiveDirectory == null) {
+            if (other.archiveDirectory != null) {
+                return false;
+            }
+        } else if (!archiveDirectory.equals(other.archiveDirectory)) {
+            return false;
+        }
+        if (baseFileUrl == null) {
+            if (other.baseFileUrl != null) {
+                return false;
+            }
+        } else if (!baseFileUrl.equals(other.baseFileUrl)) {
+            return false;
+        }
+        if (captureDirectory == null) {
+            if (other.captureDirectory != null) {
+                return false;
+            }
+        } else if (!captureDirectory.equals(other.captureDirectory)) {
+            return false;
+        }
+        if (dataGrabberRestartPolicy != other.dataGrabberRestartPolicy) {
+            return false;
+        }
+        if (expireByDeleting != other.expireByDeleting) {
+            return false;
+        }
+        if (facilities == null) {
+            if (other.facilities != null) {
+                return false;
+            }
+        } else if (!facilities.equals(other.facilities)) {
+            return false;
+        }
+        if (facilityRecheckInterval != other.facilityRecheckInterval) {
+            return false;
+        }
+        if (feedAuthor == null) {
+            if (other.feedAuthor != null) {
+                return false;
+            }
+        } else if (!feedAuthor.equals(other.feedAuthor)) {
+            return false;
+        }
+        if (feedAuthorEmail == null) {
+            if (other.feedAuthorEmail != null) {
+                return false;
+            }
+        } else if (!feedAuthorEmail.equals(other.feedAuthorEmail)) {
+            return false;
+        }
+        if (feedId == null) {
+            if (other.feedId != null) {
+                return false;
+            }
+        } else if (!feedId.equals(other.feedId)) {
+            return false;
+        }
+        if (feedPageSize != other.feedPageSize) {
+            return false;
+        }
+        if (feedTitle == null) {
+            if (other.feedTitle != null) {
+                return false;
+            }
+        } else if (!feedTitle.equals(other.feedTitle)) {
+            return false;
+        }
+        if (feedUrl == null) {
+            if (other.feedUrl != null) {
+                return false;
+            }
+        } else if (!feedUrl.equals(other.feedUrl)) {
+            return false;
+        }
+        if (holdDatasetsWithNoUser != other.holdDatasetsWithNoUser) {
+            return false;
+        }
+        if (primaryRepositoryUrl == null) {
+            if (other.primaryRepositoryUrl != null) {
+                return false;
+            }
+        } else if (!primaryRepositoryUrl.equals(other.primaryRepositoryUrl)) {
+            return false;
+        }
+        if (proxyHost == null) {
+            if (other.proxyHost != null) {
+                return false;
+            }
+        } else if (!proxyHost.equals(other.proxyHost)) {
+            return false;
+        }
+        if (proxyPort != other.proxyPort) {
+            return false;
+        }
+        if (queueExpiryInterval != other.queueExpiryInterval) {
+            return false;
+        }
+        if (queueExpiryTime != other.queueExpiryTime) {
+            return false;
+        }
+        if (serverHost == null) {
+            if (other.serverHost != null) {
+                return false;
+            }
+        } else if (!serverHost.equals(other.serverHost)) {
+            return false;
+        }
+        if (serverPort != other.serverPort) {
+            return false;
+        }
+        if (useProject != other.useProject) {
+            return false;
+        }
+        return true;
     }
 }

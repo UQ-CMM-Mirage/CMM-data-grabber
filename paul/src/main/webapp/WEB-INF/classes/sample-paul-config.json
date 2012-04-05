@@ -4,6 +4,7 @@
   "proxyHost" : "xxx.example.com",
   "serverHost" : "acls.example.com",
   "primaryRepositoryUrl" : "http://repo.example.com",
+  "aclsUrl" : "http://acls.example.com/xxx/book.dll",
   "facilityRecheckInterval" : 0,
   "useProject" : false,
   "captureDirectory" : "/tmp/safe",
@@ -12,7 +13,7 @@
   "feedUrl" : "http://xxx.example.com/paul/atom/queue",
   "feedId" : "http://xxx.example.com/paul/atom/queue",
   "feedTitle" : "Data grabber data set feed",
-  "feedAuthor" : "Some Centre, University of Example",
+  "feedAuthor" : "Generous Donor Centre, University of Example",
   "feedAuthorEmail" : "nobody@example.com",
   "feedPageSize" : 10,
   "facilities" : {
