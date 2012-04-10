@@ -8,7 +8,7 @@
     <Realm className="org.apache.catalina.realm.LockOutRealm">
         <Realm className="org.apache.catalina.realm.MemoryRealm"/>
     	<Realm className="au.edu.uq.cmm.tomcat.realm.ACLSRealm" 
-           serverHost="acls-uat.cmm.uq.edu.au" serverPort="1024" 
+           serverHost="152.98.195.10" serverPort="1024" 
            dummyFacility="The Proxy" localHostId="FISH"/>
     </Realm>
     

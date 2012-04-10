@@ -2,6 +2,8 @@ package au.edu.uq.cmm.paul.servlet;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Date;
 import java.util.List;
 
@@ -32,6 +34,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import au.edu.uq.cmm.aclslib.proxy.AclsAuthenticationException;
+import au.edu.uq.cmm.aclslib.proxy.AclsInUseException;
 import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
 import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.aclslib.service.Service.State;
@@ -155,7 +158,7 @@ public class WebUIController {
     public String endSession(@PathVariable String sessionUuid, Model model, 
             HttpServletResponse response, HttpServletRequest request) 
     throws IOException, AclsAuthenticationException {
-        services.getFacilitySessionManager().logout(sessionUuid);
+        services.getFacilitySessionManager().logoutSession(sessionUuid);
         response.sendRedirect(response.encodeRedirectURL(
                 request.getContextPath() + "/sessions"));
         return null;
@@ -201,69 +204,6 @@ public class WebUIController {
         return "facility";
     }
     
-    @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
-            params={"startSession"})
-    public String startSession(@PathVariable String facilityName, 
-            @RequestParam(required=false) String userName, 
-            @RequestParam(required=false) String account,
-            Model model, HttpServletResponse response, HttpServletRequest request) 
-    throws IOException {
-        FacilityStatusManager fsm = services.getFacilitySessionManager();
-        facilityName = tidy(facilityName);
-        model.addAttribute("facilityName", facilityName);
-        
-        String password = request.getParameter("password");
-        if ((userName = tidy(userName)).isEmpty() ||
-                (password = tidy(password)).isEmpty()) {
-            // Phase 1 - user must fill in user name and password
-            model.addAttribute("message", "Fill in username and password");
-            return "facilityLogin";
-        }
-        if (account == null) {
-            // Phase 2 - validate user credentials and get accounts list
-            List<String> accounts = null;
-            try {
-                LOG.debug("Attempting login");
-                accounts = fsm.login(facilityName, userName, password);
-                LOG.debug("Login succeeded");
-            } catch (AclsAuthenticationException ex) {
-                model.addAttribute("message", "Login failed: " + ex.getMessage());
-            }
-            // If there is only one account, select immediately.
-            if (accounts != null) {
-                try {
-                    if (accounts.size() == 1) {
-                        fsm.selectAccount(facilityName, userName, accounts.get(0));
-                        LOG.debug("Account selection succeeded");
-                        response.sendRedirect(response.encodeRedirectURL(
-                                request.getContextPath() + "/sessions"));
-                        return null;
-                    } else {
-                        model.addAttribute("accounts", accounts);
-                        model.addAttribute("message", 
-                                "Select an account to complete the login");
-                    }
-                } catch (AclsAuthenticationException ex) {
-                    model.addAttribute("message",
-                            "Account selection failed: " + ex.getMessage());
-                }
-            }
-        } else {
-            // Phase 3 - after user has selected an account
-            try {
-                fsm.selectAccount(facilityName, userName, account);
-                LOG.debug("Account selection succeeded");
-                response.sendRedirect(response.encodeRedirectURL(
-                        request.getContextPath() + "/sessions"));
-                return null;
-            } catch (AclsAuthenticationException ex) {
-                model.addAttribute("message", 
-                        "Account selection failed: " + ex.getMessage());
-            }
-        }
-        return "facilityLogin";
-    }
-    
     @RequestMapping(value="/mirage", method=RequestMethod.GET)
     public String mirage(Model model, HttpServletResponse response) 
             throws IOException {
@@ -278,6 +218,101 @@ public class WebUIController {
         response.sendRedirect(
                 services.getConfiguration().getAclsUrl());
         return null;
+    }
+    
+    @RequestMapping(value="/facilitySelect", method=RequestMethod.GET)
+    public String facilitySelector(Model model) {
+        model.addAttribute("message", "Select a facility from the pulldown");
+        model.addAttribute("facilities", 
+                services.getConfiguration().getFacilities());
+        return "facilitySelect";
+    }
+    
+    @RequestMapping(value="/facilitySelect", method=RequestMethod.POST)
+    public String facilitySelect(Model model, 
+            HttpServletRequest request, HttpServletResponse response,
+            @RequestParam(required=false) String facilityName) 
+    throws UnsupportedEncodingException, IOException {
+        if (facilityName == null) {
+            model.addAttribute("facilities", 
+                    services.getConfiguration().getFacilities());
+            model.addAttribute("message", "Select a facility from the pulldown");
+            return "facilitySelect";
+        } else {
+            response.sendRedirect(request.getContextPath() + 
+                    "/facilityLogin" +
+                    "?facilityName=" + URLEncoder.encode(facilityName, "UTF-8") + 
+                    "&returnTo=" + request.getContextPath());
+            return null;
+        }
+    }
+    
+    @RequestMapping(value="/facilityLogin")
+    public String startSession(@RequestParam String facilityName, 
+            @RequestParam(required=false) String startSession,  
+            @RequestParam(required=false) String endOldSession, 
+            @RequestParam(required=false) String userName, 
+            @RequestParam(required=false) String account,
+            @RequestParam(required=false) String returnTo,
+            Model model, HttpServletResponse response, HttpServletRequest request) 
+                    throws IOException {
+        FacilityStatusManager fsm = services.getFacilitySessionManager();
+        facilityName = tidy(facilityName);
+        returnTo = tidy(returnTo);
+        if (!returnTo.startsWith(request.getContextPath())) {
+            returnTo = request.getContextPath() + returnTo;
+        }
+        model.addAttribute("facilityName", facilityName);
+        model.addAttribute("returnTo", returnTo);
+
+        if (startSession == null) {
+            return "facilityLogin";
+        }
+
+        String password = request.getParameter("password");
+        if ((userName = tidy(userName)).isEmpty() ||
+                (password = tidy(password)).isEmpty()) {
+            // Phase 1 - user must fill in user name and password
+            model.addAttribute("message", "Fill in username and password");
+            return "facilityLogin";
+        }
+        try {
+            if (account == null) {
+                // Phase 2 - validate user credentials and get accounts list
+                List<String> accounts = null;
+                if (endOldSession != null) {
+                    LOG.debug("Attempting old session logout");
+                    fsm.logoutFacility(facilityName);
+                    LOG.debug("Logout succeeded");
+                }
+                LOG.debug("Attempting login");
+                accounts = fsm.login(facilityName, userName, password);
+                LOG.debug("Login succeeded");
+                // If there is only one account, select immediately.
+                if (accounts != null) {
+                    if (accounts.size() == 1) {
+                        fsm.selectAccount(facilityName, userName, accounts.get(0));
+                        LOG.debug("Account selection succeeded");;
+                        return "facilityLoggedIn";
+                    } else {
+                        model.addAttribute("accounts", accounts);
+                        model.addAttribute("message", 
+                                "Select an account to complete the login");
+                    }
+                }
+            } else {
+                // Phase 3 - after user has selected an account
+                fsm.selectAccount(facilityName, userName, account);
+                LOG.debug("Account selection succeeded");
+                return "facilityLoggedIn";
+            }
+        } catch (AclsAuthenticationException ex) {
+            model.addAttribute("message", "Login failed: " + ex.getMessage());
+        } catch (AclsInUseException ex) {
+            model.addAttribute("message", ex.getMessage());
+            model.addAttribute("inUse", true);
+        }
+        return "facilityLogin";
     }
     
     @RequestMapping(value="/login", method=RequestMethod.GET)

@@ -10,14 +10,20 @@
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container">
 		<h1>Data Grabber Login</h1>
-		<p>Login to the Data Grabber to claim files, view the queues and
-			perform other tasks. Use your normal ACLS user name and password, or
-			administrator credentials.</p>
-
+		<c:choose>
+			<c:when test="">
+				<p>Login to the Data Grabber to claim files, view the queues and
+					perform other tasks. Use your normal ACLS user name and password,
+					or administrator credentials.</p>
+			</c:when>
+			<c:otherwise>
+				<p>You need to be logged in to perform this operation</p>
+			</c:otherwise>
+		</c:choose>
 		${message}
 
 		<form name="form" method="POST" method="post"
-			action='<%= response.encodeURL("j_security_check") %>'>
+			action='<%=response.encodeURL("j_security_check")%>'>
 			<c:if test="${empty accounts}">
               User name: <input type="text" name="j_username"
 					value="${param.userName}">

@@ -24,19 +24,18 @@
         
         ${message}
         
-        <form name="form" method="POST" method="post"
-              action="/paul/facilities/${facilityName}">
+        <form name="form" method="post" action="/paul/facilityLogin">
           <c:if test="${empty accounts}">
               User name: <input type="text" name="userName" value="${param.userName}">
               <br>
-              Password: <input type="password" name="password" value="${param.userName}">
+              Password: <input type="password" name="password" value="${param.password}">
           </c:if>
           <c:if test="${! empty accounts}">
               User name:  <input type="text" name="userName" 
               					 value="${param.userName}" readonly>
               <br>
               Password: <input type="password" name="password" 
-                               value="${param.userName}" readonly>
+                               value="${param.password}" readonly>
               <br>
               <select name="account">
                   <c:forEach items="${accounts}" var="account">
@@ -45,8 +44,16 @@
               </select>
           </c:if>
           <br>
-          <button type="submit" name="startSession">OK</button>
-          <button type="button" onclick="window.location = '/paul/sessions'">Cancel</button>
+          <input type="hidden" name="facilityName" value="${facilityName}">
+          <input type="hidden" name="returnTo" value="${returnTo}">
+          <c:if test='${empty inUse}'>
+          	  <button type="submit" name="startSession">OK</button>
+          </c:if>
+          <c:if test='${!empty inUse}'>
+          	  <button type="submit" name="startSession">Logout Existing Session</button>
+          	  <input type="hidden" name="endOldSession" value="yes">
+          </c:if>
+          <button type="button" onclick="window.location = '${returnTo}'">Cancel</button>
         </form>
 	</div><!-- /container -->
 <%@ include file="/WEB-INF/jsp/commonFooter.jspFrag" %>
