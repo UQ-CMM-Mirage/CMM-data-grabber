@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
-<%@ page session="false"%>
+<%@ page session="true"%>
 <html lang="en">
 <head>
 <%@ include file="/WEB-INF/jsp/commonHead.jspFrag"%>
@@ -10,16 +10,18 @@
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container">
 		<h1>Data Grabber Login</h1>
-		<c:choose>
-			<c:when test="">
-				<p>Login to the Data Grabber to claim files, view the queues and
-					perform other tasks. Use your normal ACLS user name and password,
-					or administrator credentials.</p>
-			</c:when>
-			<c:otherwise>
-				<p>You need to be logged in to perform this operation</p>
-			</c:otherwise>
-		</c:choose>
+
+        <%-- This doesn't work ... --%>
+		<c:if test="${!request.getHeader('referer').endsWith('loggedIn')}">
+			<p>You need to be logged in to perform this operation</p>
+			<p>${request.getHeader('referer')}</p>
+			<p>${request.getHeader('referer').endsWith('loggedIn')}</p>
+		</c:if>
+		<p>
+			Please enter your normal ACLS username and password, or the
+		    credentials of a local administrator account.
+		</p> 
+		
 		${message}
 
 		<form name="form" method="POST" method="post"

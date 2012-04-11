@@ -9,21 +9,35 @@
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container">
-		<h1>Facility Selection</h1>
+		<h1>
+			<c:choose>
+				<c:when test="${next == 'claimDatasets'}">
+					Select the Instrument you were using
+				</c:when>
+				<c:when test="${next == 'facilityLogin'}">
+					Select the Facility you want use
+				</c:when>
+				<c:otherwise>
+					Facility Selection
+				</c:otherwise>
+			</c:choose>
+		</h1>
 		${message}
 		<br> 
 		<form action="facilitySelect" method="post">
 			<select name="facilityName">
 				<c:forEach items="${facilities}" var="facility">
-					<option value="${facility.facilityName}">
-						${facility.facilityName}
-					</option>
+				    <c:if test="${!facility.dummy}">
+						<option value="${facility.facilityName}">
+							${facility.facilityName}
+						</option>
+					</c:if>
 				</c:forEach>
 			</select>
 		<br>
+		    <input type="hidden" name="next" value="${next}">
 			<button type="submit">OK</button>
 			<button type="button" onclick="window.location = '/paul'">Cancel</button>
-
 		</form>
 	</div>
 	<!-- /container -->

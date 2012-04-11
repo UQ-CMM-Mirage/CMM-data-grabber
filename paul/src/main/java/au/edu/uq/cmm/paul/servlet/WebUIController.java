@@ -221,8 +221,10 @@ public class WebUIController {
     }
     
     @RequestMapping(value="/facilitySelect", method=RequestMethod.GET)
-    public String facilitySelector(Model model) {
+    public String facilitySelector(Model model, 
+            @RequestParam String next) {
         model.addAttribute("message", "Select a facility from the pulldown");
+        model.addAttribute("next", next);
         model.addAttribute("facilities", 
                 services.getConfiguration().getFacilities());
         return "facilitySelect";
@@ -230,6 +232,7 @@ public class WebUIController {
     
     @RequestMapping(value="/facilitySelect", method=RequestMethod.POST)
     public String facilitySelect(Model model, 
+            @RequestParam String next,
             HttpServletRequest request, HttpServletResponse response,
             @RequestParam(required=false) String facilityName) 
     throws UnsupportedEncodingException, IOException {
@@ -237,10 +240,11 @@ public class WebUIController {
             model.addAttribute("facilities", 
                     services.getConfiguration().getFacilities());
             model.addAttribute("message", "Select a facility from the pulldown");
+            model.addAttribute("next", next);
             return "facilitySelect";
         } else {
             response.sendRedirect(request.getContextPath() + 
-                    "/facilityLogin" +
+                    "/" + next +
                     "?facilityName=" + URLEncoder.encode(facilityName, "UTF-8") + 
                     "&returnTo=" + request.getContextPath());
             return null;
