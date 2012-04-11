@@ -13,6 +13,7 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
@@ -242,16 +243,19 @@ public class Facility implements FacilityConfig {
     @JsonIgnore
     @Transient
     public synchronized FacilitySession getCurrentSession() {
+        // FIXME - this needs tuning
         return (sessions.size() == 0) ? null : sessions.get(sessions.size() - 1);
     }
     
     @JsonIgnore
     @Transient
     public synchronized boolean isInUse() {
+        // FIXME - this needs tuning
         return sessions.size() > 0 && getCurrentSession().getLogoutTime() == null;
     }
 
     public synchronized FacilitySession getLoginDetails(long timestamp) {
+        // FIXME - this needs tuning
         for (int i = sessions.size() - 1; i >= 0; i--) {
             FacilitySession session = sessions.get(i);
             if (session.getLoginTime().getTime() <= timestamp && 
@@ -264,8 +268,10 @@ public class Facility implements FacilityConfig {
     }
 
     @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER)
+    @OrderBy(value="id")
     @JoinColumn(name="session_id")
     public List<FacilitySession> getSessions() {
+        // FIXME - this needs tuning
         return sessions;
     }
 
