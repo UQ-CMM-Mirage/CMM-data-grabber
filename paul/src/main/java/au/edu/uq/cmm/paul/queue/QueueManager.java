@@ -42,7 +42,7 @@ public class QueueManager {
         this.services = services;
     }
 
-    public List<DatasetMetadata> getSnapshot(Slice slice) {
+    public List<DatasetMetadata> getSnapshot(Slice slice, String facilityName) {
         EntityManager em = services.getEntityManagerFactory().createEntityManager();
         try {
             String whereClause = "";
@@ -54,12 +54,24 @@ public class QueueManager {
                 whereClause = "where m.userName is not null ";
                 break;
             }
-            return em.createQuery("from DatasetMetadata m " +
-            		whereClause + "order by m.id", 
-                    DatasetMetadata.class).getResultList();
+            TypedQuery<DatasetMetadata> query;
+            if (facilityName == null) {
+                query = em.createQuery("from DatasetMetadata m " +
+                    whereClause + "order by m.id", DatasetMetadata.class);
+            } else {
+                query = em.createQuery("from DatasetMetadata m " +
+                    whereClause + "and facilityName = :name " +
+                        "order by m.id", DatasetMetadata.class);
+                query.setParameter("name", facilityName);
+            }
+            return query.getResultList();
         } finally {
             em.close();
         }
+    }
+
+    public List<DatasetMetadata> getSnapshot(Slice slice) {
+        return getSnapshot(slice, null);
     }
 
     public void addEntry(DatasetMetadata metadata, File metadataFile) 

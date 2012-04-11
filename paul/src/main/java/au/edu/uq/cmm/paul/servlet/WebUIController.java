@@ -153,9 +153,10 @@ public class WebUIController {
         return "sessions";
     }
     
-    @RequestMapping(value="/sessions/{sessionUuid:.+}", method=RequestMethod.POST, 
+    @RequestMapping(value="/sessions", method=RequestMethod.POST,
             params={"endSession"})
-    public String endSession(@PathVariable String sessionUuid, Model model, 
+    public String endSession(Model model, 
+            @RequestParam String sessionUuid, 
             HttpServletResponse response, HttpServletRequest request) 
     throws IOException, AclsAuthenticationException {
         services.getFacilitySessionManager().logoutSession(sessionUuid);
@@ -169,6 +170,14 @@ public class WebUIController {
         Facility facility = lookupFacilityByName(facilityName);
         model.addAttribute("facility", facility);
         return "facility";
+    }
+    
+    @RequestMapping(value="/facilities/{facilityName:.+}", 
+            method=RequestMethod.GET, params={"sessionLog"})
+    public String facilitySessions(@PathVariable String facilityName, Model model) {
+        Facility facility = lookupFacilityByName(facilityName);
+        model.addAttribute("facility", facility);
+        return "facilitySessions";
     }
     
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
@@ -378,6 +387,17 @@ public class WebUIController {
                 services.getQueueManager().getSnapshot(Slice.INGESTIBLE));
         return "queue";
     }
+    
+    @RequestMapping(value="/claimDatasets")
+    public String claimDatasets(Model model,
+            @RequestParam String facilityName) {
+        model.addAttribute("facilityName", facilityName);
+        model.addAttribute("datasets", 
+                services.getQueueManager().getSnapshot(Slice.HELD, facilityName));
+        return "claimDatasets";
+    }
+    
+    
     
     @RequestMapping(value="/queue/{sliceName:held|ingestible}", 
             method=RequestMethod.POST, 

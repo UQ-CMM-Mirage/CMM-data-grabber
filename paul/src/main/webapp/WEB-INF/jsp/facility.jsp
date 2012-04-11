@@ -51,6 +51,9 @@
 					Watching</button>
 			</form>
 		</c:if>
+		<form action="${facility.facilityName}">
+			<button type="submit" name="sessionLog">Session Log</button>
+		</form>
 	</div>
 	<!-- /container -->
 	<%@ include file="/WEB-INF/jsp/commonFooter.jspFrag"%>
