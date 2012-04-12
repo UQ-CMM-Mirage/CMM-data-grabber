@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import au.edu.uq.cmm.aclslib.proxy.AclsAuthenticationException;
 import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEvent;
 import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEventListener;
+import au.edu.uq.cmm.aclslib.proxy.AclsInUseException;
 import au.edu.uq.cmm.aclslib.proxy.AclsLoginEvent;
 import au.edu.uq.cmm.aclslib.proxy.AclsLogoutEvent;
 import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
@@ -46,11 +47,13 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
     }
 
     public void eventOccurred(AclsFacilityEvent event) {
+        LOG.debug("Processing event " + event);
         EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
             String facilityName = event.getFacilityName();
             Facility facility = getFacility(em, facilityName);
+            FacilitySession session;
             if (facility == null) {
                 LOG.error("No facility found for facility id " + facilityName);
                 return;
@@ -62,22 +65,22 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
             String emailAddress = aclsAccountMapper.mapToEmailAddress(
                     event.getUserName(), event.getAccount());
             if (event instanceof AclsLoginEvent) {
-                FacilitySession details = new FacilitySession(
+                session = new FacilitySession(
                         userName, accountName, facility, emailAddress, new Date());
-                facility.addSession(details);
+                facility.addSession(session);
             } else if (event instanceof AclsLogoutEvent) {
-                FacilitySession details = facility.getCurrentSession();
-                if (details == null) {
+                session = facility.getCurrentSession();
+                if (session == null) {
                     throw new InvalidSessionException(
                             "No current session for facility " + facility.getFacilityName());
-                } else if (!details.getUserName().equals(userName) ||
-                        !details.getAccount().equals(accountName)) {
+                } else if (!session.getUserName().equals(userName) ||
+                        !session.getAccount().equals(accountName)) {
                     throw new InvalidSessionException(
                             "Inconsistent session user or account name for facility " + 
                             facility.getFacilityName());
                 }
-                details.setLogoutTime(new Date());
-            }
+                session.setLogoutTime(new Date());
+            } 
             em.persist(facility);
             em.getTransaction().commit();
         } catch (InvalidSessionException ex) {
@@ -115,7 +118,7 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
         }
     }
     
-    public void logout(String sessionUuid) throws AclsAuthenticationException {
+    public void logoutSession(String sessionUuid) throws AclsAuthenticationException {
         EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
@@ -136,34 +139,52 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
             em.close();
         }
     }
+    
+    public void logoutFacility(String facilityId) 
+            throws AclsAuthenticationException {
+        EntityManager em = emf.createEntityManager();
+        try {
+            em.getTransaction().begin();
+            Facility facility = getFacility(em, facilityId);
+            FacilitySession session = facility.getCurrentSession();
+            if (session != null) {
+                if (session.getLogoutTime() == null) {
+                    session.setLogoutTime(new Date());
+                }
+                proxy.logout(facility, session.getUserName(), 
+                        session.getAccount());
+                em.getTransaction().commit();
+            }
+        } finally {
+            em.close();
+        }
+    }
 
     public Collection<Facility> getSnapshot() {
         EntityManager em = emf.createEntityManager();
         try {
             TypedQuery<Facility> query = em.createQuery(
                     "from Facility", Facility.class);
-            Collection<Facility> res = query.getResultList();
-            LOG.debug("Snapshot contains " + res.size() + " entries");
-            return res;
+            return query.getResultList();
         } finally {
             em.close();
         }
     }
 
     public List<String> login(String facilityName, String userName, String password) 
-    throws AclsAuthenticationException {
+    throws AclsAuthenticationException, AclsInUseException {
         Facility facility = lookupIdleFacility(facilityName);
         return proxy.login(facility, userName, password);
     }
 
     public void selectAccount (String facilityName, String userName, String account) 
-    throws AclsAuthenticationException {
+    throws AclsAuthenticationException, AclsInUseException {
         Facility facility = lookupIdleFacility(facilityName);
         proxy.selectAccount(facility, userName, account);
     }
 
     private Facility lookupIdleFacility(String facilityName)
-    throws AclsAuthenticationException {
+    throws AclsAuthenticationException, AclsInUseException {
         Facility facility;
         EntityManager em = emf.createEntityManager();
         try {
@@ -172,10 +193,10 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
             em.close();
         }
         if (facility == null) {
-            throw new AclsAuthenticationException ("Unknown facility " + facilityName);
+            throw new AclsAuthenticationException("Unknown facility " + facilityName);
         }
         if (facility.isInUse()) {
-            throw new AclsAuthenticationException ("Facility " + facilityName + " is in use");
+            throw new AclsInUseException("Facility " + facilityName + " is in use");
         }
         return facility;
     }

@@ -67,10 +67,9 @@
 	<security-constraint>
 		<web-resource-collection>
 			<web-resource-name>User Interfaces</web-resource-name>
-			<url-pattern>/sessions</url-pattern>
-			<url-pattern>/queue/held</url-pattern>
-			<url-pattern>/claim</url-pattern>
 			<url-pattern>/loggedIn</url-pattern>
+			<url-pattern>/claim</url-pattern>
+			<url-pattern>/facilitySelect</url-pattern>
 		</web-resource-collection>
 		<auth-constraint>
 			<role-name>ROLE_USER</role-name>
