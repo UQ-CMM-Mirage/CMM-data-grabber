@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
-<%@ page session="false"%>
+<%@ page session="true"%>
 <html lang="en">
 <head>
 <%@ include file="/WEB-INF/jsp/commonHead.jspFrag"%>
@@ -10,14 +10,22 @@
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container">
 		<h1>Data Grabber Login</h1>
-		<p>Login to the Data Grabber to claim files, view the queues and
-			perform other tasks. Use your normal ACLS user name and password, or
-			administrator credentials.</p>
 
+        <%-- This doesn't work ... --%>
+		<c:if test="${!request.getHeader('referer').endsWith('loggedIn')}">
+			<p>You need to be logged in to perform this operation</p>
+			<p>${request.getHeader('referer')}</p>
+			<p>${request.getHeader('referer').endsWith('loggedIn')}</p>
+		</c:if>
+		<p>
+			Please enter your normal ACLS username and password, or the
+		    credentials of a local administrator account.
+		</p> 
+		
 		${message}
 
 		<form name="form" method="POST" method="post"
-			action='<%= response.encodeURL("j_security_check") %>'>
+			action='<%=response.encodeURL("j_security_check")%>'>
 			<c:if test="${empty accounts}">
               User name: <input type="text" name="j_username"
 					value="${param.userName}">
