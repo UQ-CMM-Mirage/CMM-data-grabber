@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -13,6 +14,7 @@ import javax.persistence.TypedQuery;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.catalina.realm.GenericPrincipal;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
 import org.joda.time.Hours;
@@ -366,8 +368,8 @@ public class WebUIController {
         return "queue";
     }
     
-    @RequestMapping(value="/claimDatasets")
-    public String claimDatasets(Model model,
+    @RequestMapping(value="/claimDatasets", method=RequestMethod.GET)
+    public String showClaimDatasets(Model model,
             @RequestParam String facilityName) {
         model.addAttribute("facilityName", facilityName);
         model.addAttribute("datasets", 
@@ -375,9 +377,60 @@ public class WebUIController {
         return "claimDatasets";
     }
     
+    @RequestMapping(value="/claimDatasets", 
+            method=RequestMethod.POST, params={"claim"})
+    public String claimDatasets(Model model,
+            HttpServletRequest request, HttpServletResponse response,
+            @RequestParam(required=false) String[] ids,
+            @RequestParam(required=false) String userName,
+            @RequestParam String facilityName) 
+    throws IOException {
+        if (ids == null) {
+            model.addAttribute("facilityName", facilityName);
+            model.addAttribute("datasets", 
+                    services.getQueueManager().getSnapshot(Slice.HELD, facilityName));
+            model.addAttribute("message", "Check the checkboxes for the " +
+                    "Datasets you want to claim");
+            return "claimDatasets";
+        }
+        GenericPrincipal principal = (GenericPrincipal) request.getUserPrincipal();
+        if (principal == null) {
+            LOG.error("No principal ... can't proceed");
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            return null;
+        }
+        if (userName == null) {
+            if (!Arrays.asList(principal.getRoles()).contains("ROLE_ACLS_USER")) {
+                model.addAttribute("message", "You must be logged in using " +
+                		"your ACLS credentials to claim files");
+                model.addAttribute("returnTo", request.getContextPath());
+                return "failed";
+            }
+            userName = principal.getName();
+        } else {
+            if (!Arrays.asList(principal.getRoles()).contains("ROLE_ADMIN")) {
+                model.addAttribute("message", "Only an administrator can claim " +
+                        "files for someone else");
+                model.addAttribute("returnTo", request.getContextPath());
+                return "failed";
+            }
+        }
+        try {
+            services.getQueueManager().changeUser(ids, userName);
+        } catch (NumberFormatException ex) {
+            LOG.debug("Rejected request with bad entry id(s)");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return null;
+        }
+        model.addAttribute("message",
+                (ids.length == 0 ? "No datasets " :
+                    ids.length == 1 ? "1 datasets " :
+                        (ids.length + " datasets ")) + " claimed");
+        return "ok";
+    }
+
     @RequestMapping(value="/queue/{sliceName:held|ingestible}", 
-            method=RequestMethod.POST, 
-            params={"deleteAll"})
+            method=RequestMethod.POST, params={"deleteAll"})
     public String deleteAll(Model model, 
             @PathVariable String sliceName,
             @RequestParam(required=false) String mode, 
@@ -478,21 +531,19 @@ public class WebUIController {
             params={"assign"})
     public String assignQueueEntry(@PathVariable String entry, Model model, 
             @PathVariable String sliceName,
-            HttpServletResponse response, @RequestParam String userName) 
-            throws IOException {
-        long id;
+            HttpServletResponse response, @RequestParam String userName) throws IOException {
+        if (userName.trim().isEmpty()) {
+            model.addAttribute("message", "Set the user name");
+            return "queueEntry";
+        }
         try {
-            id = Long.parseLong(entry);
+            services.getQueueManager().changeUser(new String[]{entry}, userName);
         } catch (NumberFormatException ex) {
             LOG.debug("Rejected request with bad entry id");
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return null;
         }
-        if (userName.trim().isEmpty()) {
-            model.addAttribute("message", "Set the user name");
-            return "queueEntry";
-        }
-        services.getQueueManager().assignToUser(id, userName);
+        
         model.addAttribute("message", "Queue entry assigned to " + userName);
         model.addAttribute("returnTo", ".");
         return "ok";

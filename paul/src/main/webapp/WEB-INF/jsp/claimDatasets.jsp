@@ -23,6 +23,7 @@
 					the Lab staff.  The files may have been mistakenly assigned
 					to or claimed by the wrong user.</li>
 			</ul>
+			<p>${message}</p>
 			<c:choose>
 				<c:when test="${!empty datasets}">
 					<table class="table table-striped table-bordered table-condensed">
@@ -37,7 +38,7 @@
 					    <tbody>
 						<c:forEach var="dataset" items="${datasets}">
 						    <tr>
-								<td><input type="checkbox" name="id-${dataset.id}"></td>
+								<td><input type="checkbox" name="ids" value="${dataset.id}"></td>
 								<td>${dataset.id}</td>
 								<td>${dataset.captureTimestamp}</td>
 								<td>${dataset.sourceFilePathnameBase}</td>
@@ -45,7 +46,8 @@
 						</c:forEach>
 						</tbody>
 					</table>
-					<button type="submit" name="claimThem">Claim Datasets</button>
+					<input type="hidden" name="facilityName" value="${facilityName}">
+					<button type="submit" name="claim">Claim Datasets</button>
 				</c:when>
 				<c:otherwise>
 					<p>There are no unclaimed datasets</p>
