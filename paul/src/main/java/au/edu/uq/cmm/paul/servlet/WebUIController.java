@@ -112,9 +112,7 @@ public class WebUIController {
         model.addAttribute("proxyState", ps);
         model.addAttribute("watcherStatus", stateToStatus(ws));
         model.addAttribute("proxyStatus", stateToStatus(ps));
-        model.addAttribute("resetRequired", 
-                services.getConfigManager().getLatestConfig() != 
-                services.getConfigManager().getActiveConfig());
+        model.addAttribute("resetRequired", getLatestConfig() != getConfig());
     }
     
     private Status stateToStatus(State state) {
@@ -128,22 +126,6 @@ public class WebUIController {
         default:
             return Status.TRANSITIONAL;
         }
-    }
-
-    private AclsProxy getProxy() {
-        return services.getProxy();
-    }
-    
-    private FileWatcher getFileWatcher() {
-        return services.getFileWatcher();
-    }
-    
-    private PaulConfiguration getLatestConfig() {
-        return services.getConfigManager().getLatestConfig();
-    }
-    
-    private Facility lookupFacilityByName(String facilityName) {
-        return (Facility) getLatestConfig().lookupFacilityByName(facilityName);
     }
     
     @RequestMapping(value="/sessions", method=RequestMethod.GET)
@@ -216,16 +198,14 @@ public class WebUIController {
     @RequestMapping(value="/mirage", method=RequestMethod.GET)
     public String mirage(Model model, HttpServletResponse response) 
             throws IOException {
-        response.sendRedirect(
-                services.getConfiguration().getPrimaryRepositoryUrl());
+        response.sendRedirect(getConfig().getPrimaryRepositoryUrl());
         return null;
     }
     
     @RequestMapping(value="/acls", method=RequestMethod.GET)
     public String acls(Model model, HttpServletResponse response) 
             throws IOException {
-        response.sendRedirect(
-                services.getConfiguration().getAclsUrl());
+        response.sendRedirect(getConfig().getAclsUrl());
         return null;
     }
     
@@ -234,8 +214,7 @@ public class WebUIController {
             @RequestParam String next) {
         model.addAttribute("message", "Select a facility from the pulldown");
         model.addAttribute("next", next);
-        model.addAttribute("facilities", 
-                services.getConfiguration().getFacilities());
+        model.addAttribute("facilities", getConfig().getFacilities());
         return "facilitySelect";
     }
     
@@ -246,8 +225,7 @@ public class WebUIController {
             @RequestParam(required=false) String facilityName) 
     throws UnsupportedEncodingException, IOException {
         if (facilityName == null) {
-            model.addAttribute("facilities", 
-                    services.getConfiguration().getFacilities());
+            model.addAttribute("facilities", getConfig().getFacilities());
             model.addAttribute("message", "Select a facility from the pulldown");
             model.addAttribute("next", next);
             return "facilitySelect";
@@ -397,8 +375,6 @@ public class WebUIController {
         return "claimDatasets";
     }
     
-    
-    
     @RequestMapping(value="/queue/{sliceName:held|ingestible}", 
             method=RequestMethod.POST, 
             params={"deleteAll"})
@@ -534,7 +510,7 @@ public class WebUIController {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return null;
         }
-        File file = new File(services.getConfiguration().getCaptureDirectory(), fileName);
+        File file = new File(getConfig().getCaptureDirectory(), fileName);
         DatafileMetadata metadata = fetchMetadata(file);
         if (metadata == null) {
             LOG.debug("No metadata for file " + fileName);
@@ -568,8 +544,7 @@ public class WebUIController {
     }
     
     private DatafileMetadata fetchMetadata(File file) {
-        EntityManager entityManager = 
-                services.getEntityManagerFactory().createEntityManager();
+        EntityManager entityManager = createEntityManager();
         try {
             TypedQuery<DatafileMetadata> query = entityManager.createQuery(
                     "from DatafileMetadata d where d.capturedFilePathname = :pathName", 
@@ -582,10 +557,9 @@ public class WebUIController {
             entityManager.close();
         }
     }
-    
+
     private DatasetMetadata fetchMetadata(long id) {
-        EntityManager entityManager = 
-                services.getEntityManagerFactory().createEntityManager();
+        EntityManager entityManager = createEntityManager();
         try {
             TypedQuery<DatasetMetadata> query = entityManager.createQuery(
                     "from DatasetMetadata d where d.id = :id", 
@@ -597,6 +571,30 @@ public class WebUIController {
         } finally {
             entityManager.close();
         }
+    }
+
+    private AclsProxy getProxy() {
+        return services.getProxy();
+    }
+    
+    private FileWatcher getFileWatcher() {
+        return services.getFileWatcher();
+    }
+    
+    private PaulConfiguration getLatestConfig() {
+        return services.getConfigManager().getLatestConfig();
+    }
+    
+    private PaulConfiguration getConfig() {
+        return services.getConfigManager().getActiveConfig();
+    }
+    
+    private Facility lookupFacilityByName(String facilityName) {
+        return (Facility) getLatestConfig().lookupFacilityByName(facilityName);
+    }
+    
+    private EntityManager createEntityManager() {
+        return services.getEntityManagerFactory().createEntityManager();
     }
     
     private String tidy(String str) {

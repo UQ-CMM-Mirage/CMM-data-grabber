@@ -64,7 +64,8 @@ public class QueueManager {
                         "order by m.id", DatasetMetadata.class);
                 query.setParameter("name", facilityName);
             }
-            return query.getResultList();
+            List<DatasetMetadata> res = query.getResultList();
+            return res;
         } finally {
             em.close();
         }
