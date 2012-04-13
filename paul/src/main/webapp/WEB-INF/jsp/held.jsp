@@ -17,22 +17,36 @@
 						entries</button>
 					<button type="submit" name="expire">Expire entries</button>
 				</form>
-				<ul>
-					<c:forEach items="${queue}" var="entry">
-						<li><a href="held/${entry.id}">Entry # ${entry.id}</a> -
-							facility ${entry.facilityName}, base pathname
-							${entry.sourceFilePathnameBase} captured:
-							${entry.captureTimestamp}
-							<form method="POST" action="held/${entry.id}">
-								<button type="submit" name="mode" 
-										value="discard">Delete</button>
-								<button type="submit" name="mode" 
-										value="archive">Archive</button>
-								<input type="hidden" name="confirmed"> <input
-									type="hidden" name="delete">
-							</form></li>
-					</c:forEach>
-				</ul>
+				<table class="table table-striped table-bordered table-condensed">
+					<thead>
+						<tr>
+							<th>Entry #</th>
+							<th>Facility name</th>
+							<th>Dataset pathname</th>
+							<th>Dataset capture date/time</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						<c:forEach items="${queue}" var="entry">
+							<tr>
+								<td><a href="held/${entry.id}">${entry.id}</a></td>
+								<td>${entry.facilityName}</td>
+								<td>${entry.sourceFilePathnameBase}</td>
+								<td>${entry.captureTimestamp}</td>
+								<td><form class="btn-group" method="POST" action="held/${entry.id}">
+										<button class="btn" type="submit" 
+												name="mode" value="discard">Delete</button>
+										<button class="btn" type="submit" 
+												name="mode" value="archive">Archive</button>
+										<input type="hidden" name="confirmed"> <input
+											type="hidden" name="delete">
+									</form>
+								<td>
+							</tr>
+						</c:forEach>
+					</tbody>
+				</table>
 			</c:when>
 			<c:otherwise>
 				<p>Hold queue is empty</p>
