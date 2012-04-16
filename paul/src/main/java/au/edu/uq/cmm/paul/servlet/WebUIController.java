@@ -258,15 +258,23 @@ public class WebUIController {
         model.addAttribute("facilityName", facilityName);
         model.addAttribute("returnTo", returnTo);
 
-        if (startSession == null) {
-            return "facilityLogin";
-        }
 
-        String password = request.getParameter("password");
-        if ((userName = tidy(userName)).isEmpty() ||
-                (password = tidy(password)).isEmpty()) {
+        userName = tidy(userName);
+        String password = tidy(request.getParameter("password"));
+        if (startSession == null) {
+            GenericPrincipal principal = (GenericPrincipal) request.getUserPrincipal();
+            if (principal != null && principal.hasRole("ROLE_ACLS_USER") && 
+                    principal.getPassword() != null &&
+                    !principal.getPassword().isEmpty()) {
+                userName = principal.getName();
+                password = principal.getPassword();
+            }
+        }
+        model.addAttribute("userName", userName);
+        model.addAttribute("password", password);
+        if (userName.isEmpty() || password.isEmpty()) {
             // Phase 1 - user must fill in user name and password
-            model.addAttribute("message", "Fill in username and password");
+            model.addAttribute("message", "Fill in the username and password fields");
             return "facilityLogin";
         }
         try {
@@ -400,7 +408,7 @@ public class WebUIController {
             return null;
         }
         if (userName == null) {
-            if (!Arrays.asList(principal.getRoles()).contains("ROLE_ACLS_USER")) {
+            if (!principal.hasRole("ROLE_ACLS_USER")) {
                 model.addAttribute("message", "You must be logged in using " +
                 		"your ACLS credentials to claim files");
                 model.addAttribute("returnTo", request.getContextPath());
@@ -408,7 +416,7 @@ public class WebUIController {
             }
             userName = principal.getName();
         } else {
-            if (!Arrays.asList(principal.getRoles()).contains("ROLE_ADMIN")) {
+            if (!principal.hasRole("ROLE_ADMIN")) {
                 model.addAttribute("message", "Only an administrator can claim " +
                         "files for someone else");
                 model.addAttribute("returnTo", request.getContextPath());
