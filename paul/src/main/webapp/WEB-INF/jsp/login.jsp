@@ -11,12 +11,7 @@
 	<div class="container">
 		<h1>Data Grabber Login</h1>
 
-        <%-- This doesn't work ... --%>
-		<c:if test="${!request.getHeader('referer').endsWith('loggedIn')}">
-			<p>You need to be logged in to perform this operation</p>
-			<p>${request.getHeader('referer')}</p>
-			<p>${request.getHeader('referer').endsWith('loggedIn')}</p>
-		</c:if>
+        <p>You need to be logged in to perform this operation</p>
 		<p>
 			Please enter your normal ACLS username and password, or the
 		    credentials of a local administrator account.

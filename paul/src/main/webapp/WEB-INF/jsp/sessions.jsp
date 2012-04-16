@@ -10,30 +10,53 @@
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container">
 		<h1>Current Facility Sessions</h1>
-		<c:forEach items="${facilities}" var="facility">
-		    <c:choose>
-				<c:when test="${facility.dummy}"></c:when>
-				<c:when test="${facility.inUse}">
-					<form action="sessions" method="post">
-						${facility.facilityName} is in use - user :
-						${facility.currentSession.userName}, started :
-						${facility.currentSession.loginTime}
-						<input type="hidden" name="sessionUuid"
-							value="${facility.currentSession.sessionUuid}">
-						<button name="endSession" type="submit">End session</button>
-					</form>
-				</c:when>
-				<c:otherwise>
-					<form action="facilityLogin" method="post">
-						${facility.facilityName} is idle
-						<input type="hidden" name="facilityName" 
-							value="${facility.facilityName}">
-						<input type="hidden" name="returnTo" value="/sessions">
-						<button name="startSession" type="submit">Start session</button>
-					</form>
-				</c:otherwise>
-			</c:choose>
-		</c:forEach>
+		<table class="table table-striped table-bordered table-condensed">
+			<thead>
+				<tr>
+					<th>Facility name</th>
+					<th>User</th>
+					<th>Session started</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				<c:forEach items="${facilities}" var="facility">
+					<c:choose>
+						<c:when test="${facility.dummy}"></c:when>
+						<c:when test="${facility.inUse}">
+							<tr>
+								<td>${facility.facilityName}</td>
+								<td>${facility.currentSession.userName}</td>
+								<td>${facility.currentSession.loginTime}</td>
+								<td>
+									<form class="btn-group" action="sessions" method="post">
+										<input type="hidden" name="sessionUuid"
+											value="${facility.currentSession.sessionUuid}">
+										<button class="btn" name="endSession" type="submit">End
+											session</button>
+									</form>
+								</td>
+							</tr>
+						</c:when>
+						<c:otherwise>
+							<tr>
+								<td>${facility.facilityName}</td>
+								<td colspan="2">not in use</td>
+								<td>
+									<form class="btn-group" action="facilityLogin" method="post">
+										<input type="hidden"
+											name="facilityName" value="${facility.facilityName}">
+										<input type="hidden" name="returnTo" value="/sessions">
+										<button class="btn" name="startSession" type="submit">Start
+											session</button>
+									</form>
+								</td>
+							</tr>
+						</c:otherwise>
+					</c:choose>
+				</c:forEach>
+			</tbody>
+		</table>
 	</div>
 	<!-- /container -->
 	<%@ include file="/WEB-INF/jsp/commonFooter.jspFrag"%>
