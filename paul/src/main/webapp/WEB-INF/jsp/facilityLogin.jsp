@@ -20,16 +20,16 @@
         
         <form name="form" method="post" action="/paul/facilityLogin">
           <c:if test="${empty accounts}">
-              User name: <input type="text" name="userName" value="${param.userName}">
+              User name: <input type="text" name="userName" value="${userName}">
               <br>
-              Password: <input type="password" name="password" value="${param.password}">
+              Password: <input type="password" name="password" value="${password}">
           </c:if>
           <c:if test="${! empty accounts}">
               User name:  <input type="text" name="userName" 
-              					 value="${param.userName}" readonly>
+              					 value="${userName}" readonly>
               <br>
               Password: <input type="password" name="password" 
-                               value="${param.password}" readonly>
+                               value="${password}" readonly>
               <br>
               <select name="account">
                   <c:forEach items="${accounts}" var="account">

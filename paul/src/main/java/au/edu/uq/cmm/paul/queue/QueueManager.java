@@ -43,7 +43,7 @@ public class QueueManager {
     }
 
     public List<DatasetMetadata> getSnapshot(Slice slice, String facilityName) {
-        EntityManager em = services.getEntityManagerFactory().createEntityManager();
+        EntityManager em = createEntityManager();
         try {
             String whereClause = "";
             switch (slice) {
@@ -82,7 +82,7 @@ public class QueueManager {
     }
 
     private void saveToDatabase(DatasetMetadata metadata) {
-        EntityManager em = services.getEntityManagerFactory().createEntityManager();
+        EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
             em.persist(metadata);
@@ -109,7 +109,7 @@ public class QueueManager {
     }
 
     public int expireAll(boolean discard, Slice slice, Date olderThan) {
-        EntityManager em = services.getEntityManagerFactory().createEntityManager();
+        EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
             String andPart = "";
@@ -138,7 +138,7 @@ public class QueueManager {
     }
 
     public int deleteAll(boolean discard, Slice slice) {
-        EntityManager em = services.getEntityManagerFactory().createEntityManager();
+        EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
             String whereClause = "";
@@ -164,7 +164,7 @@ public class QueueManager {
     }
     
     public boolean delete(long id, boolean discard) {
-        EntityManager em = services.getEntityManagerFactory().createEntityManager();
+        EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
             TypedQuery<DatasetMetadata> query =
@@ -221,23 +221,29 @@ public class QueueManager {
         }
     }
 
-    public void assignToUser(long id, String userName) {
-        EntityManager em = services.getEntityManagerFactory().createEntityManager();
+    public void changeUser(String[] ids, String userName) {
+        EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
             TypedQuery<DatasetMetadata> query =
                     em.createQuery("from DatasetMetadata d where d.id = :id", 
                     DatasetMetadata.class);
-            query.setParameter("id", id);
-            DatasetMetadata dataset = query.getSingleResult();
-            dataset.setUserName(userName);
-            dataset.setUpdateTimestamp(new Date());
+            for (String idstr : ids) {
+                query.setParameter("id", new Long(idstr));
+                DatasetMetadata dataset = query.getSingleResult();
+                dataset.setUserName(userName);
+                dataset.setUpdateTimestamp(new Date());
+            }
             em.getTransaction().commit();
         } catch (NoResultException ex) {
             LOG.info("Record not found", ex);
         } finally {
             em.close();
         }
+    }
+    
+    private EntityManager createEntityManager() {
+        return services.getEntityManagerFactory().createEntityManager();
     }
 
 }
