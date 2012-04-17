@@ -51,7 +51,6 @@ public class PaulConfiguration implements Configuration {
     private String feedAuthorEmail;
     private String feedUrl;
     private int feedPageSize = 20;
-    private long facilityRecheckInterval;
     private long queueExpiryTime;
     private long queueExpiryInterval;
     private boolean expireByDeleting;
@@ -182,14 +181,6 @@ public class PaulConfiguration implements Configuration {
 
     public void setFeedPageSize(int feedPageSize) {
         this.feedPageSize = feedPageSize;
-    }
-
-    public long getFacilityRecheckInterval() {
-        return facilityRecheckInterval;
-    }
-
-    public void setFacilityRecheckInterval(long facilityRecheckInterval) {
-        this.facilityRecheckInterval = facilityRecheckInterval;
     }
     
     public long getQueueExpiryTime() {
@@ -358,9 +349,6 @@ public class PaulConfiguration implements Configuration {
         result = prime * result + (expireByDeleting ? 1231 : 1237);
         result = prime * result
                 + ((facilities == null) ? 0 : facilities.hashCode());
-        result = prime
-                * result
-                + (int) (facilityRecheckInterval ^ (facilityRecheckInterval >>> 32));
         result = prime * result
                 + ((feedAuthor == null) ? 0 : feedAuthor.hashCode());
         result = prime * result
@@ -433,9 +421,6 @@ public class PaulConfiguration implements Configuration {
                 return false;
             }
         } else if (!facilities.equals(other.facilities)) {
-            return false;
-        }
-        if (facilityRecheckInterval != other.facilityRecheckInterval) {
             return false;
         }
         if (feedAuthor == null) {
