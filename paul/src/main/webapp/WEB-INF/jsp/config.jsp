@@ -31,8 +31,6 @@
 			<li>Hold datasets with no user information -
 				${config.holdDatasetsWithNoUser}
 			<li>Clients use 'project' - ${config.useProject}</li>
-			<li>Facility recheck interval -
-				${config.facilityRecheckInterval} (minutes)</li>
 			<li>Atom feed parameters for the Ingestion feed:
 				<ul>
 					<li>Feed URL - ${config.feedUrl}</li>

@@ -5,7 +5,6 @@
   "serverHost" : "acls.example.com",
   "primaryRepositoryUrl" : "http://repo.example.com",
   "aclsUrl" : "http://acls.example.com/xxx/book.dll",
-  "facilityRecheckInterval" : 0,
   "useProject" : false,
   "captureDirectory" : "/tmp/safe",
   "archiveDirectory" : "/tmp/archive",
