@@ -14,7 +14,6 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
-import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
@@ -22,8 +21,9 @@ import javax.persistence.UniqueConstraint;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.hibernate.annotations.GenericGenerator;
 
-import au.edu.uq.cmm.aclslib.config.DatafileTemplateConfig;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
+import au.edu.uq.cmm.paul.DatafileTemplateConfig;
+import au.edu.uq.cmm.paul.GrabberFacilityConfig;
 import au.edu.uq.cmm.paul.grabber.FileGrabber;
 
 /**
@@ -43,7 +43,6 @@ public class Facility implements FacilityConfig {
         ON, DISABLED, OFF, DUMMY
     }
 
-    private List<FacilitySession> sessions = new ArrayList<FacilitySession>();
     private Long id;
     
     private boolean useFullScreen;
@@ -55,7 +54,6 @@ public class Facility implements FacilityConfig {
     private String localHostId;
     private boolean useTimer;
     private String facilityDescription;
-    private boolean dummy;
     private boolean useFileLocks = true;
     private boolean caseInsensitive;
     private int fileSettlingTime;
@@ -71,23 +69,22 @@ public class Facility implements FacilityConfig {
         super();
     }
 
-    public Facility(FacilityConfig facilityConfig) {
-        useFullScreen = facilityConfig.isUseFullScreen();
-        driveName = facilityConfig.getDriveName();
-        accessPassword = facilityConfig.getAccessPassword();
-        accessName = facilityConfig.getAccessName();
-        facilityName = facilityConfig.getFacilityName();
-        localHostId = facilityConfig.getLocalHostId();
-        folderName = facilityConfig.getFolderName();
-        useTimer = facilityConfig.isUseTimer();
-        facilityDescription = facilityConfig.getFacilityDescription();
-        dummy = facilityConfig.isDummy();
-        useFileLocks = facilityConfig.isUseFileLocks();
-        fileSettlingTime = facilityConfig.getFileSettlingTime();
-        caseInsensitive = facilityConfig.isCaseInsensitive();
-        address = facilityConfig.getAddress();
+    public Facility(GrabberFacilityConfig facility) {
+        useFullScreen = facility.isUseFullScreen();
+        driveName = facility.getDriveName();
+        accessPassword = facility.getAccessPassword();
+        accessName = facility.getAccessName();
+        facilityName = facility.getFacilityName();
+        localHostId = facility.getLocalHostId();
+        folderName = facility.getFolderName();
+        useTimer = facility.isUseTimer();
+        facilityDescription = facility.getFacilityDescription();
+        useFileLocks = facility.isUseFileLocks();
+        fileSettlingTime = facility.getFileSettlingTime();
+        caseInsensitive = facility.isCaseInsensitive();
+        address = facility.getAddress();
         datafileTemplates = new ArrayList<DatafileTemplate>();
-        for (DatafileTemplateConfig template : facilityConfig.getDatafileTemplates()) {
+        for (DatafileTemplateConfig template : facility.getDatafileTemplates()) {
             datafileTemplates.add(new DatafileTemplate(template));
         }
     }
@@ -138,10 +135,6 @@ public class Facility implements FacilityConfig {
         return useTimer;
     }
 
-    public boolean isDummy() {
-        return dummy;
-    }
-
     public void setAccessName(String accessName) {
         this.accessName = accessName;
     }
@@ -182,10 +175,6 @@ public class Facility implements FacilityConfig {
         this.useTimer = useTimer;
     }
 
-    public void setDummy(boolean dummy) {
-        this.dummy = dummy;
-    }
-
     public boolean isUseFileLocks() {
         return this.useFileLocks;
     }
@@ -202,7 +191,7 @@ public class Facility implements FacilityConfig {
         this.fileSettlingTime = fileSettlingTime;
     }
 
-    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.LAZY)
+    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER)
     @JoinColumn(name="datafile_id")
     public List<DatafileTemplate> getDatafileTemplates() {
         return datafileTemplates;
@@ -236,57 +225,27 @@ public class Facility implements FacilityConfig {
     public Long getId() {
         return id;
     }
-    
-    public synchronized void addSession(FacilitySession session) {
-        sessions.add(session);
-    }
 
-    @JsonIgnore
-    @Transient
-    public synchronized FacilitySession getCurrentSession() {
-        // FIXME - this needs tuning
-        return (sessions.size() == 0) ? null : sessions.get(sessions.size() - 1);
-    }
-    
-    @JsonIgnore
-    @Transient
-    public synchronized boolean isInUse() {
-        // FIXME - this needs tuning
-        return sessions.size() > 0 && getCurrentSession().getLogoutTime() == null;
-    }
-
-    public synchronized FacilitySession getLoginDetails(long timestamp) {
-        // FIXME - this needs tuning
-        Date nextSessionStart = null;
-        for (int i = sessions.size() - 1; i >= 0; i--) {
-            FacilitySession session = sessions.get(i);
-            Date sessionEnd = session.getLogoutTime();
-            if (sessionEnd == null) {
-                sessionEnd = nextSessionStart;
-            }
-            if (session.getLoginTime().getTime() <= timestamp && 
-                    (sessionEnd == null || sessionEnd.getTime() >= timestamp)) {
-                return session;
-            }
-            if (session.getLoginTime().getTime() > timestamp) {
-                break;
-            }
-            nextSessionStart = session.getLoginTime();
-        }
-        return null;
-    }
-
-    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER)
-    @OrderBy(value="id")
-    @JoinColumn(name="session_id")
-    public List<FacilitySession> getSessions() {
-        // FIXME - this needs tuning
-        return sessions;
-    }
-
-    public void setSessions(List<FacilitySession> sessions) {
-        this.sessions = sessions;
-    }
+//    public synchronized FacilitySession getLoginDetails(long timestamp) {
+//        // FIXME - this needs tuning
+//        Date nextSessionStart = null;
+//        for (int i = sessions.size() - 1; i >= 0; i--) {
+//            FacilitySession session = sessions.get(i);
+//            Date sessionEnd = session.getLogoutTime();
+//            if (sessionEnd == null) {
+//                sessionEnd = nextSessionStart;
+//            }
+//            if (session.getLoginTime().getTime() <= timestamp && 
+//                    (sessionEnd == null || sessionEnd.getTime() >= timestamp)) {
+//                return session;
+//            }
+//            if (session.getLoginTime().getTime() > timestamp) {
+//                break;
+//            }
+//            nextSessionStart = session.getLoginTime();
+//        }
+//        return null;
+//    }
 
     public boolean isCaseInsensitive() {
         return caseInsensitive;

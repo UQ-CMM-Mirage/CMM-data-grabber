@@ -9,11 +9,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.Lifecycle;
 
-import au.edu.uq.cmm.aclslib.config.Configuration.DataGrabberRestartPolicy;
-import au.edu.uq.cmm.aclslib.config.StaticConfiguration;
 import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
 import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
 import au.edu.uq.cmm.aclslib.service.ServiceException;
+import au.edu.uq.cmm.paul.GrabberConfiguration.DataGrabberRestartPolicy;
 import au.edu.uq.cmm.paul.queue.QueueExpirer;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.servlet.ConfigurationManager;
@@ -39,23 +38,26 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
     private UserDetailsManager userDetailsManager;
     private ConfigurationManager configManager;
     
-    public Paul(StaticConfiguration staticConfig,
+    public Paul(StaticPaulConfiguration staticConfig,
+            StaticPaulFacilities staticFacilities,
             EntityManagerFactory entityManagerFactory)
     throws IOException {
-        this(staticConfig, entityManagerFactory, null, new SambaUncPathnameMapper());
+        this(staticConfig, staticFacilities,
+                entityManagerFactory, null, new SambaUncPathnameMapper());
     }
     
-    public Paul(StaticConfiguration staticConfig,
+    public Paul(StaticPaulConfiguration staticConfig,
+            StaticPaulFacilities staticFacilities,
             EntityManagerFactory entityManagerFactory,
             SessionDetailMapper sessionDetailMapper,
             UncPathnameMapper uncNameMapper)
     throws IOException {
         this.entityManagerFactory = entityManagerFactory;
         this.sessionDetailMapper = sessionDetailMapper;
-        configManager = new ConfigurationManager(entityManagerFactory, staticConfig);
+        configManager = new ConfigurationManager(entityManagerFactory, staticConfig, staticFacilities);
         // Testing ...
         PaulConfiguration.load(entityManagerFactory);
-        proxy = new AclsProxy(getConfiguration());
+        proxy = new AclsProxy(getConfiguration(), configManager.getFacilityMapper());
         try {
             proxy.probeServer();
         } catch (ServiceException ex) {
@@ -73,19 +75,31 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
     // FIXME - get rid if this?
     public static void main(String[] args) {
         String configFile = null;
+        String facilityFile = null;
         if (args.length > 0) {
             configFile = args[0];
+            if (args.length > 1) {
+                facilityFile = args[1];
+            }
         }
         try {
-            StaticConfiguration staticConfig = null;
+            StaticPaulConfiguration staticConfig = null;
+            StaticPaulFacilities staticFacilities = null;
             if (configFile != null) {
-                staticConfig = StaticConfiguration.loadConfiguration(configFile);
+                staticConfig = StaticPaulConfiguration.loadConfiguration(configFile);
                 if (staticConfig == null) {
                     LOG.info("Can't read/load initial configuration file");
                     System.exit(2);
                 }
             }
-            Paul grabber = new Paul(staticConfig, 
+            if (facilityFile != null) {
+                staticFacilities = StaticPaulFacilities.loadFacilities(facilityFile);
+                if (staticFacilities == null) {
+                    LOG.info("Can't read/load initial facilities file");
+                    System.exit(2);
+                }
+            }
+            Paul grabber = new Paul(staticConfig, staticFacilities, 
                     Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul"));
             grabber.startup();
             grabber.awaitShutdown();

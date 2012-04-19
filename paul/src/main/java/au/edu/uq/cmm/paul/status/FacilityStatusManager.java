@@ -1,6 +1,6 @@
 package au.edu.uq.cmm.paul.status;
 
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -66,11 +66,22 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
                     event.getUserName(), event.getAccount());
             if (event instanceof AclsLoginEvent) {
                 session = new FacilitySession(
-                        userName, accountName, facility, emailAddress, new Date());
-                facility.addSession(session);
+                        userName, accountName, facilityName, emailAddress, new Date());
+                em.persist(session);
             } else if (event instanceof AclsLogoutEvent) {
-                session = facility.getCurrentSession();
-                if (session == null) {
+                TypedQuery<FacilitySession> query = em.createQuery(
+                        "from FacilitySession f where f.facilityName = :facilityName " +
+                                "order by f.loginTime desc", 
+                        FacilitySession.class);
+                query.setParameter("facilityName", facility.getFacilityName());
+                query.setMaxResults(1);
+                List<FacilitySession> sessions = query.getResultList();
+                if (sessions.isEmpty()) {
+                    throw new InvalidSessionException(
+                            "No sessions for facility " + facility.getFacilityName());
+                }
+                session = sessions.get(0);
+                if (session.getLogoutTime() != null) {
                     throw new InvalidSessionException(
                             "No current session for facility " + facility.getFacilityName());
                 } else if (!session.getUserName().equals(userName) ||
@@ -90,8 +101,8 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
         }
     }
 
-    private Facility getFacility(EntityManager entityManager, String facilityName) {
-        TypedQuery<Facility> query = entityManager.createQuery(
+    private Facility getFacility(EntityManager em, String facilityName) {
+        TypedQuery<Facility> query = em.createQuery(
                 "from Facility f where f.facilityName = :facilityName", Facility.class);
         query.setParameter("facilityName", facilityName);
         List<Facility> res = query.getResultList();
@@ -104,15 +115,58 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
         }
     }
 
-    public FacilitySession getLoginDetails(String facilityId, long timestamp) {
+    public List<FacilitySession> sessionsForFacility(String facilityName) {
         EntityManager em = emf.createEntityManager();
         try {
-            Facility facility = getFacility(em, facilityId);
-            if (facility == null) {
-                LOG.error("No Facility record for facility " + facilityId);
-                return null;
+            TypedQuery<FacilitySession> query = em.createQuery(
+                    "from FacilitySession s where s.facilityName = :facilityName " +
+                    "order by s.loginTime desc", FacilitySession.class);
+            query.setParameter("facilityName", facilityName);
+            return query.getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    public List<FacilitySession> getLatestSessions() {
+        EntityManager em = emf.createEntityManager();
+        try {
+            em.getTransaction().begin();
+            TypedQuery<String> query0 = em.createQuery(
+                    "select f.facilityName from Facility f order by f.facilityName", String.class);
+            List<String> facilityNames = query0.getResultList();
+            List<FacilitySession> sessions = new ArrayList<FacilitySession>(facilityNames.size());
+            for (String facilityName : facilityNames) {
+                FacilitySession session = latestSession(em, facilityName);
+                if (session == null) {
+                    session = new FacilitySession(facilityName);
+                }
+                sessions.add(session);
             }
-            return facility.getLoginDetails(timestamp);
+            em.getTransaction().rollback();
+            return sessions;
+        } finally {
+            em.close();
+        }
+    }
+
+    public FacilitySession getLoginDetails(String facilityName, long timestamp) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            TypedQuery<FacilitySession> query = em.createQuery(
+                    "from FacilitySession s where s.facilityName = :facilityName " +
+                    "and s.loginTime <= :timestamp " +
+                    "and (s.logoutTime is null or s.logoutTime >= :timestamp " +
+                    "order by s.loginTime desc", FacilitySession.class);
+            query.setParameter("facilityName", facilityName);
+            query.setParameter("timestamp", new Date(timestamp));
+            query.setMaxResults(1);
+            List<FacilitySession> list = query.getResultList();
+            if (list.size() == 0) {
+                return null;
+            } else {
+                return list.get(0);
+            }
         } finally {
             em.close();
         }
@@ -130,7 +184,7 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
             if (session.getLogoutTime() == null) {
                 session.setLogoutTime(new Date());
             }
-            proxy.logout(session.getFacility(), session.getUserName(), 
+            proxy.logout(getFacility(em, session.getFacilityName()), session.getUserName(), 
                     session.getAccount());
             em.getTransaction().commit();
         } catch (NoResultException ex) {
@@ -140,35 +194,34 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
         }
     }
     
-    public void logoutFacility(String facilityId) 
-            throws AclsAuthenticationException {
+    public void logoutFacility(String facilityName) throws AclsAuthenticationException {
         EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
-            Facility facility = getFacility(em, facilityId);
-            FacilitySession session = facility.getCurrentSession();
+            FacilitySession session = latestSession(em, facilityName);
             if (session != null) {
-                if (session.getLogoutTime() == null) {
-                    session.setLogoutTime(new Date());
-                }
-                proxy.logout(facility, session.getUserName(), 
-                        session.getAccount());
+//                if (session.getLogoutTime() == null) {
+//                    session.setLogoutTime(new Date());
+//                }
+                proxy.logout(getFacility(em, facilityName), 
+                        session.getUserName(), session.getAccount());
                 em.getTransaction().commit();
+            } else {
+                em.getTransaction().rollback();
             }
         } finally {
             em.close();
         }
     }
-
-    public Collection<Facility> getSnapshot() {
-        EntityManager em = emf.createEntityManager();
-        try {
-            TypedQuery<Facility> query = em.createQuery(
-                    "from Facility", Facility.class);
-            return query.getResultList();
-        } finally {
-            em.close();
-        }
+    
+    private FacilitySession latestSession(EntityManager em, String facilityName) {
+        TypedQuery<FacilitySession> query = em.createQuery(
+                "from FacilitySession s where s.facilityName = :facilityName " +
+                "order by s.loginTime desc", FacilitySession.class);
+        query.setParameter("facilityName", facilityName);
+        query.setMaxResults(1);
+        List<FacilitySession> results = query.getResultList();
+        return (results.isEmpty()) ? null : results.get(0);
     }
 
     public List<String> login(String facilityName, String userName, String password) 
@@ -184,20 +237,21 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
     }
 
     private Facility lookupIdleFacility(String facilityName)
-    throws AclsAuthenticationException, AclsInUseException {
+            throws AclsAuthenticationException, AclsInUseException {
         Facility facility;
         EntityManager em = emf.createEntityManager();
         try {
+            FacilitySession session = latestSession(em, facilityName);
+            if (session != null && session.getLogoutTime() == null) {
+                throw new AclsInUseException("Facility " + facilityName + " is in use");
+            }
             facility = getFacility(em, facilityName);
+            if (facility == null) {
+                throw new AclsAuthenticationException("Unknown facility " + facilityName);
+            }
+            return facility;
         } finally {
             em.close();
         }
-        if (facility == null) {
-            throw new AclsAuthenticationException("Unknown facility " + facilityName);
-        }
-        if (facility.isInUse()) {
-            throw new AclsInUseException("Facility " + facilityName + " is in use");
-        }
-        return facility;
     }
 }

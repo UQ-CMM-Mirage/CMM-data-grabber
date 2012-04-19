@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -35,6 +35,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import au.edu.uq.cmm.aclslib.config.ConfigurationException;
+import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.proxy.AclsAuthenticationException;
 import au.edu.uq.cmm.aclslib.proxy.AclsInUseException;
 import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
@@ -132,8 +134,7 @@ public class WebUIController {
     
     @RequestMapping(value="/sessions", method=RequestMethod.GET)
     public String status(Model model) {
-        model.addAttribute("facilities", 
-                services.getFacilitySessionManager().getSnapshot());
+        model.addAttribute("sessions", services.getFacilitySessionManager().getLatestSessions());
         return "sessions";
     }
     
@@ -150,7 +151,8 @@ public class WebUIController {
     }
     
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.GET)
-    public String facilityConfig(@PathVariable String facilityName, Model model) {
+    public String facilityConfig(@PathVariable String facilityName, Model model) 
+            throws ConfigurationException {
         Facility facility = lookupFacilityByName(facilityName);
         model.addAttribute("facility", facility);
         return "facility";
@@ -158,15 +160,18 @@ public class WebUIController {
     
     @RequestMapping(value="/facilities/{facilityName:.+}", 
             method=RequestMethod.GET, params={"sessionLog"})
-    public String facilitySessions(@PathVariable String facilityName, Model model) {
-        Facility facility = lookupFacilityByName(facilityName);
-        model.addAttribute("facility", facility);
+    public String facilitySessions(@PathVariable String facilityName, Model model) 
+            throws ConfigurationException {
+        model.addAttribute("sessions", 
+                services.getFacilitySessionManager().sessionsForFacility(facilityName));
+        model.addAttribute("facilityName", facilityName);
         return "facilitySessions";
     }
     
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
             params={"enableWatcher"})
-    public String enableWatcher(@PathVariable String facilityName, Model model) {
+    public String enableWatcher(@PathVariable String facilityName, Model model) 
+            throws ConfigurationException {
         Facility facility = lookupFacilityByName(facilityName);
         if (facility != null) {
             getFileWatcher().startFileWatching(facility, true);
@@ -177,7 +182,8 @@ public class WebUIController {
     
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
             params={"disableWatcher"})
-    public String disableWatcher(@PathVariable String facilityName, Model model) {
+    public String disableWatcher(@PathVariable String facilityName, Model model) 
+            throws ConfigurationException {
         Facility facility = lookupFacilityByName(facilityName);
         if (facility != null) {
             getFileWatcher().stopFileWatching(facility, true);
@@ -188,7 +194,8 @@ public class WebUIController {
     
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
             params={"pauseWatcher"})
-    public String pauseWatcher(@PathVariable String facilityName, Model model) {
+    public String pauseWatcher(@PathVariable String facilityName, Model model) 
+            throws ConfigurationException {
         Facility facility = lookupFacilityByName(facilityName);
         if (facility != null) {
             getFileWatcher().stopFileWatching(facility, false);
@@ -216,7 +223,7 @@ public class WebUIController {
             @RequestParam String next) {
         model.addAttribute("message", "Select a facility from the pulldown");
         model.addAttribute("next", next);
-        model.addAttribute("facilities", getConfig().getFacilities());
+        model.addAttribute("facilities", getFacilities());
         return "facilitySelect";
     }
     
@@ -227,7 +234,7 @@ public class WebUIController {
             @RequestParam(required=false) String facilityName) 
     throws UnsupportedEncodingException, IOException {
         if (facilityName == null) {
-            model.addAttribute("facilities", getConfig().getFacilities());
+            model.addAttribute("facilities", getFacilities());
             model.addAttribute("message", "Select a facility from the pulldown");
             model.addAttribute("next", next);
             return "facilitySelect";
@@ -344,6 +351,7 @@ public class WebUIController {
     @RequestMapping(value="/config", method=RequestMethod.GET)
     public String config(Model model) {
         model.addAttribute("config", getLatestConfig());
+        model.addAttribute("facilities", getFacilities());
         return "config";
     }
     
@@ -648,8 +656,13 @@ public class WebUIController {
         return services.getConfigManager().getActiveConfig();
     }
     
-    private Facility lookupFacilityByName(String facilityName) {
-        return (Facility) getLatestConfig().lookupFacilityByName(facilityName);
+    private Facility lookupFacilityByName(String facilityName) 
+            throws ConfigurationException {
+        return (Facility) services.getConfigManager().getFacilityMapper().lookup(null, facilityName, null);
+    }
+    
+    private Collection<FacilityConfig> getFacilities() {
+        return services.getConfigManager().getFacilityMapper().allFacilities();
     }
     
     private EntityManager createEntityManager() {
