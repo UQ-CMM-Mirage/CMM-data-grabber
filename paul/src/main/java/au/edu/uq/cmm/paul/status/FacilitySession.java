@@ -3,12 +3,9 @@ package au.edu.uq.cmm.paul.status;
 import java.util.Date;
 import java.util.UUID;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -29,7 +26,7 @@ public class FacilitySession {
     
     private String userName;
     private String account;
-    private Facility facility;
+    private String facilityName;
     private Date loginTime;
     private Date logoutTime;
     private Long id;
@@ -40,16 +37,20 @@ public class FacilitySession {
         super();
     }
     
-    public FacilitySession(String userName, String account, Facility facility,
+    public FacilitySession(String facilityName) {
+        this.facilityName = facilityName;
+    }
+    
+    public FacilitySession(String userName, String account, String facilityName,
             String emailAddress, Date loginTime) {
         super();
         if (userName.isEmpty() || account.isEmpty() || 
-                facility == null || loginTime == null) {
+                facilityName == null || loginTime == null) {
             throw new IllegalArgumentException("Empty or missing argument");
         }
         this.userName = userName;
         this.account = account;
-        this.facility = facility;
+        this.facilityName = facilityName;
         this.loginTime = loginTime;
         this.emailAddress = emailAddress;
         this.sessionUuid = UUID.randomUUID().toString();
@@ -77,12 +78,6 @@ public class FacilitySession {
         return account;
     }
 
-    @ManyToOne(cascade={CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinColumn(name="facility_id")
-    public Facility getFacility() {
-        return facility;
-    }
-
     @Temporal(TemporalType.TIMESTAMP)
     public Date getLoginTime() {
         return loginTime;
@@ -107,10 +102,6 @@ public class FacilitySession {
         this.account = account;
     }
 
-    public void setFacility(Facility facility) {
-        this.facility = facility;
-    }
-
     public void setLoginTime(Date loginTime) {
         this.loginTime = loginTime;
     }
@@ -131,10 +122,18 @@ public class FacilitySession {
         this.emailAddress = emailAddress;
     }
 
+    public String getFacilityName() {
+        return facilityName;
+    }
+
+    public void setFacilityName(String facilityName) {
+        this.facilityName = facilityName;
+    }
+
     public static FacilitySession makeDummySession(Facility facility, Date now) {
         FacilitySession res = new FacilitySession(
                 FacilitySession.UNKNOWN, FacilitySession.UNKNOWN, 
-                facility, null, now);
+                facility.getFacilityName(), null, now);
         res.setSessionUuid(FacilitySession.UNKNOWN);
         return res;
     }

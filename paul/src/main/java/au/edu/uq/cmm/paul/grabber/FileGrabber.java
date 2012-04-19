@@ -21,10 +21,9 @@ import javax.persistence.TypedQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import au.edu.uq.cmm.aclslib.config.DatafileTemplateConfig;
-import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
 import au.edu.uq.cmm.aclslib.service.Service;
+import au.edu.uq.cmm.paul.DatafileTemplateConfig;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.status.Facility;
@@ -172,7 +171,7 @@ public class FileGrabber extends CompositeServiceBase
 
     private void processEvent(FileWatcherEvent event) {
         File file = event.getFile();
-        FacilityConfig facility = event.getFacility();
+        Facility facility = (Facility) event.getFacility();
         LOG.debug("FileWatcherEvent received : " + 
                 facility.getFacilityName() + "," + file + "," + event.isCreate());
         File baseFile = null;

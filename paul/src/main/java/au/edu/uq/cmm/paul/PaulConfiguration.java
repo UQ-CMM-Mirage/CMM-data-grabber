@@ -1,28 +1,15 @@
 package au.edu.uq.cmm.paul;
 
-import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
-import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
 import javax.persistence.NoResultException;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import org.hibernate.annotations.GenericGenerator;
-
-import au.edu.uq.cmm.aclslib.config.Configuration;
-import au.edu.uq.cmm.aclslib.config.FacilityConfig;
-import au.edu.uq.cmm.paul.status.Facility;
 
 /**
  * This class represents the configuration details of a DataGrabber instance.
@@ -32,15 +19,16 @@ import au.edu.uq.cmm.paul.status.Facility;
  */
 @Entity
 @Table(name = "CONFIGURATION")
-public class PaulConfiguration implements Configuration {
+public class PaulConfiguration implements GrabberConfiguration {
     
     private Long id;
-    private List<Facility> facilities = new ArrayList<Facility>();
     
     private int proxyPort = 1024;
     private int serverPort = 1024;
     private String serverHost;
     private String proxyHost;
+    private String dummyFacilityName;
+    private String dummyFacilityHostId;
     private boolean useProject;
     private String captureDirectory;
     private String archiveDirectory;
@@ -60,7 +48,35 @@ public class PaulConfiguration implements Configuration {
     private String primaryRepositoryUrl;
     private String aclsUrl;
     
+    public PaulConfiguration() {
+        super();
+    }
     
+    public PaulConfiguration(StaticPaulConfiguration staticConfig) {
+        setProxyHost(staticConfig.getProxyHost());
+        setServerHost(staticConfig.getServerHost());
+        setProxyPort(staticConfig.getProxyPort());
+        setServerPort(staticConfig.getServerPort());
+        setDummyFacilityHostId(staticConfig.getDummyFacilityHostId());
+        setDummyFacilityName(staticConfig.getDummyFacilityName());
+        setBaseFileUrl(staticConfig.getBaseFileUrl());
+        setCaptureDirectory(staticConfig.getCaptureDirectory());
+        setArchiveDirectory(staticConfig.getArchiveDirectory());
+        setFeedId(staticConfig.getFeedId());
+        setFeedTitle(staticConfig.getFeedTitle());
+        setFeedAuthor(staticConfig.getFeedAuthor());
+        setFeedAuthorEmail(staticConfig.getFeedAuthorEmail());
+        setFeedUrl(staticConfig.getFeedUrl());
+        setFeedPageSize(staticConfig.getFeedPageSize());
+        setQueueExpiryInterval(staticConfig.getQueueExpiryInterval());
+        setQueueExpiryTime(staticConfig.getQueueExpiryTime());
+        setExpireByDeleting(staticConfig.isExpireByDeleting());
+        setDataGrabberRestartPolicy(staticConfig.getDataGrabberRestartPolicy());
+        setHoldDatasetsWithNoUser(staticConfig.isHoldDatasetsWithNoUser());
+        setPrimaryRepositoryUrl(staticConfig.getPrimaryRepositoryUrl());
+        setAclsUrl(staticConfig.getAclsUrl());
+    }
+
     public int getProxyPort() {
         return proxyPort;
     }
@@ -71,6 +87,22 @@ public class PaulConfiguration implements Configuration {
 
     public int getServerPort() {
         return serverPort;
+    }
+
+    public String getDummyFacilityName() {
+        return dummyFacilityName;
+    }
+
+    public void setDummyFacilityName(String dummyFacilityName) {
+        this.dummyFacilityName = dummyFacilityName;
+    }
+
+    public String getDummyFacilityHostId() {
+        return dummyFacilityHostId;
+    }
+
+    public void setDummyFacilityHostId(String dummyFacilityHostId) {
+        this.dummyFacilityHostId = dummyFacilityHostId;
     }
 
     public boolean isUseProject() {
@@ -99,16 +131,6 @@ public class PaulConfiguration implements Configuration {
 
     public void setProxyHost(String proxyHost) {
         this.proxyHost = proxyHost;
-    }
-
-    @Transient
-    public final String getDummyFacility() {
-        for (FacilityConfig facility : getFacilities()) {
-            if (facility.isDummy()) {
-                return facility.getFacilityName();
-            }
-        }
-        throw new IllegalStateException("There are no dummy facilities");
     }
 
     public String getCaptureDirectory() {
@@ -268,55 +290,10 @@ public class PaulConfiguration implements Configuration {
             entityManager.close();
         }
     }
-    
-    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.LAZY)
-    @JoinColumn(name="facility_id")
-    public List<Facility> getFacilities() {
-        return facilities;
-    }
-
-    public void setFacilities(List<Facility> facilities) {
-        this.facilities = facilities;
-    }
-    
-    @Transient
-    public Collection<FacilityConfig> getFacilityConfigs() {
-        List<FacilityConfig> res = new ArrayList<FacilityConfig>();
-        res.addAll(facilities);
-        return res;
-    }
-
-    public FacilityConfig lookupFacilityByAddress(InetAddress addr) {
-        for (FacilityConfig f : facilities) {
-            if (f.getAddress().equals(addr.getHostAddress()) ||
-                    f.getAddress().equals(addr.getHostName())) {
-                return f;
-            }
-        }
-        return null;
-    }
-
-    public FacilityConfig lookupFacilityByName(String id) {
-        for (FacilityConfig f : facilities) {
-            if (id.equals(f.getFacilityName())) {
-                return f;
-            }
-        }
-        return null;
-    }
-    
-    public FacilityConfig lookupFacilityByLocalHostId(String localHostId) {
-        for (FacilityConfig f : facilities) {
-            if (localHostId.equals(f.getLocalHostId())) {
-                return f;
-            }
-        }
-        return null;
-    }
 
     @Transient
     public boolean isEmpty() {
-        return facilities.isEmpty();
+        return this.equals(new PaulConfiguration());
     }
 
     @Id
@@ -334,6 +311,7 @@ public class PaulConfiguration implements Configuration {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
+        result = prime * result + ((aclsUrl == null) ? 0 : aclsUrl.hashCode());
         result = prime
                 * result
                 + ((archiveDirectory == null) ? 0 : archiveDirectory.hashCode());
@@ -346,9 +324,15 @@ public class PaulConfiguration implements Configuration {
                 * result
                 + ((dataGrabberRestartPolicy == null) ? 0
                         : dataGrabberRestartPolicy.hashCode());
+        result = prime
+                * result
+                + ((dummyFacilityHostId == null) ? 0 : dummyFacilityHostId
+                        .hashCode());
+        result = prime
+                * result
+                + ((dummyFacilityName == null) ? 0 : dummyFacilityName
+                        .hashCode());
         result = prime * result + (expireByDeleting ? 1231 : 1237);
-        result = prime * result
-                + ((facilities == null) ? 0 : facilities.hashCode());
         result = prime * result
                 + ((feedAuthor == null) ? 0 : feedAuthor.hashCode());
         result = prime * result
@@ -389,6 +373,13 @@ public class PaulConfiguration implements Configuration {
             return false;
         }
         PaulConfiguration other = (PaulConfiguration) obj;
+        if (aclsUrl == null) {
+            if (other.aclsUrl != null) {
+                return false;
+            }
+        } else if (!aclsUrl.equals(other.aclsUrl)) {
+            return false;
+        }
         if (archiveDirectory == null) {
             if (other.archiveDirectory != null) {
                 return false;
@@ -413,14 +404,21 @@ public class PaulConfiguration implements Configuration {
         if (dataGrabberRestartPolicy != other.dataGrabberRestartPolicy) {
             return false;
         }
-        if (expireByDeleting != other.expireByDeleting) {
-            return false;
-        }
-        if (facilities == null) {
-            if (other.facilities != null) {
+        if (dummyFacilityHostId == null) {
+            if (other.dummyFacilityHostId != null) {
                 return false;
             }
-        } else if (!facilities.equals(other.facilities)) {
+        } else if (!dummyFacilityHostId.equals(other.dummyFacilityHostId)) {
+            return false;
+        }
+        if (dummyFacilityName == null) {
+            if (other.dummyFacilityName != null) {
+                return false;
+            }
+        } else if (!dummyFacilityName.equals(other.dummyFacilityName)) {
+            return false;
+        }
+        if (expireByDeleting != other.expireByDeleting) {
             return false;
         }
         if (feedAuthor == null) {

@@ -15,6 +15,12 @@
 				${config.proxyPort}</li>
 			<li>ACLS Server host - ${config.serverHost} :
 				${config.serverPort}</li>
+			<li>ACLS Proxy details:
+			    <ul>
+			    	<li>Dummy facility name: ${config.dummyFacilityName}</li>
+			    	<li>Dummy facility hostId: ${config.dummyFacilityHostId}</li>
+			    </ul>
+			</li>
 			<li>Base file URL - ${config.baseFileUrl}</li>
 			<li>Queue parameters:
 				<ul>
@@ -48,7 +54,7 @@
 			</li>
 			<li>Facilities:
 				<ul>
-					<c:forEach items="${config.facilities}" var="facility">
+					<c:forEach items="${facilities}" var="facility">
 						<li><a href="/paul/facilities/${facility.facilityName}">
 								${facility.facilityName} - ${facility.facilityDescription} -
 								${facility.status} </a></li>
