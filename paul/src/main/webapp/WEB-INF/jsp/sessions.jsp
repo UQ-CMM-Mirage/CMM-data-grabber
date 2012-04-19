@@ -20,18 +20,17 @@
 				</tr>
 			</thead>
 			<tbody>
-				<c:forEach items="${facilities}" var="facility">
+				<c:forEach items="${sessions}" var="session">
 					<c:choose>
-						<c:when test="${facility.dummy}"></c:when>
-						<c:when test="${facility.inUse}">
+						<c:when test="${empty session.logoutTime && !empty session.loginTime}">
 							<tr>
-								<td>${facility.facilityName}</td>
-								<td>${facility.currentSession.userName}</td>
-								<td>${facility.currentSession.loginTime}</td>
+								<td>${session.facilityName}</td>
+								<td>${session.userName}</td>
+								<td>${session.loginTime}</td>
 								<td>
 									<form class="btn-group" action="sessions" method="post">
 										<input type="hidden" name="sessionUuid"
-											value="${facility.currentSession.sessionUuid}">
+											value="${session.sessionUuid}">
 										<button class="btn" name="endSession" type="submit">End
 											session</button>
 									</form>
@@ -40,12 +39,12 @@
 						</c:when>
 						<c:otherwise>
 							<tr>
-								<td>${facility.facilityName}</td>
+								<td>${session.facilityName}</td>
 								<td colspan="2">not in use</td>
 								<td>
 									<form class="btn-group" action="facilityLogin" method="post">
 										<input type="hidden"
-											name="facilityName" value="${facility.facilityName}">
+											name="facilityName" value="${session.facilityName}">
 										<input type="hidden" name="returnTo" value="/sessions">
 										<button class="btn" name="startSession" type="submit">Start
 											session</button>

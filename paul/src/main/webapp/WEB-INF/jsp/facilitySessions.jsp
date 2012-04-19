@@ -9,9 +9,9 @@
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container">
-		<h1>Facility Session Log for '${facility.facilityName}</h1>
+		<h1>Facility Session Log for '${facilityName}</h1>
 		<c:choose>
-			<c:when test="${empty facility.sessions}">
+			<c:when test="${empty sessions}">
 		    	There are no sessions recorded for this facility.
 		    </c:when>
 			<c:otherwise>
@@ -26,7 +26,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						<c:forEach items="${facility.sessions}" var="session">
+						<c:forEach items="${sessions}" var="session">
 							<tr>
 								<td>${session.userName}</td>
 								<td>${session.account}</td>

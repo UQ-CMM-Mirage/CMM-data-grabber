@@ -20,10 +20,10 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.service.MonitoredThreadServiceBase;
 import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.paul.Paul;
-import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.grabber.FileGrabber;
 import au.edu.uq.cmm.paul.status.Facility;
@@ -69,7 +69,6 @@ public class FileWatcher extends MonitoredThreadServiceBase {
     
     private static final Logger LOG = LoggerFactory.getLogger(FileWatcher.class);
     
-    private PaulConfiguration config;
     private Map<WatchKey, WatcherEntry> watchMap = 
             new HashMap<WatchKey, WatcherEntry>();
     private UncPathnameMapper uncNameMapper;
@@ -79,7 +78,6 @@ public class FileWatcher extends MonitoredThreadServiceBase {
     public FileWatcher(Paul services) 
             throws UnknownHostException {
         this.services = services;
-        this.config = services.getConfiguration();
         this.uncNameMapper = services.getUncNameMapper();
     }
 
@@ -160,8 +158,8 @@ public class FileWatcher extends MonitoredThreadServiceBase {
     private void configureWatcher() throws IOException {
         FileSystem fs = FileSystems.getDefault();
         watcher = fs.newWatchService();
-        for (Facility facility : config.getFacilities()) {
-            startFileWatching(facility, false);
+        for (FacilityConfig facility : services.getConfigManager().allFacilities()) {
+            startFileWatching((Facility) facility, false);
         }
     }
 
@@ -173,8 +171,6 @@ public class FileWatcher extends MonitoredThreadServiceBase {
         if (getState() != Service.State.STARTED) {
             facility.setStatus(Status.OFF);
             facility.setMessage("File watcher service is not running");
-        } else if (facility.isDummy()) {
-            facility.setStatus(Status.DUMMY);
         } else if (facility.getStatus() == Status.DISABLED && !enable) {
             // leave it disabled
         } else if (name == null) {

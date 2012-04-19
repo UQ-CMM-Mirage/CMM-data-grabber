@@ -1,28 +1,42 @@
 package au.edu.uq.cmm.paul.servlet;
 
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.TypedQuery;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import au.edu.uq.cmm.aclslib.config.ConfigurationException;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
-import au.edu.uq.cmm.aclslib.config.StaticConfiguration;
+import au.edu.uq.cmm.aclslib.config.FacilityMapper;
 import au.edu.uq.cmm.paul.PaulConfiguration;
+import au.edu.uq.cmm.paul.StaticPaulConfiguration;
+import au.edu.uq.cmm.paul.StaticPaulFacilities;
+import au.edu.uq.cmm.paul.StaticPaulFacility;
 import au.edu.uq.cmm.paul.status.Facility;
 
-public class ConfigurationManager {
+public class ConfigurationManager implements FacilityMapper {
     private static final Logger LOG = LoggerFactory.getLogger(ConfigurationManager.class);
 
-    PaulConfiguration activeConfig;
-    PaulConfiguration latestConfig;
-    StaticConfiguration staticConfig;
+    private PaulConfiguration activeConfig;
+    private PaulConfiguration latestConfig;
+    private StaticPaulConfiguration staticConfig;
     private EntityManagerFactory entityManagerFactory;
+    private StaticPaulFacilities staticFacilities;
 
+    
     public ConfigurationManager(EntityManagerFactory entityManagerFactory,
-            StaticConfiguration staticConfig) {
+            StaticPaulConfiguration staticConfig, 
+            StaticPaulFacilities staticFacilities) {
         this.entityManagerFactory = entityManagerFactory;
         this.staticConfig = staticConfig;
+        this.staticFacilities =  staticFacilities;
         activeConfig = PaulConfiguration.load(entityManagerFactory, true);
         if (activeConfig.isEmpty() && staticConfig != null) {
             activeConfig = doResetConfiguration();
@@ -37,56 +51,121 @@ public class ConfigurationManager {
     public PaulConfiguration getLatestConfig() {
         return latestConfig;
     }
+
+    public FacilityMapper getFacilityMapper() {
+        return this;
+    }
     
     public void resetConfiguration() {
         latestConfig = doResetConfiguration();
     }
 
+    @Override
+    public FacilityConfig lookup(String localHostId, String facilityName,
+            InetAddress clientAddr) throws ConfigurationException {
+        EntityManager em = entityManagerFactory.createEntityManager();
+        TypedQuery<Facility> query;
+        Facility res;
+        try {
+            if (localHostId != null) {
+                query = em.createQuery(
+                        "from Facility f where f.localHostId = :localHostId",
+                        Facility.class);
+                query.setParameter("localHostId", localHostId);
+                res = getFirst(query, "hostId", localHostId);
+                if (res != null) {
+                    return res;
+                }
+            }
+            if (facilityName != null) {
+                query = em.createQuery(
+                        "from Facility f where f.facilityName = :facilityName",
+                        Facility.class);
+                query.setParameter("facilityName", facilityName);
+                res = getFirst(query, "facilityName", facilityName);
+                if (res != null) {
+                    return res;
+                }
+            }
+            if (clientAddr != null) {
+                String ipAddress = clientAddr.getHostAddress();
+                String fqdn = clientAddr.getCanonicalHostName();
+                String[] hostNameParts = clientAddr.getCanonicalHostName().split("\\.");
+                query = em.createQuery(
+                        "from Facility f where f.address = :ipAddress or " +
+                        "f.address = :fqdn or f.address = :hostName",
+                        Facility.class);
+                query.setParameter("ipAddress", ipAddress);
+                query.setParameter("fqdn", fqdn);
+                query.setParameter("hostName", hostNameParts[hostNameParts.length - 1]);
+                res = getFirst(query, "ipAddress/hostname", ipAddress + "/" + fqdn);
+                if (res != null) {
+                    return res;
+                }
+            }
+            return null;
+        } finally {
+            em.close();
+        }
+    }
+
+    private Facility getFirst(TypedQuery<Facility> query, String key, String keyValue) 
+            throws ConfigurationException {
+        List<Facility> list = query.getResultList();
+        if (list.size() == 0) {
+            return null;
+        } else if (list.size() == 1) {
+            return list.get(0);
+        } else {
+            throw new ConfigurationException(
+                    "Multiple facilities have " + key + " equal to " + keyValue);
+        }
+    }
+
+    @Override
+    public Collection<FacilityConfig> allFacilities() {
+        EntityManager em = entityManagerFactory.createEntityManager();
+        try {
+            TypedQuery<Facility> query = em.createQuery(
+                    "from Facility", Facility.class);
+            return new ArrayList<FacilityConfig>(query.getResultList());
+        } finally {
+            em.close();
+        }
+    }
+
     private PaulConfiguration doResetConfiguration() {
         LOG.info("Resetting details from static Configuration");
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             // FIXME - we do two transactions.  Combining the two transactions 
             // into one transaction is gives constraint errors when adding the new
             // facilities.  (The fix is to version the configurations.)
-            entityManager.getTransaction().begin();
-            PaulConfiguration config = entityManager.
+            em.getTransaction().begin();
+            PaulConfiguration config = em.
                     createQuery("from PaulConfiguration", PaulConfiguration.class).
                     getSingleResult();
-            entityManager.remove(config);
-            entityManager.getTransaction().commit();
+            em.remove(config);
+            List<Facility> facilities = em.
+                    createQuery("from Facility", Facility.class).
+                    getResultList();
+            for (Facility facility : facilities) {
+                em.remove(facility);
+            }
+            em.getTransaction().commit();
             
             // Second transaction
-            entityManager.getTransaction().begin();
-            config = new PaulConfiguration();
-            config.setProxyHost(staticConfig.getProxyHost());
-            config.setServerHost(staticConfig.getServerHost());
-            config.setProxyPort(staticConfig.getProxyPort());
-            config.setServerPort(staticConfig.getServerPort());
-            config.setBaseFileUrl(staticConfig.getBaseFileUrl());
-            config.setCaptureDirectory(staticConfig.getCaptureDirectory());
-            config.setArchiveDirectory(staticConfig.getArchiveDirectory());
-            config.setFeedId(staticConfig.getFeedId());
-            config.setFeedTitle(staticConfig.getFeedTitle());
-            config.setFeedAuthor(staticConfig.getFeedAuthor());
-            config.setFeedAuthorEmail(staticConfig.getFeedAuthorEmail());
-            config.setFeedUrl(staticConfig.getFeedUrl());
-            config.setFeedPageSize(staticConfig.getFeedPageSize());
-            config.setQueueExpiryInterval(staticConfig.getQueueExpiryInterval());
-            config.setQueueExpiryTime(staticConfig.getQueueExpiryTime());
-            config.setExpireByDeleting(staticConfig.isExpireByDeleting());
-            config.setDataGrabberRestartPolicy(staticConfig.getDataGrabberRestartPolicy());
-            config.setHoldDatasetsWithNoUser(staticConfig.isHoldDatasetsWithNoUser());
-            config.setPrimaryRepositoryUrl(staticConfig.getPrimaryRepositoryUrl());
-            config.setAclsUrl(staticConfig.getAclsUrl());
-            for (FacilityConfig facilityConfig: staticConfig.getFacilityConfigs()) {
-                config.getFacilities().add(new Facility(facilityConfig));
+            em.getTransaction().begin();
+            config = new PaulConfiguration(staticConfig);
+            em.persist(config);
+            for (StaticPaulFacility staticFacility : staticFacilities.getFacilities()) {
+                Facility facility = new Facility(staticFacility);
+                em.persist(facility);
             }
-            entityManager.persist(config);
-            entityManager.getTransaction().commit();
+            em.getTransaction().commit();
             return config;
         } finally {
-            entityManager.close();
+            em.close();
         }
     }
 }
