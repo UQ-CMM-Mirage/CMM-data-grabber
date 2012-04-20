@@ -2,7 +2,6 @@ package au.edu.uq.cmm.paul.status;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.persistence.CascadeType;
@@ -225,27 +224,6 @@ public class Facility implements FacilityConfig {
     public Long getId() {
         return id;
     }
-
-//    public synchronized FacilitySession getLoginDetails(long timestamp) {
-//        // FIXME - this needs tuning
-//        Date nextSessionStart = null;
-//        for (int i = sessions.size() - 1; i >= 0; i--) {
-//            FacilitySession session = sessions.get(i);
-//            Date sessionEnd = session.getLogoutTime();
-//            if (sessionEnd == null) {
-//                sessionEnd = nextSessionStart;
-//            }
-//            if (session.getLoginTime().getTime() <= timestamp && 
-//                    (sessionEnd == null || sessionEnd.getTime() >= timestamp)) {
-//                return session;
-//            }
-//            if (session.getLoginTime().getTime() > timestamp) {
-//                break;
-//            }
-//            nextSessionStart = session.getLoginTime();
-//        }
-//        return null;
-//    }
 
     public boolean isCaseInsensitive() {
         return caseInsensitive;

@@ -1,8 +1,16 @@
 package au.edu.uq.cmm.paul;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.NoResultException;
@@ -27,8 +35,12 @@ public class PaulConfiguration implements GrabberConfiguration {
     private int serverPort = 1024;
     private String serverHost;
     private String proxyHost;
+    private boolean allowUnknownClients;
+    private Set<String> trustedAddresses = Collections.emptySet();
+    private Set<InetAddress> trustedInetAddresses = Collections.emptySet();
     private String dummyFacilityName;
     private String dummyFacilityHostId;
+    
     private boolean useProject;
     private String captureDirectory;
     private String archiveDirectory;
@@ -52,11 +64,13 @@ public class PaulConfiguration implements GrabberConfiguration {
         super();
     }
     
-    public PaulConfiguration(StaticPaulConfiguration staticConfig) {
+    public PaulConfiguration(StaticPaulConfiguration staticConfig) throws UnknownHostException {
         setProxyHost(staticConfig.getProxyHost());
         setServerHost(staticConfig.getServerHost());
         setProxyPort(staticConfig.getProxyPort());
         setServerPort(staticConfig.getServerPort());
+        setAllowUnknownClients(staticConfig.isAllowUnknownClients());
+        setTrustedAddresses(staticConfig.getTrustedAddresses());
         setDummyFacilityHostId(staticConfig.getDummyFacilityHostId());
         setDummyFacilityName(staticConfig.getDummyFacilityName());
         setBaseFileUrl(staticConfig.getBaseFileUrl());
@@ -262,6 +276,33 @@ public class PaulConfiguration implements GrabberConfiguration {
         this.aclsUrl = aclsUrl;
     }
 
+    public boolean isAllowUnknownClients() {
+        return allowUnknownClients;
+    }
+
+    public void setAllowUnknownClients(boolean allowUnknownClients) {
+        this.allowUnknownClients = allowUnknownClients;
+    }
+
+    @ElementCollection(fetch=FetchType.EAGER, targetClass=HashSet.class)
+    public Set<String> getTrustedAddresses() {
+        return trustedAddresses;
+    }
+
+    public void setTrustedAddresses(Set<String> trustedAddresses) 
+            throws UnknownHostException {
+        this.trustedAddresses = trustedAddresses;
+        this.trustedInetAddresses = new HashSet<InetAddress>(trustedAddresses.size());
+        for (String address : trustedAddresses) {
+            trustedInetAddresses.add(InetAddress.getByName(address));
+        }
+    }
+
+    @Transient
+    public Set<InetAddress> getTrustedInetAddresses() {
+        return trustedInetAddresses;
+    }
+    
     public static PaulConfiguration load(EntityManagerFactory entityManagerFactory) {
         return load(entityManagerFactory, false);
     }

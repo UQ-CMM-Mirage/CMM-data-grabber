@@ -7,23 +7,15 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 
-import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEvent;
-import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEventListener;
 import au.edu.uq.cmm.paul.Paul;
 
 
-public class UserDetailsManager implements AclsFacilityEventListener {
+public class UserDetailsManager {
     
     private EntityManagerFactory entityManagerFactory;
-    private SessionDetailMapper aclsAccountMapper;
 
     public UserDetailsManager(Paul services) {
         this.entityManagerFactory = services.getEntityManagerFactory();
-        this.aclsAccountMapper = services.getSessionDetailMapper();
-        if (this.aclsAccountMapper == null) {
-            this.aclsAccountMapper = new DefaultSessionDetailsMapper();
-        }
-        services.getProxy().addListener(this);
     }
     
     public UserDetails lookupUser(String userName) throws UnknownUserException {
@@ -61,29 +53,5 @@ public class UserDetailsManager implements AclsFacilityEventListener {
         } finally {
             em.close();
         }
-    }
-
-    @Override
-    public void eventOccurred(AclsFacilityEvent event) {
-        try {
-            String userName = aclsAccountMapper.mapToUserName(
-                    event.getUserName(), event.getAccount());
-            String emailAddress = aclsAccountMapper.mapToEmailAddress(
-                    event.getUserName(), event.getAccount());
-            try {
-                lookupUser(userName);
-            } catch (UnknownUserException e) {
-                EntityManager em = entityManagerFactory.createEntityManager();
-                try {
-                    em.getTransaction().begin();
-                    em.persist(new UserDetails(userName, emailAddress, null));
-                    em.getTransaction().commit();
-                } finally {
-                    em.close();
-                }
-            }
-        } catch (InvalidSessionException ex) {
-            // Ignore this - it is diagnosed elsewhere
-        } 
     }
 }
