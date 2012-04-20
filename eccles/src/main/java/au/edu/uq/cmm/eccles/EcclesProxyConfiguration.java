@@ -1,10 +1,19 @@
 package au.edu.uq.cmm.eccles;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import au.edu.uq.cmm.aclslib.config.ACLSProxyConfiguration;
 
@@ -19,6 +28,9 @@ public class EcclesProxyConfiguration implements ACLSProxyConfiguration {
     private String proxyHost;
     private String dummyFacilityName;
     private String dummyFacilityHostId;
+    private boolean allowUnknownClients;
+    private Set<String> trustedAddresses = Collections.emptySet();
+    private Set<InetAddress> trustedInetAddresses = Collections.emptySet();
     
     
     public EcclesProxyConfiguration() {
@@ -105,6 +117,33 @@ public class EcclesProxyConfiguration implements ACLSProxyConfiguration {
 
     public void setDummyFacilityName(String dummyFacilityName) {
         this.dummyFacilityName = dummyFacilityName;
+    }
+
+    public boolean isAllowUnknownClients() {
+        return allowUnknownClients;
+    }
+
+    public void setAllowUnknownClients(boolean allowUnknownClients) {
+        this.allowUnknownClients = allowUnknownClients;
+    }
+    
+    @ElementCollection(fetch=FetchType.EAGER, targetClass=HashSet.class)
+    public Set<String> getTrustedAddresses() {
+        return trustedAddresses;
+    }
+
+    public void setTrustedAddresses(Set<String> trustedAddresses) 
+            throws UnknownHostException {
+        this.trustedAddresses = trustedAddresses;
+        this.trustedInetAddresses = new HashSet<InetAddress>(trustedAddresses.size());
+        for (String address : trustedAddresses) {
+            trustedInetAddresses.add(InetAddress.getByName(address));
+        }
+    }
+
+    @Transient
+    public Set<InetAddress> getTrustedInetAddresses() {
+        return trustedInetAddresses;
     }
 
 }

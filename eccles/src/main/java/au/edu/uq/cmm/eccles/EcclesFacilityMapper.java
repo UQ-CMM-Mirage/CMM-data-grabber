@@ -32,7 +32,7 @@ public class EcclesFacilityMapper implements FacilityMapper {
         try {
             if (localHostId != null) {
                 query = em.createQuery(
-                        "from Facility f where f.localHostId = :localHostId",
+                        "from EcclesFacility f where f.localHostId = :localHostId",
                         EcclesFacility.class);
                 query.setParameter("localHostId", localHostId);
                 res = getFirst(query, "hostId", localHostId);
@@ -42,7 +42,7 @@ public class EcclesFacilityMapper implements FacilityMapper {
             }
             if (facilityName != null) {
                 query = em.createQuery(
-                        "from Facility f where f.facilityName = :facilityName",
+                        "from EcclesFacility f where f.facilityName = :facilityName",
                         EcclesFacility.class);
                 query.setParameter("facilityName", facilityName);
                 res = getFirst(query, "facilityName", facilityName);
@@ -55,7 +55,7 @@ public class EcclesFacilityMapper implements FacilityMapper {
                 String fqdn = clientAddr.getCanonicalHostName();
                 String[] hostNameParts = clientAddr.getCanonicalHostName().split("\\.");
                 query = em.createQuery(
-                        "from Facility f where f.address = :ipAddress or " +
+                        "from EcclesFacility f where f.address = :ipAddress or " +
                         "f.address = :fqdn or f.address = :hostName",
                         EcclesFacility.class);
                 query.setParameter("ipAddress", ipAddress);
@@ -90,7 +90,7 @@ public class EcclesFacilityMapper implements FacilityMapper {
         EntityManager em = entityManagerFactory.createEntityManager();
         try {
             TypedQuery<EcclesFacility> query = em.createQuery(
-                    "from Facility", EcclesFacility.class);
+                    "from EcclesFacility", EcclesFacility.class);
             return new ArrayList<FacilityConfig>(query.getResultList());
         } finally {
             em.close();
