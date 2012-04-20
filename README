@@ -1,3 +1,8 @@
 Paul is the "data grabber" application that prepares data and metadata
-files into the CMM MIRAGE repository.  Benny is simple HTTP service for 
-authenticating against a backend ACLS instance.
+files into the CMM MIRAGE repository.  
+
+Eccles is a proxy for an ACLS service that tracks sessions, and will 
+insulate the ACLS clients from server outages.  Eventually, it may evolve into
+a replacement for ACLS.
+
+Benny is simple HTTP service for authenticating against a backend ACLS instance.  
