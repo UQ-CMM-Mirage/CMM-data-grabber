@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.Lifecycle;
 
-import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
+import au.edu.uq.cmm.aclslib.proxy.AclsHelper;
 import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
 import au.edu.uq.cmm.aclslib.service.ServiceException;
 import au.edu.uq.cmm.paul.GrabberConfiguration.DataGrabberRestartPolicy;
@@ -17,7 +17,6 @@ import au.edu.uq.cmm.paul.queue.QueueExpirer;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.servlet.ConfigurationManager;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
-import au.edu.uq.cmm.paul.status.SessionDetailMapper;
 import au.edu.uq.cmm.paul.status.UserDetailsManager;
 import au.edu.uq.cmm.paul.watcher.FileWatcher;
 import au.edu.uq.cmm.paul.watcher.SambaUncPathnameMapper;
@@ -28,48 +27,40 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
     // so that it gets told when the servlet is being shutdown.
     private static final Logger LOG = LoggerFactory.getLogger(Paul.class);
     private FacilityStatusManager statusManager;
-    private AclsProxy proxy;
     private UncPathnameMapper uncNameMapper;
     private EntityManagerFactory entityManagerFactory;
     private QueueManager queueManager;
     private QueueExpirer queueExpirer;
-    private SessionDetailMapper sessionDetailMapper;
     private FileWatcher fileWatcher;
     private UserDetailsManager userDetailsManager;
     private ConfigurationManager configManager;
+    private PaulFacilityMapper facilityMapper;
+    private AclsHelper aclsHelper;
     
     public Paul(StaticPaulConfiguration staticConfig,
             StaticPaulFacilities staticFacilities,
             EntityManagerFactory entityManagerFactory)
     throws IOException {
         this(staticConfig, staticFacilities,
-                entityManagerFactory, null, new SambaUncPathnameMapper());
+                entityManagerFactory, new SambaUncPathnameMapper());
     }
     
     public Paul(StaticPaulConfiguration staticConfig,
             StaticPaulFacilities staticFacilities,
             EntityManagerFactory entityManagerFactory,
-            SessionDetailMapper sessionDetailMapper,
             UncPathnameMapper uncNameMapper)
     throws IOException {
         this.entityManagerFactory = entityManagerFactory;
-        this.sessionDetailMapper = sessionDetailMapper;
-        configManager = new ConfigurationManager(entityManagerFactory, staticConfig, staticFacilities);
-        // Testing ...
-        PaulConfiguration.load(entityManagerFactory);
-        proxy = new AclsProxy(getConfiguration(), configManager.getFacilityMapper());
-        try {
-            proxy.probeServer();
-        } catch (ServiceException ex) {
-            LOG.error("ACLS server probe failed", ex);
-            LOG.info("Continuing regardless ...");
-        }
-        statusManager = new FacilityStatusManager(this);
+        this.configManager = new ConfigurationManager(entityManagerFactory, staticConfig, staticFacilities);
+        this.facilityMapper = new PaulFacilityMapper(entityManagerFactory);
+        PaulConfiguration activeConfig = configManager.getActiveConfig();
+        this.aclsHelper = new AclsHelper(activeConfig.getProxyHost(), activeConfig.getProxyPort(), false);
+        this.statusManager = new FacilityStatusManager(this);
         this.uncNameMapper = uncNameMapper;
-        fileWatcher = new FileWatcher(this);
-        queueManager = new QueueManager(this);
-        queueExpirer = new QueueExpirer(this);
-        userDetailsManager = new UserDetailsManager(this);
+        this.fileWatcher = new FileWatcher(this);
+        this.queueManager = new QueueManager(this);
+        this.queueExpirer = new QueueExpirer(this);
+        this.userDetailsManager = new UserDetailsManager(this);
     }
 
     // FIXME - get rid if this?
@@ -116,14 +107,12 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
         LOG.info("Shutdown started");
         queueExpirer.shutdown();
         fileWatcher.shutdown();
-        proxy.shutdown();
         LOG.info("Shutdown completed");
     }
 
     @Override
     protected void doStartup() throws ServiceException {
         LOG.info("Startup started");
-        proxy.startup();
         if (getConfiguration().getDataGrabberRestartPolicy() !=
                 DataGrabberRestartPolicy.NO_AUTO_START) {
             fileWatcher.startup();
@@ -156,20 +145,20 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
         return entityManagerFactory;
     }
 
-    public AclsProxy getProxy() {
-        return proxy;
-    }
-
     public UncPathnameMapper getUncNameMapper() {
         return uncNameMapper;
     }
 
-    public SessionDetailMapper getSessionDetailMapper() {
-        return sessionDetailMapper;
-    }
-
     public UserDetailsManager getUserDetailsManager() {
         return userDetailsManager;
+    }
+
+    public PaulFacilityMapper getFacilityMapper() {
+        return facilityMapper;
+    }
+
+    public AclsHelper getAclsHelper() {
+        return aclsHelper;
     }
 
     @Override

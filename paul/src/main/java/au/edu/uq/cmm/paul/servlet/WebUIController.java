@@ -39,7 +39,6 @@ import au.edu.uq.cmm.aclslib.config.ConfigurationException;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.proxy.AclsAuthenticationException;
 import au.edu.uq.cmm.aclslib.proxy.AclsInUseException;
-import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
 import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.aclslib.service.Service.State;
 import au.edu.uq.cmm.paul.Paul;
@@ -87,7 +86,6 @@ public class WebUIController {
     @RequestMapping(value="/control", method=RequestMethod.POST)
     public String controlAction(Model model, HttpServletRequest request) {
         processStatusChange(getFileWatcher(), request.getParameter("watcher"));
-        processStatusChange(getProxy(), request.getParameter("proxy"));
         addStateAndStatus(model);
         return "control";
     }
@@ -111,11 +109,8 @@ public class WebUIController {
     
     private void addStateAndStatus(Model model) {
         State ws = getFileWatcher().getState();
-        State ps = getProxy().getState();
         model.addAttribute("watcherState", ws);
-        model.addAttribute("proxyState", ps);
         model.addAttribute("watcherStatus", stateToStatus(ws));
-        model.addAttribute("proxyStatus", stateToStatus(ps));
         model.addAttribute("resetRequired", getLatestConfig() != getConfig());
     }
     
@@ -639,10 +634,6 @@ public class WebUIController {
             entityManager.close();
         }
     }
-
-    private AclsProxy getProxy() {
-        return services.getProxy();
-    }
     
     private FileWatcher getFileWatcher() {
         return services.getFileWatcher();
@@ -658,11 +649,11 @@ public class WebUIController {
     
     private Facility lookupFacilityByName(String facilityName) 
             throws ConfigurationException {
-        return (Facility) services.getConfigManager().getFacilityMapper().lookup(null, facilityName, null);
+        return (Facility) services.getFacilityMapper().lookup(null, facilityName, null);
     }
     
     private Collection<FacilityConfig> getFacilities() {
-        return services.getConfigManager().getFacilityMapper().allFacilities();
+        return services.getFacilityMapper().allFacilities();
     }
     
     private EntityManager createEntityManager() {
