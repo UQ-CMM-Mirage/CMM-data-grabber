@@ -13,12 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import au.edu.uq.cmm.aclslib.proxy.AclsAuthenticationException;
-import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEvent;
-import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEventListener;
+import au.edu.uq.cmm.aclslib.proxy.AclsHelper;
 import au.edu.uq.cmm.aclslib.proxy.AclsInUseException;
-import au.edu.uq.cmm.aclslib.proxy.AclsLoginEvent;
-import au.edu.uq.cmm.aclslib.proxy.AclsLogoutEvent;
-import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.grabber.FileGrabber;
@@ -29,76 +25,15 @@ import au.edu.uq.cmm.paul.grabber.FileGrabber;
  * 
  * @author scrawley
  */
-public class FacilityStatusManager implements AclsFacilityEventListener {
+public class FacilityStatusManager {
     private static final Logger LOG = LoggerFactory.getLogger(FileGrabber.class);
     // FIXME - the facility statuses need to be persisted.
-    private AclsProxy proxy;
     private EntityManagerFactory emf;
-    private SessionDetailMapper aclsAccountMapper;
+    private AclsHelper aclsHelper;
 
     public FacilityStatusManager(Paul services) {
-        this.proxy = services.getProxy();
-        this.proxy.addListener(this);
         this.emf = services.getEntityManagerFactory();
-        this.aclsAccountMapper = services.getSessionDetailMapper();
-        if (this.aclsAccountMapper == null) {
-            this.aclsAccountMapper = new DefaultSessionDetailsMapper();
-        }
-    }
-
-    public void eventOccurred(AclsFacilityEvent event) {
-        LOG.debug("Processing event " + event);
-        EntityManager em = emf.createEntityManager();
-        try {
-            em.getTransaction().begin();
-            String facilityName = event.getFacilityName();
-            Facility facility = getFacility(em, facilityName);
-            FacilitySession session;
-            if (facility == null) {
-                LOG.error("No facility found for facility id " + facilityName);
-                return;
-            }
-            String userName = aclsAccountMapper.mapToUserName(
-                    event.getUserName(), event.getAccount());
-            String accountName = aclsAccountMapper.mapToAccountName(
-                    event.getUserName(), event.getAccount());
-            String emailAddress = aclsAccountMapper.mapToEmailAddress(
-                    event.getUserName(), event.getAccount());
-            if (event instanceof AclsLoginEvent) {
-                session = new FacilitySession(
-                        userName, accountName, facilityName, emailAddress, new Date());
-                em.persist(session);
-            } else if (event instanceof AclsLogoutEvent) {
-                TypedQuery<FacilitySession> query = em.createQuery(
-                        "from FacilitySession f where f.facilityName = :facilityName " +
-                                "order by f.loginTime desc", 
-                        FacilitySession.class);
-                query.setParameter("facilityName", facility.getFacilityName());
-                query.setMaxResults(1);
-                List<FacilitySession> sessions = query.getResultList();
-                if (sessions.isEmpty()) {
-                    throw new InvalidSessionException(
-                            "No sessions for facility " + facility.getFacilityName());
-                }
-                session = sessions.get(0);
-                if (session.getLogoutTime() != null) {
-                    throw new InvalidSessionException(
-                            "No current session for facility " + facility.getFacilityName());
-                } else if (!session.getUserName().equals(userName) ||
-                        !session.getAccount().equals(accountName)) {
-                    throw new InvalidSessionException(
-                            "Inconsistent session user or account name for facility " + 
-                            facility.getFacilityName());
-                }
-                session.setLogoutTime(new Date());
-            } 
-            em.persist(facility);
-            em.getTransaction().commit();
-        } catch (InvalidSessionException ex) {
-            LOG.error("Bad session information - ignoring login/logout event", ex);
-        } finally {
-            em.close();
-        }
+        this.aclsHelper = services.getAclsHelper();
     }
 
     private Facility getFacility(EntityManager em, String facilityName) {
@@ -184,7 +119,7 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
             if (session.getLogoutTime() == null) {
                 session.setLogoutTime(new Date());
             }
-            proxy.logout(getFacility(em, session.getFacilityName()), session.getUserName(), 
+            aclsHelper.logout(getFacility(em, session.getFacilityName()), session.getUserName(), 
                     session.getAccount());
             em.getTransaction().commit();
         } catch (NoResultException ex) {
@@ -200,10 +135,7 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
             em.getTransaction().begin();
             FacilitySession session = latestSession(em, facilityName);
             if (session != null) {
-//                if (session.getLogoutTime() == null) {
-//                    session.setLogoutTime(new Date());
-//                }
-                proxy.logout(getFacility(em, facilityName), 
+                aclsHelper.logout(getFacility(em, facilityName), 
                         session.getUserName(), session.getAccount());
                 em.getTransaction().commit();
             } else {
@@ -227,13 +159,13 @@ public class FacilityStatusManager implements AclsFacilityEventListener {
     public List<String> login(String facilityName, String userName, String password) 
     throws AclsAuthenticationException, AclsInUseException {
         Facility facility = lookupIdleFacility(facilityName);
-        return proxy.login(facility, userName, password);
+        return aclsHelper.login(facility, userName, password);
     }
 
     public void selectAccount (String facilityName, String userName, String account) 
     throws AclsAuthenticationException, AclsInUseException {
         Facility facility = lookupIdleFacility(facilityName);
-        proxy.selectAccount(facility, userName, account);
+        aclsHelper.selectAccount(facility, userName, account);
     }
 
     private Facility lookupIdleFacility(String facilityName)

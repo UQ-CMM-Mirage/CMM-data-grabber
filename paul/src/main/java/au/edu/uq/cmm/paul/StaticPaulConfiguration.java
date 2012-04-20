@@ -1,7 +1,14 @@
 package au.edu.uq.cmm.paul;
 
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.codehaus.jackson.annotate.JsonIgnore;
 
 import au.edu.uq.cmm.aclslib.config.ConfigurationException;
 import au.edu.uq.cmm.aclslib.config.JsonConfigLoader;
@@ -18,6 +25,10 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
     private int serverPort = 1024;
     private String serverHost;
     private String proxyHost;
+    private boolean allowUnknownClients;
+    private Set<String> trustedAddresses = Collections.emptySet();
+    private Set<InetAddress> trustedInetAddresses = Collections.emptySet();
+    
     private boolean useProject;
     private String dummyFacilityName;
     private String dummyFacilityHostId;
@@ -223,6 +234,33 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
     public void setDummyFacilityHostId(String dummyFacilityHostId) {
         this.dummyFacilityHostId = dummyFacilityHostId;
     }
+
+    public boolean isAllowUnknownClients() {
+        return allowUnknownClients;
+    }
+
+    public void setAllowUnknownClients(boolean allowUnknownClients) {
+        this.allowUnknownClients = allowUnknownClients;
+    }
+
+    public Set<String> getTrustedAddresses() {
+        return trustedAddresses;
+    }
+
+    public void setTrustedAddresses(Set<String> trustedAddresses) 
+            throws UnknownHostException {
+        this.trustedAddresses = trustedAddresses;
+        this.trustedInetAddresses = new HashSet<InetAddress>(trustedAddresses.size());
+        for (String address : trustedAddresses) {
+            trustedInetAddresses.add(InetAddress.getByName(address));
+        }
+    }
+
+    @JsonIgnore
+    public Set<InetAddress> getTrustedInetAddresses() {
+        return trustedInetAddresses;
+    }
+
 
     /**
      * Load the configuration from a file.

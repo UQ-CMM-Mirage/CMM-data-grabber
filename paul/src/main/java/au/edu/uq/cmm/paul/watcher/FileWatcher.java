@@ -158,7 +158,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
     private void configureWatcher() throws IOException {
         FileSystem fs = FileSystems.getDefault();
         watcher = fs.newWatchService();
-        for (FacilityConfig facility : services.getConfigManager().allFacilities()) {
+        for (FacilityConfig facility : services.getFacilityMapper().allFacilities()) {
             startFileWatching((Facility) facility, false);
         }
     }

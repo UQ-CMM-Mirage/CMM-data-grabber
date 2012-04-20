@@ -5,7 +5,10 @@ import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
+
+import org.codehaus.jackson.annotate.JsonIgnore;
 
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 
@@ -27,7 +30,6 @@ public class EcclesFacility implements FacilityConfig {
     private String localHostId;
     private String facilityDescription;
     private boolean useFullScreen;
-    private boolean useNetDrive;
     private boolean useTimer;
 
     @Override
@@ -75,9 +77,10 @@ public class EcclesFacility implements FacilityConfig {
         return useFullScreen;
     }
 
-    @Override
+    @JsonIgnore
+    @Transient
     public boolean isUseNetDrive() {
-        return useNetDrive;
+        return driveName != null;
     }
 
     @Override
@@ -119,10 +122,6 @@ public class EcclesFacility implements FacilityConfig {
 
     public void setUseFullScreen(boolean useFullScreen) {
         this.useFullScreen = useFullScreen;
-    }
-
-    public void setUseNetDrive(boolean useNetDrive) {
-        this.useNetDrive = useNetDrive;
     }
 
     public void setUseTimer(boolean useTimer) {

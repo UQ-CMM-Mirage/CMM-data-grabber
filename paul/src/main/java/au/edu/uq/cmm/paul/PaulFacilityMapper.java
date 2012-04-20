@@ -1,4 +1,4 @@
-package au.edu.uq.cmm.eccles;
+package au.edu.uq.cmm.paul;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -12,13 +12,14 @@ import javax.persistence.TypedQuery;
 import au.edu.uq.cmm.aclslib.config.ConfigurationException;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.config.FacilityMapper;
+import au.edu.uq.cmm.paul.status.Facility;
 
-public class EcclesFacilityMapper implements FacilityMapper {
+public class PaulFacilityMapper implements FacilityMapper {
 
     private EntityManagerFactory entityManagerFactory;
     
 
-    public EcclesFacilityMapper(EntityManagerFactory entityManagerFactory) {
+    public PaulFacilityMapper(EntityManagerFactory entityManagerFactory) {
         super();
         this.entityManagerFactory = entityManagerFactory;
     }
@@ -27,13 +28,13 @@ public class EcclesFacilityMapper implements FacilityMapper {
     public FacilityConfig lookup(String localHostId, String facilityName,
             InetAddress clientAddr) throws ConfigurationException {
         EntityManager em = entityManagerFactory.createEntityManager();
-        TypedQuery<EcclesFacility> query;
-        EcclesFacility res;
+        TypedQuery<Facility> query;
+        Facility res;
         try {
             if (localHostId != null) {
                 query = em.createQuery(
-                        "from EcclesFacility f where f.localHostId = :localHostId",
-                        EcclesFacility.class);
+                        "from Facility f where f.localHostId = :localHostId",
+                        Facility.class);
                 query.setParameter("localHostId", localHostId);
                 res = getFirst(query, "hostId", localHostId);
                 if (res != null) {
@@ -42,8 +43,8 @@ public class EcclesFacilityMapper implements FacilityMapper {
             }
             if (facilityName != null) {
                 query = em.createQuery(
-                        "from EcclesFacility f where f.facilityName = :facilityName",
-                        EcclesFacility.class);
+                        "from Facility f where f.facilityName = :facilityName",
+                        Facility.class);
                 query.setParameter("facilityName", facilityName);
                 res = getFirst(query, "facilityName", facilityName);
                 if (res != null) {
@@ -55,9 +56,9 @@ public class EcclesFacilityMapper implements FacilityMapper {
                 String fqdn = clientAddr.getCanonicalHostName();
                 String[] hostNameParts = clientAddr.getCanonicalHostName().split("\\.");
                 query = em.createQuery(
-                        "from EcclesFacility f where f.address = :ipAddress or " +
+                        "from Facility f where f.address = :ipAddress or " +
                         "f.address = :fqdn or f.address = :hostName",
-                        EcclesFacility.class);
+                        Facility.class);
                 query.setParameter("ipAddress", ipAddress);
                 query.setParameter("fqdn", fqdn);
                 query.setParameter("hostName", hostNameParts[hostNameParts.length - 1]);
@@ -72,9 +73,9 @@ public class EcclesFacilityMapper implements FacilityMapper {
         }
     }
 
-    private EcclesFacility getFirst(TypedQuery<EcclesFacility> query, String key, String keyValue) 
+    private Facility getFirst(TypedQuery<Facility> query, String key, String keyValue) 
             throws ConfigurationException {
-        List<EcclesFacility> list = query.getResultList();
+        List<Facility> list = query.getResultList();
         if (list.size() == 0) {
             return null;
         } else if (list.size() == 1) {
@@ -89,8 +90,8 @@ public class EcclesFacilityMapper implements FacilityMapper {
     public Collection<FacilityConfig> allFacilities() {
         EntityManager em = entityManagerFactory.createEntityManager();
         try {
-            TypedQuery<EcclesFacility> query = em.createQuery(
-                    "from EcclesFacility", EcclesFacility.class);
+            TypedQuery<Facility> query = em.createQuery(
+                    "from Facility", Facility.class);
             return new ArrayList<FacilityConfig>(query.getResultList());
         } finally {
             em.close();

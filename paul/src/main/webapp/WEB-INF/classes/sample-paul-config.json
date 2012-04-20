@@ -3,6 +3,8 @@
   "serverPort" : 1024,
   "proxyHost" : "xxx.example.com",
   "serverHost" : "acls.example.com",
+  "allowUnknownClients" : false,
+  "trustedAddresses" : ["xxx.example.com", "127.0.0.1"],
   "primaryRepositoryUrl" : "http://repo.example.com",
   "aclsUrl" : "http://acls.example.com/xxx/book.dll",
   "useProject" : false,
@@ -15,45 +17,5 @@
   "feedAuthor" : "Generous Donor Centre, University of Example",
   "feedAuthorEmail" : "nobody@example.com",
   "feedPageSize" : 10,
-  "facilities" : {
-    "127.0.0.1" : {
-      "useFullScreen" : true,
-      "driveName" : null,
-      "accessPassword" : null,
-      "accessName" : null,
-      "folderName" : null, 
-      "facilityName" : "The Proxy",
-      "useTimer" : false,
-      "facilityDescription" : "The Proxy",
-      "useFullScreen" : false,
-      "dummy" : true 
-    },
-    "192.168.122.239" : {
-      "useFullScreen" : true,
-      "driveName" : "T",
-      "accessPassword" : "secret",
-      "accessName" : "jim",
-      "folderName" : "\\\\xxx\\test",
-      "facilityName" : "Trollscope 2000",
-      "useTimer" : false,
-      "facilityDescription" : "Trollscope 2000",
-      "useFullScreen" : true,
-      "fileSettlingTime" : 5000,
-      "datafileTemplates" : [
-        {"filePattern" : "(.*)\\.txt", "mimeType" : "text/plain", "suffix" : ".txt"},
-        {"filePattern" : "(.*)\\.guf", "mimeType" : "vendor/guf", "suffix" : ".guf"}
-      ]
-    },
-    "hatstand.example.com" : {
-      "useFullScreen" : false,
-      "driveName" : null,
-      "accessPassword" : null,
-      "accessName" : null,
-      "folderName" : null,
-      "facilityName" : "TEM CM200",
-      "useTimer" : false,
-      "facilityDescription" : "The hatstand in the corner",
-      "useFullScreen" : false
-    }
-  }
+  
 }
