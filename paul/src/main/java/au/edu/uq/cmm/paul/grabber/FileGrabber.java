@@ -138,7 +138,7 @@ public class FileGrabber extends CompositeServiceBase
         } finally {
             em.close();
         }
-        LOG.error("determineCatchupTime(" + facility.getFacilityName() + ") -> " + res);
+        LOG.info("determineCatchupTime(" + facility.getFacilityName() + ") -> " + res);
         return res;
     }
 
