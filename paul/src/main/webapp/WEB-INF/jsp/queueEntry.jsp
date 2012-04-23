@@ -34,11 +34,11 @@
 		<li>Session uuid: ${entry.sessionUuid}</li>
 		<li>Session start time: ${entry.sessionStartTimestamp}</li>
 		<li>Dataset uuid: ${entry.recordUuid}</li>
-		<li>Dataset base filename: ${entry.sourceFilePathnameBase}</li>
+		<li>Dataset base filename: ${entry.sourceFilePathnameBase} / ${entry.facilityFilePathnameBase}</li>
 		<li>Datafiles:
 			<ul>
 				<c:forEach items="${entry.datafiles}" var="datafile">
-					<li>Filename: ${datafile.sourceFilePathname}
+					<li>Filename: ${datafile.sourceFilePathname} / ${datafile.facilityFilePathname}
 						<ul>
 							<li>File id: ${datafile.id}</li>
 							<li>Captured filename: ${datafile.capturedFilePathname}</li>

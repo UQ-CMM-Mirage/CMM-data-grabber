@@ -42,6 +42,7 @@ class WorkEntry implements Runnable {
     private final QueueManager queueManager;
     private final BlockingDeque<FileWatcherEvent> events;
     private final File baseFile;
+    private final String instrumentBasePath;
     private final Map<File, GrabbedFile> files;
     private final Facility facility;
     private final Date timestamp;
@@ -53,11 +54,26 @@ class WorkEntry implements Runnable {
         this.fileGrabber = facility.getFileGrabber();
         this.queueManager = services.getQueueManager();
         this.baseFile = baseFile;
+        this.instrumentBasePath = mapToInstrumentPath(facility, baseFile);
         this.files = new ConcurrentHashMap<File, GrabbedFile>();
         this.events = new LinkedBlockingDeque<FileWatcherEvent>();
         this.holdDatasetsWithNoUser = 
                 services.getConfiguration().isHoldDatasetsWithNoUser();
         addEvent(event);
+    }
+
+    private String mapToInstrumentPath(Facility facility, File file) {
+        String filePath = file.getAbsolutePath();
+        String directoryPath = facility.getLocalDirectory().getAbsolutePath();
+        if (!filePath.startsWith(directoryPath)) {
+            throw new PaulException("Bad path base: '" + filePath +
+                    "' does not start with '" + directoryPath);
+        }
+        // This is a hack, but I can't use `File` to generate a Windows-style
+        // pathname on Unix / Linux.
+        filePath = filePath.substring(directoryPath.length());
+        filePath = filePath.replaceAll("/", "\\\\");
+        return facility.getDriveName() + ":" + filePath;
     }
 
     public void addEvent(FileWatcherEvent event) {
@@ -189,13 +205,15 @@ class WorkEntry implements Runnable {
             String mimeType = (g.getTemplate() == null) ? 
                     "application/octet-stream" : g.getTemplate().getMimeType();
             DatafileMetadata d = new DatafileMetadata(
-                    g.getFile().getAbsolutePath(), g.getCopiedFile().getAbsolutePath(), 
+                    g.getFile().getAbsolutePath(), 
+                    mapToInstrumentPath(facility, g.getFile()),
+                    g.getCopiedFile().getAbsolutePath(), 
                     g.getFileTimestamp(), g.getCopyTimestamp(), mimeType,
                     g.getCopiedFile().length());
             list.add(d);
         }
-        DatasetMetadata metadata = new DatasetMetadata(
-                baseFile.getAbsolutePath(), metadataFile.getAbsolutePath(), 
+        DatasetMetadata metadata = new DatasetMetadata(baseFile.getAbsolutePath(), 
+                instrumentBasePath, metadataFile.getAbsolutePath(), 
                 userName, facility.getFacilityName(), facility.getId(), 
                 account, emailAddress, now, sessionUuid, loginTime, list);
         queueManager.addEntry(metadata, metadataFile);

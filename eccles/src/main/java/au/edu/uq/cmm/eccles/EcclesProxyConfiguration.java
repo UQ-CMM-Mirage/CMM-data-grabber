@@ -6,12 +6,14 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.persistence.CollectionTable;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
@@ -127,7 +129,8 @@ public class EcclesProxyConfiguration implements ACLSProxyConfiguration {
         this.allowUnknownClients = allowUnknownClients;
     }
     
-    @ElementCollection(fetch=FetchType.EAGER, targetClass=HashSet.class)
+    @CollectionTable(name="trusted_addresses",joinColumns=@JoinColumn(name="addr_id"))
+    @ElementCollection()
     public Set<String> getTrustedAddresses() {
         return trustedAddresses;
     }

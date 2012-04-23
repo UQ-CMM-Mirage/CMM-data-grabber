@@ -91,7 +91,7 @@ public class FacilityStatusManager {
             TypedQuery<FacilitySession> query = em.createQuery(
                     "from FacilitySession s where s.facilityName = :facilityName " +
                     "and s.loginTime <= :timestamp " +
-                    "and (s.logoutTime is null or s.logoutTime >= :timestamp " +
+                    "and (s.logoutTime is null or s.logoutTime >= :timestamp) " +
                     "order by s.loginTime desc", FacilitySession.class);
             query.setParameter("facilityName", facilityName);
             query.setParameter("timestamp", new Date(timestamp));
