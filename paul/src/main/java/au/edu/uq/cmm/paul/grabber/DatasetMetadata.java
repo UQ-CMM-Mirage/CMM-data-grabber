@@ -35,6 +35,7 @@ public class DatasetMetadata {
     private String facilityName;
     private String accountName;
     private String sourceFilePathnameBase;
+    private String facilityFilePathnameBase;
     private Date captureTimestamp;
     private Date updateTimestamp;
     private Date sessionStartTimestamp;
@@ -51,6 +52,7 @@ public class DatasetMetadata {
     }
     
     public DatasetMetadata(String sourceFilePathnameBase, 
+            String facilityFilePathnameBase,
             String metadataFilePathname, String userName, 
             String facilityName, Long facilityId,
             String accountName, String emailAddress, Date captureTimestamp,
@@ -58,6 +60,7 @@ public class DatasetMetadata {
             List<DatafileMetadata> datafiles) {
         super();
         this.sourceFilePathnameBase = sourceFilePathnameBase;
+        this.facilityFilePathnameBase = facilityFilePathnameBase;
         this.metadataFilePathname = metadataFilePathname;
         this.userName = userName;
         this.facilityName = facilityName;
@@ -163,6 +166,14 @@ public class DatasetMetadata {
 
     public void setSourceFilePathnameBase(String sourceFilePathnameBase) {
         this.sourceFilePathnameBase = sourceFilePathnameBase;
+    }
+
+    public String getFacilityFilePathnameBase() {
+        return facilityFilePathnameBase;
+    }
+
+    public void setFacilityFilePathnameBase(String facilityFilePathnameBase) {
+        this.facilityFilePathnameBase = facilityFilePathnameBase;
     }
 
     @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER)

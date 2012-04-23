@@ -17,6 +17,12 @@
 				${config.serverPort}</li>
 			<li>ACLS Proxy details:
 			    <ul>
+			   		<li>Allow unknown clients: ${config.allowUnknownClients}</li>
+			        <li>Trusted addresses: 
+			        	<c:forEach var="addr" items="${config.trustedAddresses}">
+			        		${addr} &nbsp;
+			        	</c:forEach>
+			        </li>
 			    	<li>Dummy facility name: ${config.dummyFacilityName}</li>
 			    	<li>Dummy facility hostId: ${config.dummyFacilityHostId}</li>
 			    </ul>
