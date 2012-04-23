@@ -138,7 +138,7 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
 
     @Override
     public String getTitle(DatasetMetadata record) throws ResponseContextException {
-        return record.getSourceFilePathnameBase();
+        return record.getFacilityFilePathnameBase();
     }
 
     @Override
@@ -186,7 +186,7 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
             entry.addLink(config.getBaseFileUrl() + 
                     new File(datafile.getCapturedFilePathname()).getName(),
                     "enclosure", datafile.getMimeType(), 
-                    datafile.getSourceFilePathname(),
+                    datafile.getFacilityFilePathname(),
                     "en", datafile.getFileSize());
         }
         entry.addLink(config.getBaseFileUrl() + 

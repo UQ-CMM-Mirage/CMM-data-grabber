@@ -25,6 +25,7 @@ import org.hibernate.annotations.GenericGenerator;
         uniqueConstraints=@UniqueConstraint(columnNames={"capturedFilePathname"}))
 public class DatafileMetadata {
     private String sourceFilePathname;
+    private String facilityFilePathname;
     private Date captureTimestamp;
     private Date fileWriteTimestamp;
     private String capturedFilePathname;
@@ -36,11 +37,13 @@ public class DatafileMetadata {
         super();
     }
     
-    public DatafileMetadata(String sourceFilePathname, String capturedFilePathname, 
-            Date captureTimestamp, Date fileWriteTimestamp, String mimeType,
-            long fileSize) {
+    public DatafileMetadata(
+            String sourceFilePathname, String facilityFilePathname,
+            String capturedFilePathname, Date captureTimestamp, 
+            Date fileWriteTimestamp, String mimeType, long fileSize) {
         super();
         this.sourceFilePathname = sourceFilePathname;
+        this.facilityFilePathname = facilityFilePathname;
         this.capturedFilePathname = capturedFilePathname;
         this.captureTimestamp = captureTimestamp;
         this.fileWriteTimestamp = fileWriteTimestamp;
@@ -76,6 +79,14 @@ public class DatafileMetadata {
 
     public void setSourceFilePathname(String sourceFilePathname) {
         this.sourceFilePathname = sourceFilePathname;
+    }
+
+    public String getFacilityFilePathname() {
+        return facilityFilePathname;
+    }
+
+    public void setFacilityFilePathname(String facilityFilePathname) {
+        this.facilityFilePathname = facilityFilePathname;
     }
 
     public void setCaptureTimestamp(Date captureTimestamp) {
