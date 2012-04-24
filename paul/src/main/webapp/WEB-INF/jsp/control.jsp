@@ -35,6 +35,7 @@
             	<button name="restart">Restart now</button>
 			</c:if>
 		</form>
+		</div>
 		<!-- /container -->
 		<%@ include file="/WEB-INF/jsp/commonFooter.jspFrag"%>
 </body>

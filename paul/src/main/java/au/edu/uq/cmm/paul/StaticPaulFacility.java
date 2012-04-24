@@ -8,7 +8,7 @@ import au.edu.uq.cmm.aclslib.config.StaticFacilityConfig;
 public class StaticPaulFacility extends StaticFacilityConfig implements
         GrabberFacilityConfig {
     
-    private boolean caseSensitive;
+    private boolean caseInsensitive;
     private boolean useFileLocks;
     private int fileSettlingTime;
     private List<StaticDatafileTemplateConfig> datafileTemplates =
@@ -21,7 +21,7 @@ public class StaticPaulFacility extends StaticFacilityConfig implements
 
     @Override
     public boolean isCaseInsensitive() {
-        return caseSensitive;
+        return caseInsensitive;
     }
 
     @Override
@@ -34,12 +34,8 @@ public class StaticPaulFacility extends StaticFacilityConfig implements
         return fileSettlingTime;
     }
 
-    public boolean isCaseSensitive() {
-        return caseSensitive;
-    }
-
-    public void setCaseSensitive(boolean caseSensitive) {
-        this.caseSensitive = caseSensitive;
+    public void setCaseInsensitive(boolean caseInsensitive) {
+        this.caseInsensitive = caseInsensitive;
     }
 
     public void setUseFileLocks(boolean useFileLocks) {

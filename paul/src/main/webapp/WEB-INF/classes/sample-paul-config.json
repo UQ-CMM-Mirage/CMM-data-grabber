@@ -17,5 +17,6 @@
   "feedAuthor" : "Generous Donor Centre, University of Example",
   "feedAuthorEmail" : "nobody@example.com",
   "feedPageSize" : 10,
-  
+  "dummyFacilityName" : "ACCESS CONTROL",
+  "dummyFacilityHostId" : "SOMETHING"
 }
