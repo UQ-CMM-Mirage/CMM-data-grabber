@@ -16,6 +16,8 @@
 # Description:       Start the ACLS proxy service.
 ### END INIT INFO
 
+set -e
+
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
 NAME=eccles
 DESC="ACLS proxy service"
@@ -43,7 +45,7 @@ fi
 # Run Eccles as this user ID and group ID
 ECCLES_USER=eccles
 ECCLES_GROUP=eccles
-LOG_DIR=/var/log/$name
+LOG_DIR=/var/log/$NAME
 
 JAVA=/usr/bin/java
 
@@ -56,11 +58,12 @@ if [ -f "$DEFAULT" ]; then
         . "$DEFAULT"
 fi
 
-if [ -z "JAVA_HOME" ] ; then 
+if [ -z "$JAVA_HOME" ] ; then 
 	JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:bin/java::") 
 fi
+export JAVA_HOME
 
-PID_FILE=/var/run/$NAME
+PID_FILE=/var/run/$NAME.pid
 
 case "$1" in
   start)
@@ -71,10 +74,12 @@ case "$1" in
     log_daemon_msg "Starting $DESC" "$NAME"
     if start-stop-daemon --test --start --pidfile "$PID_FILE" \
            --user $ECCLES_USER --exec "$JAVA_HOME/bin/java" >/dev/null; then
-        chown -r $ECCLES_USER $LOG_DIR
+        set +e
         start-stop-daemon --start -b -u "$ECCLES_USER" -g "$ECCLES_GROUP" \
                 -c "$ECCLES_USER" -d "$LOG_DIR" -p "$PID_FILE" \
-                $JAVA_HOME/bin/java -jar $ECCLES_HOME/eccles.jar
+                --syexec $JAVA_HOME/bin/java -- -jar $ECCLES_HOME/eccles.jar \
+                                             $ECCLES_HOME/eccles.properties
+        set -e
         sleep 5
         if start-stop-daemon --test --start --pidfile "$PID_FILE" \
                 --user $ECCLES_USER --exec "$JAVA_HOME/bin/java" >/dev/null; then
@@ -92,6 +97,7 @@ case "$1" in
     ;;
   stop)
     log_daemon_msg "Stopping $DESC" "$NAME"
+    set +e
     if [ -f "$PID_FILE" ]; then 
         start-stop-daemon --stop --pidfile "$PID_FILE" \
               --user "$ECCLES_USER" --retry=TERM/20/KILL/5 >/dev/null
@@ -107,8 +113,10 @@ case "$1" in
         log_progress_msg "(not running)"
     fi
     log_end_msg 0
+    set -e
     ;;
   status)
+    set +e
     start-stop-daemon --test --start --pidfile "$PID_FILE" \
            --user $ECCLES_USER --exec "$JAVA_HOME/bin/java" >/dev/null 2>&1
     if [ "$?" = "0" ]; then
@@ -122,6 +130,7 @@ case "$1" in
     else
         log_success_msg "$DESC is running with pid `cat $PID_FILE`"
     fi
+    set -e
     ;;
   restart|force-reload)
     if [ -f "$PID_FILE" ]; then

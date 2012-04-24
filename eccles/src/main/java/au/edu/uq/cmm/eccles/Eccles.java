@@ -1,7 +1,10 @@
 package au.edu.uq.cmm.eccles;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -31,12 +34,30 @@ public class Eccles implements AclsFacilityEventListener {
      * @throws InterruptedException 
      */
     public static void main(String[] args) throws InterruptedException {
+        Properties properties = null;
+        if (args.length > 0) {
+            properties = new Properties();
+            try {
+                properties.load(new FileInputStream(args[0]));
+            } catch (IOException ex) {
+                System.err.println(ex.getMessage());
+                System.exit(1);
+            }
+        }
         LOG.info("Hallo ... I'm the famous Eccles!");
-        new Eccles().run();
+        try {
+            new Eccles().run(properties);
+        } catch (Throwable ex) {
+            LOG.error("Some rotten swine has deaded me!", ex);
+        }
+        // (Wrong character, but who cares :-) )
+        LOG.info("Exits stage left on council dust cart. Pieew!!");
     }
 
-    private void run() throws InterruptedException {
-        emf = Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul");
+    private void run(Properties properties) throws InterruptedException {
+        emf = properties == null ?
+                Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul") :
+                Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul", properties);
         ACLSProxyConfiguration config = EcclesProxyConfiguration.load(emf);
         FacilityMapper mapper = new EcclesFacilityMapper(emf);
         userDetailsMapper = new DefaultSessionDetailsMapper();
@@ -64,6 +85,7 @@ public class Eccles implements AclsFacilityEventListener {
                 LOG.error("Interrupted ...", ex);
             }
         }
+        
     }
 
     public void eventOccurred(AclsFacilityEvent event) {
