@@ -77,12 +77,6 @@
 			<artifactId>slf4j-log4j12</artifactId>
 			<version>1.6.4</version>
 			<scope>runtime</scope>
-			<exclusions>
-				<exclusion>
-					<groupId>log4j</groupId>
-					<artifactId>log4j</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.abdera</groupId>
