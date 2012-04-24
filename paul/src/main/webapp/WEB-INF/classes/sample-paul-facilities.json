@@ -1,17 +1,7 @@
-{ "facilities" : [
-    { address: "127.0.0.1",
-      "useFullScreen" : true,
-      "driveName" : null,
-      "accessPassword" : null,
-      "accessName" : null,
-      "folderName" : null, 
-      "facilityName" : "The Proxy",
-      "useTimer" : false,
-      "facilityDescription" : "The Proxy",
-      "useFullScreen" : false,
-      "dummy" : true 
-    },
-    { address: "192.168.122.239",
+{
+  "facilities" : [
+    {
+      "address" : "192.168.122.239",
       "useFullScreen" : true,
       "driveName" : "T",
       "accessPassword" : "secret",
@@ -25,9 +15,11 @@
       "datafileTemplates" : [
         {"filePattern" : "(.*)\\.txt", "mimeType" : "text/plain", "suffix" : ".txt"},
         {"filePattern" : "(.*)\\.guf", "mimeType" : "vendor/guf", "suffix" : ".guf"}
-      ]
+      ],
+      "localHostId" : "SOMETHING-2"
     },
-    { address: "hatstand.example.com",
+    {
+      "address" : "hatstand.example.com",
       "useFullScreen" : false,
       "driveName" : null,
       "accessPassword" : null,
@@ -36,7 +28,8 @@
       "facilityName" : "TEM CM200",
       "useTimer" : false,
       "facilityDescription" : "The hatstand in the corner",
-      "useFullScreen" : false
+      "useFullScreen" : false,
+      "localHostId" : "SOMETHING-3"
     }
   ]
 }
