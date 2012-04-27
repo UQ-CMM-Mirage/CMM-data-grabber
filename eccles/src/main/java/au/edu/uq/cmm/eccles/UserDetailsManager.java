@@ -91,6 +91,7 @@ public class UserDetailsManager {
             userDetails.setAccounts(new HashSet<String>(loginDetails.getAccounts()));
             userDetails.setDigest(digest);
             userDetails.setOrgName(loginDetails.getOrgName());
+            userDetails.setHumanReadableName(loginDetails.getHumanReadableName());
             userDetails.setOnsiteAssist(loginDetails.isOnsiteAssist());
             userDetails.getCertifications().put(
                     loginDetails.getFacilityName(), loginDetails.getCertification().toString());
@@ -120,9 +121,8 @@ public class UserDetailsManager {
                 if (cert == null) {
                     cert = defaultCertification;
                 }
-                return new AclsLoginDetails(userName,
-                        userDetails.getOrgName(), password, 
-                        facility.getFacilityName(), 
+                return new AclsLoginDetails(userName, userDetails.getHumanReadableName(),
+                        userDetails.getOrgName(), password,  facility.getFacilityName(), 
                         new ArrayList<String>(userDetails.getAccounts()),
                         cert, userDetails.isOnsiteAssist(), true);
             }

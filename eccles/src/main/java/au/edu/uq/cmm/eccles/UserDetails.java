@@ -48,6 +48,7 @@ public class UserDetails {
         this.digest = digest;
         this.seed = seed;
         this.orgName = details.getOrgName();
+        this.humanReadableName = details.getHumanReadableName();
         this.onsiteAssist = details.isOnsiteAssist();
         this.accounts = new HashSet<String>(details.getAccounts());
         this.certifications = new HashMap<String, String>();
