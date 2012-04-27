@@ -33,14 +33,20 @@ public class UserDetailsManager {
         this.emf = emf;
     }
     
-    public UserDetails lookupUser(String userName) throws UnknownUserException {
+    public UserDetails lookupUser(String userName, boolean fetchCollections) 
+            throws UnknownUserException {
         EntityManager em = emf.createEntityManager();
         try {
             TypedQuery<UserDetails> query = em.createQuery(
                     "from UserDetails u where u.userName = :userName", 
                     UserDetails.class);
             query.setParameter("userName", userName);
-            return query.getSingleResult();
+            UserDetails userDetails = query.getSingleResult();
+            if (fetchCollections) {
+                userDetails.getAccounts().size();
+                userDetails.getCertifications().size();
+            }
+            return userDetails;
         } catch (NoResultException ex) {
             throw new UnknownUserException(userName);
         } finally {
@@ -105,7 +111,7 @@ public class UserDetailsManager {
             String userName, String password, FacilityConfig facility) {
         LOG.debug("Attempting to authenticate using cached user details for " + userName);
         try {
-            UserDetails userDetails = lookupUser(userName);
+            UserDetails userDetails = lookupUser(userName, true);
             byte[] myDigest = createDigest(password, userDetails.getSeed());
             byte[] savedDigest = userDetails.getDigest();
             if (sameDigest(myDigest, savedDigest)) {
