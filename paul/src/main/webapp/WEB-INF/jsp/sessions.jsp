@@ -8,7 +8,7 @@
 </head>
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
-	<div class="container">
+	<div class="container-fluid">
 		<h1>Current Facility Sessions</h1>
 		<table class="table table-striped table-bordered table-condensed">
 			<thead>

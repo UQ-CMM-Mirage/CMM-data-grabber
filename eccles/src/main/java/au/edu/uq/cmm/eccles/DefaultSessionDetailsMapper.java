@@ -9,17 +9,17 @@ package au.edu.uq.cmm.eccles;
 public class DefaultSessionDetailsMapper implements SessionDetailMapper {
 
     @Override
-    public String mapToUserName(String userName, String accountName) {
+    public String mapToUserName(String userName) {
         return userName;
     }
 
     @Override
-    public String mapToAccountName(String userName, String accountName) {
+    public String mapToAccount(String accountName) {
         return accountName;
     }
 
     @Override
-    public String mapToEmailAddress(String userName, String accountName)
+    public String mapToEmailAddress(String userName)
             throws InvalidSessionException {
         return null;
     }

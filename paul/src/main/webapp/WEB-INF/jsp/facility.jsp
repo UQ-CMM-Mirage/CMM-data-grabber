@@ -8,7 +8,7 @@
 </head>
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
-	<div class="container">
+	<div class="container-fluid">
 		<h1>Facility Configuration / Controls for
 			${facility.facilityName}</h1>
 		<ul>

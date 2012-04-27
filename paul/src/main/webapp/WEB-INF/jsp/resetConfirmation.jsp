@@ -8,7 +8,7 @@
 </head>
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
-	<div class="container">
+	<div class="container-fluid">
 		<h1>Data Grabber Configuration Reset</h1>
 		<form name="form" method="POST" action="${returnTo}">
 			Resetting the configuration will permanently delete any manual

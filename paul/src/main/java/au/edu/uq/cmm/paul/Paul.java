@@ -12,12 +12,12 @@ import org.springframework.context.Lifecycle;
 import au.edu.uq.cmm.aclslib.proxy.AclsHelper;
 import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
 import au.edu.uq.cmm.aclslib.service.ServiceException;
+import au.edu.uq.cmm.eccles.UserDetailsManager;
 import au.edu.uq.cmm.paul.GrabberConfiguration.DataGrabberRestartPolicy;
 import au.edu.uq.cmm.paul.queue.QueueExpirer;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.servlet.ConfigurationManager;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
-import au.edu.uq.cmm.paul.status.UserDetailsManager;
 import au.edu.uq.cmm.paul.watcher.FileWatcher;
 import au.edu.uq.cmm.paul.watcher.SambaUncPathnameMapper;
 import au.edu.uq.cmm.paul.watcher.UncPathnameMapper;
@@ -60,7 +60,7 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
         this.fileWatcher = new FileWatcher(this);
         this.queueManager = new QueueManager(this);
         this.queueExpirer = new QueueExpirer(this);
-        this.userDetailsManager = new UserDetailsManager(this);
+        this.userDetailsManager = new UserDetailsManager(entityManagerFactory);
     }
 
     // FIXME - get rid if this?

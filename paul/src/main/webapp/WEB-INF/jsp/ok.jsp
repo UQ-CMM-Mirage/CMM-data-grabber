@@ -8,7 +8,7 @@
 </head>
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
-	<div class="container">
+	<div class="container-fluid">
 		<h1>Data Grabber Operation Succeeded</h1>
 		${message} <br>
 		<button onclick="window.location = '${returnTo}'">OK</button>

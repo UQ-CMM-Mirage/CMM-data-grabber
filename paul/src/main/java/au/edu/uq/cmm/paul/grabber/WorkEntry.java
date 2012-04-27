@@ -20,12 +20,12 @@ import org.codehaus.jackson.JsonGenerationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.status.DatafileTemplate;
 import au.edu.uq.cmm.paul.status.Facility;
-import au.edu.uq.cmm.paul.status.FacilitySession;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
 
 /**
@@ -192,7 +192,7 @@ class WorkEntry implements Runnable {
     private void saveMetadata(Date now,FacilitySession session)
             throws IOException, JsonGenerationException {
         if (session == null && !holdDatasetsWithNoUser) {
-            session = FacilitySession.makeDummySession(facility, now);
+            session = FacilitySession.makeDummySession(facility.getFacilityName(), now);
         }
         String userName = session == null ? null : session.getUserName();
         String account = session == null ? null : session.getAccount();

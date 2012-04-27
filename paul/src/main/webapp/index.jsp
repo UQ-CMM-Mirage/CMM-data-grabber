@@ -8,7 +8,7 @@
 </head>
 <body>
 <%@ include file="/WEB-INF/jsp/commonHeader.jspFrag" %>
-	<div class="container">
+	<div class="container-fluid">
 	<h1>Data Grabber Main Menu</h1>
 	<ul>
 		<li><a href="/paul/admin">Data Grabber Administration</a> - CMM staff only.</li>

@@ -8,7 +8,7 @@
 </head>
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
-	<div class="container">
+	<div class="container-fluid">
 		<h1>Data Grabber Login</h1>
 
         <p>You need to be logged in to perform this operation</p>
