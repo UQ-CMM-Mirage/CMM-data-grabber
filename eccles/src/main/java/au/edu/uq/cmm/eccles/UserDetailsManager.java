@@ -13,23 +13,28 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import au.edu.uq.cmm.aclslib.authenticator.AclsLoginDetails;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.message.Certification;
 
 
 public class UserDetailsManager {
+    private static final Logger LOG = LoggerFactory.getLogger(UserDetailsManager.class);
+    
     private Random random = new Random();
-    private EntityManagerFactory entityManagerFactory;
+    private EntityManagerFactory emf;
     private Certification defaultCertification = Certification.VALID;
     
 
-    public UserDetailsManager(EntityManagerFactory entityManagerFactory) {
-        this.entityManagerFactory = entityManagerFactory;
+    public UserDetailsManager(EntityManagerFactory emf) {
+        this.emf = emf;
     }
     
     public UserDetails lookupUser(String userName) throws UnknownUserException {
-        EntityManager em = entityManagerFactory.createEntityManager();
+        EntityManager em = emf.createEntityManager();
         try {
             TypedQuery<UserDetails> query = em.createQuery(
                     "from UserDetails u where u.userName = :userName", 
@@ -44,7 +49,7 @@ public class UserDetailsManager {
     }
     
     public List<String> getUserNames() {
-        EntityManager em = entityManagerFactory.createEntityManager();
+        EntityManager em = emf.createEntityManager();
         try {
             TypedQuery<String> query = em.createQuery(
                     "select u.userName from UserDetails u", String.class);
@@ -55,7 +60,7 @@ public class UserDetailsManager {
     }
 
     public List<UserDetails> getUsers() {
-        EntityManager em = entityManagerFactory.createEntityManager();
+        EntityManager em = emf.createEntityManager();
         try {
             TypedQuery<UserDetails> query = em.createQuery(
                     "from UserDetails u", UserDetails.class);
@@ -67,7 +72,7 @@ public class UserDetailsManager {
 
     public void refreshUserDetails(String userName, String email, 
             AclsLoginDetails loginDetails) {
-        EntityManager em = entityManagerFactory.createEntityManager();
+        EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
             TypedQuery<UserDetails> query = em.createQuery(
@@ -75,6 +80,7 @@ public class UserDetailsManager {
                     UserDetails.class);
             query.setParameter("userName", userName);
             UserDetails userDetails = query.getSingleResult();
+            LOG.debug("Refreshing cached user details for " + userName);
             byte[] digest = createDigest(loginDetails.getPassword(), userDetails.getSeed());
             userDetails.setAccounts(new HashSet<String>(loginDetails.getAccounts()));
             userDetails.setDigest(digest);
@@ -84,10 +90,12 @@ public class UserDetailsManager {
                     loginDetails.getFacilityName(), loginDetails.getCertification().toString());
             em.getTransaction().commit();
         } catch (NoResultException ex) {
+            LOG.debug("Caching user details for " + userName);
             long seed = random.nextLong();
             byte[] digest = createDigest(loginDetails.getPassword(), seed);
             UserDetails newDetails = new UserDetails(userName, email, loginDetails, seed, digest);
             em.persist(newDetails);
+            em.getTransaction().commit();
         } finally {
             em.close();
         }
@@ -95,6 +103,7 @@ public class UserDetailsManager {
     
     public AclsLoginDetails authenticateAgainstCachedCredentials(
             String userName, String password, FacilityConfig facility) {
+        LOG.debug("Attempting to authenticate using cached user details for " + userName);
         try {
             UserDetails userDetails = lookupUser(userName);
             byte[] myDigest = createDigest(password, userDetails.getSeed());
