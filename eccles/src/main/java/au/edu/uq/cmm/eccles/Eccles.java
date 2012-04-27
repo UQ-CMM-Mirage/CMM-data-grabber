@@ -14,20 +14,26 @@ import javax.persistence.TypedQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import au.edu.uq.cmm.aclslib.authenticator.AclsLoginDetails;
+import au.edu.uq.cmm.aclslib.authenticator.Authenticator;
 import au.edu.uq.cmm.aclslib.config.ACLSProxyConfiguration;
+import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.config.FacilityMapper;
+import au.edu.uq.cmm.aclslib.message.AclsException;
 import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEvent;
 import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEventListener;
 import au.edu.uq.cmm.aclslib.proxy.AclsLoginEvent;
 import au.edu.uq.cmm.aclslib.proxy.AclsLogoutEvent;
+import au.edu.uq.cmm.aclslib.proxy.AclsPasswordAcceptedEvent;
 import au.edu.uq.cmm.aclslib.proxy.AclsProxy;
 
-public class Eccles implements AclsFacilityEventListener {
+public class Eccles implements AclsFacilityEventListener, Authenticator {
 
     private static final Logger LOG = LoggerFactory.getLogger(Eccles.class);
     private AclsProxy proxy;
     private EntityManagerFactory emf;
     private SessionDetailMapper userDetailsMapper;
+    private UserDetailsManager userDetailsManager;
     
     /**
      * @param args
@@ -61,7 +67,8 @@ public class Eccles implements AclsFacilityEventListener {
         ACLSProxyConfiguration config = EcclesProxyConfiguration.load(emf);
         FacilityMapper mapper = new EcclesFacilityMapper(emf);
         userDetailsMapper = new DefaultSessionDetailsMapper();
-        proxy = new AclsProxy(config, mapper);
+        userDetailsManager = new UserDetailsManager(emf);
+        proxy = new AclsProxy(config, mapper, this);
         proxy.addListener(this);
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override public void run() {
@@ -85,7 +92,6 @@ public class Eccles implements AclsFacilityEventListener {
                 LOG.error("Interrupted ...", ex);
             }
         }
-        
     }
 
     public void eventOccurred(AclsFacilityEvent event) {
@@ -94,46 +100,74 @@ public class Eccles implements AclsFacilityEventListener {
         try {
             em.getTransaction().begin();
             String facilityName = event.getFacilityName();
-            FacilitySession session;
-            String userName = userDetailsMapper.mapToUserName(
-                    event.getUserName(), event.getAccount());
-            String accountName = userDetailsMapper.mapToAccountName(
-                    event.getUserName(), event.getAccount());
-            String emailAddress = userDetailsMapper.mapToEmailAddress(
-                    event.getUserName(), event.getAccount());
             if (event instanceof AclsLoginEvent) {
-                session = new FacilitySession(
-                        userName, accountName, facilityName, emailAddress, new Date());
-                em.persist(session);
+                processLoginEvent((AclsLogoutEvent) event, em, facilityName);
             } else if (event instanceof AclsLogoutEvent) {
-                TypedQuery<FacilitySession> query = em.createQuery(
-                        "from FacilitySession f where f.facilityName = :facilityName " +
-                                "order by f.loginTime desc", 
-                        FacilitySession.class);
-                query.setParameter("facilityName", facilityName);
-                query.setMaxResults(1);
-                List<FacilitySession> sessions = query.getResultList();
-                if (sessions.isEmpty()) {
-                    throw new InvalidSessionException(
-                            "No sessions for facility " + facilityName);
-                }
-                session = sessions.get(0);
-                if (session.getLogoutTime() != null) {
-                    throw new InvalidSessionException(
-                            "No current session for facility " + facilityName);
-                } else if (!session.getUserName().equals(userName) ||
-                        !session.getAccount().equals(accountName)) {
-                    throw new InvalidSessionException(
-                            "Inconsistent session user or account name for facility " + 
-                                    facilityName);
-                }
-                session.setLogoutTime(new Date());
-            } 
+                processLogoutEvent((AclsLoginEvent) event, em, facilityName);
+            } else {
+                processPasswordAcceptedEvent((AclsPasswordAcceptedEvent) event, em, facilityName);
+            }
             em.getTransaction().commit();
         } catch (InvalidSessionException ex) {
-            LOG.error("Bad session information - ignoring login/logout event", ex);
+            LOG.error("Bad session information - ignoring facility event", ex);
         } finally {
             em.close();
         }
+    }
+
+    @Override
+    public AclsLoginDetails authenticate(
+            String userName, String password, FacilityConfig facility)
+            throws AclsException {
+        return userDetailsManager.authenticateAgainstCachedCredentials(userName, password, facility);
+    }
+
+    private void processPasswordAcceptedEvent(AclsPasswordAcceptedEvent event,
+            EntityManager em, String facilityName) throws InvalidSessionException {
+        String userName = userDetailsMapper.mapToUserName(event.getUserName());
+        String email = userDetailsMapper.mapToEmailAddress(event.getUserName());
+        if (!event.getLoginDetails().isCached()) {
+            userDetailsManager.refreshUserDetails(userName, email, event.getLoginDetails());
+        }
+    }
+
+    private void processLogoutEvent(AclsLoginEvent event, EntityManager em,
+            String facilityName) throws InvalidSessionException {
+        FacilitySession session;
+        String userName = userDetailsMapper.mapToUserName(event.getUserName());
+        String account = userDetailsMapper.mapToAccount(event.getAccount());
+        TypedQuery<FacilitySession> query = em.createQuery(
+                "from FacilitySession f where f.facilityName = :facilityName " +
+                        "order by f.loginTime desc", 
+                FacilitySession.class);
+        query.setParameter("facilityName", facilityName);
+        query.setMaxResults(1);
+        List<FacilitySession> sessions = query.getResultList();
+        if (sessions.isEmpty()) {
+            throw new InvalidSessionException(
+                    "No sessions for facility " + facilityName);
+        }
+        session = sessions.get(0);
+        if (session.getLogoutTime() != null) {
+            throw new InvalidSessionException(
+                    "No current session for facility " + facilityName);
+        } else if (!session.getUserName().equals(userName) ||
+                !session.getAccount().equals(account)) {
+            throw new InvalidSessionException(
+                    "Inconsistent session user or account name for facility " + 
+                            facilityName);
+        }
+        session.setLogoutTime(new Date());
+    }
+
+    private void processLoginEvent(AclsLogoutEvent event, EntityManager em,
+            String facilityName) throws InvalidSessionException {
+        FacilitySession session;
+        String userName = userDetailsMapper.mapToUserName(event.getUserName());
+        String account = userDetailsMapper.mapToAccount(event.getAccount());
+        String email = userDetailsMapper.mapToEmailAddress(event.getUserName());
+        session = new FacilitySession(
+                userName, account, facilityName, email, new Date());
+        em.persist(session);
     }
 }

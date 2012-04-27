@@ -1,4 +1,4 @@
-package au.edu.uq.cmm.paul.status;
+package au.edu.uq.cmm.eccles;
 
 @SuppressWarnings("serial")
 public class UnknownUserException extends Exception {

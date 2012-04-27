@@ -18,7 +18,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import au.edu.uq.cmm.aclslib.authenticator.Authenticator;
+import au.edu.uq.cmm.aclslib.authenticator.AclsAuthenticator;
 
 /**
  * The Benny servlet provides a simple HTTP-based service for checking a
@@ -43,12 +43,12 @@ import au.edu.uq.cmm.aclslib.authenticator.Authenticator;
  */
 @SuppressWarnings("serial")
 public class Benny extends HttpServlet {
-    private static final Logger LOG = LoggerFactory.getLogger(Authenticator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AclsAuthenticator.class);
     private static final String PROPS_RESOURCE = "/benny.properties";
     private static final Pattern BASIC_AUTH_PATTERN =
             Pattern.compile("Basic\\s+([a-z0-9+/=]+)\\s*", Pattern.CASE_INSENSITIVE);
     private static final Charset UTF_8 = Charset.forName("UTF-8");
-    private Authenticator authenticator;
+    private AclsAuthenticator authenticator;
     private String realm;
 
     @Override
@@ -68,7 +68,7 @@ public class Benny extends HttpServlet {
         }
         try {
             realm = props.getProperty("benny.realm");
-            authenticator = new Authenticator(
+            authenticator = new AclsAuthenticator(
                     props.getProperty("benny.serverHost"), 
                     Integer.parseInt(props.getProperty("benny.serverPort")),
                     props.getProperty("benny.dummyFacility"),
@@ -95,7 +95,7 @@ public class Benny extends HttpServlet {
         }
         try {
             LOG.debug("checking user='" + user + "', password='XXXXXX'");
-            boolean ok = authenticator.authenticate(user, password);
+            boolean ok = authenticator.authenticate(user, password, null) != null;
             if (ok) {
                 respond(resp, HttpServletResponse.SC_OK, "Credentials accepted");
             } else {
