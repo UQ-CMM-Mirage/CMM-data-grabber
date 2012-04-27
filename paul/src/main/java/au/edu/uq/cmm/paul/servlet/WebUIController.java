@@ -42,6 +42,7 @@ import au.edu.uq.cmm.aclslib.proxy.AclsInUseException;
 import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.aclslib.service.Service.State;
 import au.edu.uq.cmm.eccles.UnknownUserException;
+import au.edu.uq.cmm.eccles.UserDetails;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
@@ -596,7 +597,8 @@ public class WebUIController {
             HttpServletResponse response) 
             throws IOException {
         try {
-            model.addAttribute("user", services.getUserDetailsManager().lookupUser(userName));
+            UserDetails userDetails = services.getUserDetailsManager().lookupUser(userName, true);
+            model.addAttribute("user", userDetails);
         } catch (UnknownUserException e) {
             LOG.debug("Rejected request for security reasons");
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
