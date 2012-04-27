@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import au.edu.uq.cmm.aclslib.proxy.AclsAuthenticationException;
 import au.edu.uq.cmm.aclslib.proxy.AclsHelper;
 import au.edu.uq.cmm.aclslib.proxy.AclsInUseException;
+import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.grabber.FileGrabber;

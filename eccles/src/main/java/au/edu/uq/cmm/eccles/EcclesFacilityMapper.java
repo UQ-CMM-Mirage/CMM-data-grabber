@@ -9,28 +9,40 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.TypedQuery;
 
+import au.edu.uq.cmm.aclslib.config.ACLSProxyConfiguration;
 import au.edu.uq.cmm.aclslib.config.ConfigurationException;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.config.FacilityMapper;
 
 public class EcclesFacilityMapper implements FacilityMapper {
 
-    private EntityManagerFactory entityManagerFactory;
-    
+    private EntityManagerFactory emf;
+    private String dummyFacilityName;
+    private String dummyFacilityHostId;
+    private EcclesFacility dummyFacility;
 
-    public EcclesFacilityMapper(EntityManagerFactory entityManagerFactory) {
+    public EcclesFacilityMapper(
+            ACLSProxyConfiguration config, EntityManagerFactory emf) {
         super();
-        this.entityManagerFactory = entityManagerFactory;
+        this.emf = emf;
+        dummyFacilityName = config.getDummyFacilityName();
+        dummyFacilityHostId = config.getDummyFacilityHostId();
+        dummyFacility = new EcclesFacility();
+        dummyFacility.setFacilityName(dummyFacilityName);
+        dummyFacility.setLocalHostId(dummyFacilityHostId);
     }
 
     @Override
     public FacilityConfig lookup(String localHostId, String facilityName,
             InetAddress clientAddr) throws ConfigurationException {
-        EntityManager em = entityManagerFactory.createEntityManager();
+        EntityManager em = emf.createEntityManager();
         TypedQuery<EcclesFacility> query;
         EcclesFacility res;
         try {
             if (localHostId != null) {
+                if (localHostId.equals(dummyFacilityHostId)) {
+                    return dummyFacility;
+                }
                 query = em.createQuery(
                         "from EcclesFacility f where f.localHostId = :localHostId",
                         EcclesFacility.class);
@@ -41,6 +53,9 @@ public class EcclesFacilityMapper implements FacilityMapper {
                 }
             }
             if (facilityName != null) {
+                if (facilityName.equals(dummyFacilityName)) {
+                    return dummyFacility;
+                }
                 query = em.createQuery(
                         "from EcclesFacility f where f.facilityName = :facilityName",
                         EcclesFacility.class);
@@ -87,7 +102,7 @@ public class EcclesFacilityMapper implements FacilityMapper {
 
     @Override
     public Collection<FacilityConfig> allFacilities() {
-        EntityManager em = entityManagerFactory.createEntityManager();
+        EntityManager em = emf.createEntityManager();
         try {
             TypedQuery<EcclesFacility> query = em.createQuery(
                     "from EcclesFacility", EcclesFacility.class);

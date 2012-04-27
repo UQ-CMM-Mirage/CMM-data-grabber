@@ -3,17 +3,4 @@
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
     <script src="/paul/js/jquery-1.7.1.min.js"></script>
-    <!-- 
-    <script src="/paul/js/bootstrap-transition.js"></script>
-    <script src="/paul/js/bootstrap-alert.js"></script>
-    <script src="/paul/js/bootstrap-modal.js"></script>
-    <script src="/paul/js/bootstrap-dropdown.js"></script>
-    <script src="/paul/js/bootstrap-scrollspy.js"></script>
-    <script src="/paul/js/bootstrap-tab.js"></script>
-    <script src="/paul/js/bootstrap-tooltip.js"></script>
-    <script src="/paul/js/bootstrap-popover.js"></script>
-    <script src="/paul/js/bootstrap-button.js"></script>
-    <script src="/paul/js/bootstrap-collapse.js"></script>
-    <script src="/paul/js/bootstrap-carousel.js"></script>
-    <script src="/paul/js/bootstrap-typeahead.js"></script>
-    -->
+    <script src="/paul/js/bootstrap.min.js"></script>

@@ -21,7 +21,7 @@
 </head>
 <body>
     <%@ include file="/WEB-INF/jsp/commonHeader.jspFrag" %>
-	<div class="container">
+	<div class="container-fluid">
 	<h1>Data Grabber Queue Entry # ${entry.id}</h1>
 	<div class=".ui-widget-content">
 	<ul>

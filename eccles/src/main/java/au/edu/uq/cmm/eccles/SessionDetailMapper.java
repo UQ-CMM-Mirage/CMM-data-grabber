@@ -13,32 +13,29 @@ public interface SessionDetailMapper {
      * Map the details to a user name.
      * 
      * @param userName the original user name 
-     * @param accountName the original account name 
      * @return the mapped name
      * @throws InvalidSessionException
      */
-    String mapToUserName(String userName, String accountName)
+    String mapToUserName(String userName)
             throws InvalidSessionException;
     
     /**
      * Map the details to an account name.
      * 
-     * @param userName the original user name 
      * @param accountName the original account name 
      * @return the mapped name
      * @throws InvalidSessionException
      */
-    String mapToAccountName(String userName, String accountName)
+    String mapToAccount(String accountName)
             throws InvalidSessionException;
     
     /**
      * Map the details to a user address.
      * 
      * @param userName the original user name 
-     * @param accountName the original account name 
      * @return the mapped email address or null.
      * @throws InvalidSessionException
      */
-    String mapToEmailAddress(String userName, String accountName) 
+    String mapToEmailAddress(String userName) 
             throws InvalidSessionException;
 }

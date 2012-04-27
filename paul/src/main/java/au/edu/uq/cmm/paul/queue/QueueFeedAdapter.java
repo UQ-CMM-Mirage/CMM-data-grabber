@@ -23,10 +23,10 @@ import org.apache.abdera.protocol.server.impl.AbstractEntityCollectionAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
-import au.edu.uq.cmm.paul.status.FacilitySession;
 
 /**
  * This class is an Abdera feed adapter that maps the data grabber's output queue as
