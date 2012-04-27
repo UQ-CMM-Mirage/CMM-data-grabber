@@ -65,7 +65,7 @@ public class Eccles implements AclsFacilityEventListener, Authenticator {
                 Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul") :
                 Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul", properties);
         ACLSProxyConfiguration config = EcclesProxyConfiguration.load(emf);
-        FacilityMapper mapper = new EcclesFacilityMapper(emf);
+        FacilityMapper mapper = new EcclesFacilityMapper(config, emf);
         userDetailsMapper = new DefaultSessionDetailsMapper();
         userDetailsManager = new UserDetailsManager(emf);
         proxy = new AclsProxy(config, mapper, this);
