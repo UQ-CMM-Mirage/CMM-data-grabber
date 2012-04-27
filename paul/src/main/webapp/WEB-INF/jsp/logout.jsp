@@ -8,7 +8,7 @@
     </head>
     <body>
 <%@ include file="/WEB-INF/jsp/commonHeader.jspFrag" %>
-	<div class="container">
+	<div class="container-fluid">
         <h1>Data Grabber Access Control</h1>
         You are no longer logged in.
 		<% session.invalidate(); %>

@@ -8,7 +8,7 @@
 </head>
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
-	<div class="container">
+	<div class="container-fluid">
 		<h1>Data Grabber Configuration</h1>
 		<ul>
 			<li>ACLS Proxy host (i.e. this one) - ${config.proxyHost} :

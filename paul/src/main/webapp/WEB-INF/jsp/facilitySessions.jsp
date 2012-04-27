@@ -8,7 +8,7 @@
 </head>
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
-	<div class="container">
+	<div class="container-fluid">
 		<h1>Facility Session Log for '${facilityName}</h1>
 		<c:choose>
 			<c:when test="${empty sessions}">

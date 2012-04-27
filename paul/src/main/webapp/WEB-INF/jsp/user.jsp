@@ -8,7 +8,7 @@
 </head>
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
-	<div class="container">
+	<div class="container-fluid">
 		<h1>Data Grabber User ${user.userName}</h1>
 		<ul>
 			<li>User name: ${user.userName}</li>

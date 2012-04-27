@@ -8,7 +8,7 @@
 </head>
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
-	<div class="container">
+	<div class="container-fluid">
 		<h1>Data Grabber Queue Deletion</h1>
 		<form name="form" method="POST" action="${returnTo}">
 			Archive files <input id="archive" name="mode" type="radio"

@@ -8,7 +8,7 @@
 </head>
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
-	<div class="container">
+	<div class="container-fluid">
 		<h1>Held Datasets for Instrument '${facilityName}'</h1>
 		<form action="claimDatasets" method="post">
 			<p>These datasets captured from the '${facilityName}' don't have

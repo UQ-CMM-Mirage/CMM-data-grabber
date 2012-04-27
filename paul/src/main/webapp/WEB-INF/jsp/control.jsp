@@ -12,7 +12,7 @@
 </head>
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
-	<div class="container">
+	<div class="container-fluid">
 		<h1>Data Grabber Control Panel</h1>
 		<form method="post" action="control">
 			ACLS Login Proxy: status - ${proxyState}
