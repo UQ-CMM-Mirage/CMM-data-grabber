@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.Lifecycle;
 
+import au.edu.uq.cmm.aclslib.message.AclsClient;
 import au.edu.uq.cmm.aclslib.proxy.AclsHelper;
 import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
 import au.edu.uq.cmm.aclslib.service.ServiceException;
@@ -54,7 +55,14 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
         this.configManager = new ConfigurationManager(entityManagerFactory, staticConfig, staticFacilities);
         this.facilityMapper = new PaulFacilityMapper(entityManagerFactory);
         PaulConfiguration activeConfig = configManager.getActiveConfig();
-        this.aclsHelper = new AclsHelper(activeConfig.getProxyHost(), activeConfig.getProxyPort(), false);
+        this.aclsHelper = new AclsHelper(
+                activeConfig.getProxyHost(), activeConfig.getProxyPort(), 
+                /* 
+                 * Use double the default timeout, because the proxy potentially
+                 * has to timeout the downstream ACLS server.  (Hack)
+                 */
+                AclsClient.ACLS_REQUEST_TIMEOUT * 2, 
+                false);
         this.statusManager = new FacilityStatusManager(this);
         this.uncNameMapper = uncNameMapper;
         this.fileWatcher = new FileWatcher(this);
