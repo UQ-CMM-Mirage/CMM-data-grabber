@@ -71,6 +71,7 @@ public class Benny extends HttpServlet {
             authenticator = new AclsAuthenticator(
                     props.getProperty("benny.serverHost"), 
                     Integer.parseInt(props.getProperty("benny.serverPort")),
+                    Integer.parseInt(props.getProperty("benny.serverTimeout")),
                     props.getProperty("benny.dummyFacility"),
                     props.getProperty("benny.localHostId"));
         } catch (Exception ex) {

@@ -19,6 +19,7 @@ import au.edu.uq.cmm.aclslib.authenticator.Authenticator;
 import au.edu.uq.cmm.aclslib.config.ACLSProxyConfiguration;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.config.FacilityMapper;
+import au.edu.uq.cmm.aclslib.message.AclsClient;
 import au.edu.uq.cmm.aclslib.message.AclsException;
 import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEvent;
 import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEventListener;
@@ -68,7 +69,7 @@ public class Eccles implements AclsFacilityEventListener, Authenticator {
         FacilityMapper mapper = new EcclesFacilityMapper(config, emf);
         userDetailsMapper = new DefaultSessionDetailsMapper();
         userDetailsManager = new UserDetailsManager(emf);
-        proxy = new AclsProxy(config, mapper, this);
+        proxy = new AclsProxy(config, 0, mapper, this);
         proxy.addListener(this);
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override public void run() {

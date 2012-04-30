@@ -32,7 +32,7 @@ public class UserDetails {
     private Set<String> accounts;
     private Map<String, String> certifications;
     private boolean onsiteAssist; 
-    private byte[] digest;
+    private String digest;
     private long seed;
     
     
@@ -41,7 +41,7 @@ public class UserDetails {
     }
 
     public UserDetails(String userName, String emailAddress,
-            AclsLoginDetails details, long seed, byte[] digest) {
+            AclsLoginDetails details, long seed, String digest) {
         super();
         this.userName = userName;
         this.emailAddress = emailAddress;
@@ -90,11 +90,11 @@ public class UserDetails {
         this.humanReadableName = humanReadableName;
     }
 
-    public byte[] getDigest() {
+    public String getDigest() {
         return digest;
     }
 
-    public void setDigest(byte[] digest) {
+    public void setDigest(String digest) {
         this.digest = digest;
     }
 
