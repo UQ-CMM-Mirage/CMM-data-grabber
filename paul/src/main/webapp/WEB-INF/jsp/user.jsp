@@ -27,7 +27,7 @@
 					</c:when>
 					<c:otherwise>
 					    <ul>
-							<c:forEach var="entry" items="${user.certifications.entrySet()}">
+							<c:forEach var="entry" items="${user.certifications}">
 								<li>${entry.key} : ${entry.value}</li>
 							</c:forEach>
 						</ul>
