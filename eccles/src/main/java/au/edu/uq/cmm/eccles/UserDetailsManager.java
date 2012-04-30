@@ -87,20 +87,22 @@ public class UserDetailsManager {
             query.setParameter("userName", userName);
             UserDetails userDetails = query.getSingleResult();
             LOG.debug("Refreshing cached user details for " + userName);
-            byte[] digest = createDigest(loginDetails.getPassword(), userDetails.getSeed());
+            String digest = createDigest(loginDetails.getPassword(), userDetails.getSeed());
             userDetails.setAccounts(new HashSet<String>(loginDetails.getAccounts()));
             userDetails.setDigest(digest);
             userDetails.setOrgName(loginDetails.getOrgName());
             userDetails.setHumanReadableName(loginDetails.getHumanReadableName());
             userDetails.setOnsiteAssist(loginDetails.isOnsiteAssist());
             userDetails.getCertifications().put(
-                    loginDetails.getFacilityName(), loginDetails.getCertification().toString());
+                    loginDetails.getFacilityName(), 
+                    loginDetails.getCertification().toString());
             em.getTransaction().commit();
         } catch (NoResultException ex) {
             LOG.debug("Caching user details for " + userName);
             long seed = random.nextLong();
-            byte[] digest = createDigest(loginDetails.getPassword(), seed);
-            UserDetails newDetails = new UserDetails(userName, email, loginDetails, seed, digest);
+            String digest = createDigest(loginDetails.getPassword(), seed);
+            UserDetails newDetails = new UserDetails(
+                    userName, email, loginDetails, seed, digest);
             em.persist(newDetails);
             em.getTransaction().commit();
         } finally {
@@ -110,13 +112,14 @@ public class UserDetailsManager {
     
     public AclsLoginDetails authenticateAgainstCachedCredentials(
             String userName, String password, FacilityConfig facility) {
-        LOG.debug("Attempting to authenticate using cached user details for " + userName);
+        LOG.debug("Trying to authenticate using cached user details for " + userName);
         try {
             UserDetails userDetails = lookupUser(userName, true);
-            byte[] myDigest = createDigest(password, userDetails.getSeed());
-            byte[] savedDigest = userDetails.getDigest();
-            if (sameDigest(myDigest, savedDigest)) {
-                Certification cert = Certification.valueOf(
+            String myDigest = createDigest(password, userDetails.getSeed());
+            String savedDigest = userDetails.getDigest();
+            LOG.debug("Comparing digests - " + savedDigest + " vs " + myDigest);
+            if (myDigest.equals(savedDigest)) {
+                Certification cert = Certification.parse(
                         userDetails.getCertifications().get(facility.getFacilityName()));
                 if (cert == null) {
                     cert = defaultCertification;
@@ -132,15 +135,18 @@ public class UserDetailsManager {
         }
     }
 
-    private byte[] createDigest(String password, long seed) {
+    private String createDigest(String password, long seed) {
+        LOG.debug("Creating digest for password using seed " + seed);
         try {
-        MessageDigest digester = MessageDigest.getInstance("MD5");
-        for (int i = 0; i < 8; i++) {
-            byte b = (byte) ((seed >> (i * 8)) & 0xff);
-            digester.update(b);
-        }
-        digester.update(password.getBytes("UTF-8"));
-        return digester.digest();
+            MessageDigest digester = MessageDigest.getInstance("MD5");
+            for (int i = 0; i < 8; i++) {
+                byte b = (byte) ((seed >> (i * 8)) & 0xff);
+                digester.update(b);
+            }
+            digester.update(password.getBytes("UTF-8"));
+            String res = toString(digester.digest());
+            LOG.debug("Created digest - " + res);
+            return res;
         } catch (NoSuchAlgorithmException ex) {
             throw new AssertionError("Don't understand MD5?", ex);
         } catch (UnsupportedEncodingException ex) {
@@ -148,16 +154,13 @@ public class UserDetailsManager {
         }
     }
     
-    private boolean sameDigest(byte[] d1, byte[] d2) {
-        if (d1.length != d2.length) {
-            return false;
-        } else {
-            for (int i = 0; i < d1.length; i++) {
-                if (d1[i] != d2[i]) {
-                    return false;
-                }
-            }
-            return true;
+    private String toString(byte[] bytes) {
+        StringBuilder sb = new StringBuilder(bytes.length * 2 + 6);
+        sb.append(bytes.length).append(":");
+        for (byte b : bytes) {
+            sb.append("0123456789ABCDEF".charAt((b >> 4) & 0xf));
+            sb.append("0123456789ABCDEF".charAt(b & 0xf));
         }
+        return sb.toString();
     }
 }
