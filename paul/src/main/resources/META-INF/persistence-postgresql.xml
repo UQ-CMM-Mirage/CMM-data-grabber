@@ -5,6 +5,7 @@
 	version="2.0">
 	<persistence-unit name="au.edu.uq.cmm.paul">
 		<description>Persistent Facility Status</description>
+		<class>au.edu.uq.cmm.eccles.UserDetails</class>
 		<properties>
 		    <property name="hibernate.dialect" value="org.hibernate.dialect.HSQLDialect"/>
 			<property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver" />
