@@ -344,6 +344,11 @@ public class WebUIController {
         return "admin";
     }
     
+    @RequestMapping(value="/noAccess", method=RequestMethod.GET)
+    public String noAccess(Model model) {
+        return "noAccess";
+    }
+    
     @RequestMapping(value="/config", method=RequestMethod.GET)
     public String config(Model model) {
         model.addAttribute("config", getLatestConfig());

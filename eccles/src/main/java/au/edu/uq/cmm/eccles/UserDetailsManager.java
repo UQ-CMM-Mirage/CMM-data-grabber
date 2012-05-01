@@ -76,11 +76,9 @@ public class UserDetailsManager {
         }
     }
 
-    public void refreshUserDetails(String userName, String email, 
+    public void refreshUserDetails(EntityManager em, String userName, String email, 
             AclsLoginDetails loginDetails) {
-        EntityManager em = emf.createEntityManager();
         try {
-            em.getTransaction().begin();
             TypedQuery<UserDetails> query = em.createQuery(
                     "from UserDetails u where u.userName = :userName", 
                     UserDetails.class);
@@ -96,7 +94,6 @@ public class UserDetailsManager {
             userDetails.getCertifications().put(
                     loginDetails.getFacilityName(), 
                     loginDetails.getCertification().toString());
-            em.getTransaction().commit();
         } catch (NoResultException ex) {
             LOG.debug("Caching user details for " + userName);
             long seed = random.nextLong();
@@ -104,9 +101,6 @@ public class UserDetailsManager {
             UserDetails newDetails = new UserDetails(
                     userName, email, loginDetails, seed, digest);
             em.persist(newDetails);
-            em.getTransaction().commit();
-        } finally {
-            em.close();
         }
     }
     
