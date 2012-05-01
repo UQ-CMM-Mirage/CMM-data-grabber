@@ -19,7 +19,6 @@ import au.edu.uq.cmm.aclslib.authenticator.Authenticator;
 import au.edu.uq.cmm.aclslib.config.ACLSProxyConfiguration;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.config.FacilityMapper;
-import au.edu.uq.cmm.aclslib.message.AclsClient;
 import au.edu.uq.cmm.aclslib.message.AclsException;
 import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEvent;
 import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEventListener;
@@ -114,6 +113,7 @@ public class Eccles implements AclsFacilityEventListener, Authenticator {
         } finally {
             em.close();
         }
+        LOG.debug("Finished processing event " + event);
     }
 
     @Override
@@ -128,7 +128,7 @@ public class Eccles implements AclsFacilityEventListener, Authenticator {
         String userName = userDetailsMapper.mapToUserName(event.getUserName());
         String email = userDetailsMapper.mapToEmailAddress(event.getUserName());
         if (!event.getLoginDetails().isCached()) {
-            userDetailsManager.refreshUserDetails(userName, email, event.getLoginDetails());
+            userDetailsManager.refreshUserDetails(em, userName, email, event.getLoginDetails());
         }
     }
 
