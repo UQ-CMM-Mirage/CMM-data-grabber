@@ -73,16 +73,17 @@ case "$1" in
     fi
     log_daemon_msg "Starting $DESC" "$NAME"
     if start-stop-daemon --test --start --pidfile "$PID_FILE" \
-           --user $ECCLES_USER --exec "$JAVA_HOME/bin/java" >/dev/null; then
+           --user $ECCLES_USER --exec "$JAVA_HOME/bin/java" > /dev/null; then
         set +e
-        start-stop-daemon --start -b -u "$ECCLES_USER" -g "$ECCLES_GROUP" \
+        start-stop-daemon --start -b -m -u "$ECCLES_USER" -g "$ECCLES_GROUP" \
                 -c "$ECCLES_USER" -d "$LOG_DIR" -p "$PID_FILE" \
-                --syexec $JAVA_HOME/bin/java -- -jar $ECCLES_HOME/eccles.jar \
-                                             $ECCLES_HOME/eccles.properties
+                --exec $JAVA_HOME/bin/java -- -jar $ECCLES_HOME/eccles.jar \
+                                 $ECCLES_HOME/eccles.properties \
+                                 > /var/log/$NAME/${NAME}.out 2>&1
         set -e
         sleep 5
         if start-stop-daemon --test --start --pidfile "$PID_FILE" \
-                --user $ECCLES_USER --exec "$JAVA_HOME/bin/java" >/dev/null; then
+                --user $ECCLES_USER --exec "$JAVA_HOME/bin/java" > /dev/null; then
             if [ -f "$PID_FILE" ]; then
                 rm -f "$PID_FILE"
             fi
@@ -99,8 +100,8 @@ case "$1" in
     log_daemon_msg "Stopping $DESC" "$NAME"
     set +e
     if [ -f "$PID_FILE" ]; then 
-        start-stop-daemon --stop --pidfile "$PID_FILE" \
-              --user "$ECCLES_USER" --retry=TERM/20/KILL/5 >/dev/null
+        start-stop-daemon --stop --signal INT --pidfile "$PID_FILE" \
+              --user "$ECCLES_USER" --retry=TERM/20/KILL/5 > /dev/null
         if [ $? -eq 1 ]; then
             log_progress_msg "$DESC is not running but pid file exists, cleaning up"
         elif [ $? -eq 3 ]; then
@@ -118,7 +119,7 @@ case "$1" in
   status)
     set +e
     start-stop-daemon --test --start --pidfile "$PID_FILE" \
-           --user $ECCLES_USER --exec "$JAVA_HOME/bin/java" >/dev/null 2>&1
+           --user $ECCLES_USER --exec "$JAVA_HOME/bin/java" > /dev/null 2>&1
     if [ "$?" = "0" ]; then
         if [ -f "$PID_FILE" ]; then
             log_success_msg "$DESC is not running, but pid file exists."

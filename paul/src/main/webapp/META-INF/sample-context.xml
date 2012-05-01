@@ -2,5 +2,5 @@
 <Context>
     <Realm className="au.edu.uq.cmm.realm.ACLSRealm" 
            serverHost="acls.example.com" serverPort="1024" 
-           dummyFacility="The Proxy" />
+           timeout="10000" dummyFacility="The Proxy" />
 </Context>

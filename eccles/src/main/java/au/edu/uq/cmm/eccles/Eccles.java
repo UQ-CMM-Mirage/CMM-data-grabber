@@ -19,7 +19,6 @@ import au.edu.uq.cmm.aclslib.authenticator.Authenticator;
 import au.edu.uq.cmm.aclslib.config.ACLSProxyConfiguration;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.config.FacilityMapper;
-import au.edu.uq.cmm.aclslib.message.AclsClient;
 import au.edu.uq.cmm.aclslib.message.AclsException;
 import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEvent;
 import au.edu.uq.cmm.aclslib.proxy.AclsFacilityEventListener;
@@ -102,9 +101,9 @@ public class Eccles implements AclsFacilityEventListener, Authenticator {
             em.getTransaction().begin();
             String facilityName = event.getFacilityName();
             if (event instanceof AclsLoginEvent) {
-                processLoginEvent((AclsLogoutEvent) event, em, facilityName);
+                processLoginEvent((AclsLoginEvent) event, em, facilityName);
             } else if (event instanceof AclsLogoutEvent) {
-                processLogoutEvent((AclsLoginEvent) event, em, facilityName);
+                processLogoutEvent((AclsLogoutEvent) event, em, facilityName);
             } else {
                 processPasswordAcceptedEvent((AclsPasswordAcceptedEvent) event, em, facilityName);
             }
@@ -114,6 +113,7 @@ public class Eccles implements AclsFacilityEventListener, Authenticator {
         } finally {
             em.close();
         }
+        LOG.debug("Finished processing event " + event);
     }
 
     @Override
@@ -128,11 +128,11 @@ public class Eccles implements AclsFacilityEventListener, Authenticator {
         String userName = userDetailsMapper.mapToUserName(event.getUserName());
         String email = userDetailsMapper.mapToEmailAddress(event.getUserName());
         if (!event.getLoginDetails().isCached()) {
-            userDetailsManager.refreshUserDetails(userName, email, event.getLoginDetails());
+            userDetailsManager.refreshUserDetails(em, userName, email, event.getLoginDetails());
         }
     }
 
-    private void processLogoutEvent(AclsLoginEvent event, EntityManager em,
+    private void processLogoutEvent(AclsLogoutEvent event, EntityManager em,
             String facilityName) throws InvalidSessionException {
         FacilitySession session;
         String userName = userDetailsMapper.mapToUserName(event.getUserName());
@@ -161,7 +161,7 @@ public class Eccles implements AclsFacilityEventListener, Authenticator {
         session.setLogoutTime(new Date());
     }
 
-    private void processLoginEvent(AclsLogoutEvent event, EntityManager em,
+    private void processLoginEvent(AclsLoginEvent event, EntityManager em,
             String facilityName) throws InvalidSessionException {
         FacilitySession session;
         String userName = userDetailsMapper.mapToUserName(event.getUserName());
