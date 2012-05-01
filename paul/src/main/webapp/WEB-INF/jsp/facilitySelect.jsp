@@ -27,11 +27,9 @@
 		<form action="facilitySelect" method="post">
 			<select name="facilityName">
 				<c:forEach items="${facilities}" var="facility">
-				    <c:if test="${!facility.dummy}">
-						<option value="${facility.facilityName}">
-							${facility.facilityName}
-						</option>
-					</c:if>
+					<option value="${facility.facilityName}">
+						${facility.facilityName}
+					</option>
 				</c:forEach>
 			</select>
 		<br>
