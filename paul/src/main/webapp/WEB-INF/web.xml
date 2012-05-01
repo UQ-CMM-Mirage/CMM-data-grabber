@@ -102,6 +102,11 @@
 		<servlet-name>Abdera</servlet-name>
 		<url-pattern>/atom/*</url-pattern>
 	</servlet-mapping>
+	
+	<error-page>
+		<error-code>403</error-code>
+		<location>/noAccess</location>
+	</error-page>
 
 	<display-name>Paul the file grabber</display-name>
 </web-app>
