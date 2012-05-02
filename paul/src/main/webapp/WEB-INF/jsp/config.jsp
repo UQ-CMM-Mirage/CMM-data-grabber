@@ -10,7 +10,7 @@
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container-fluid">
 		<h1>Data Grabber Configuration</h1>
-		<table class="table table-striped table-bordered table-condensed">
+		<table class="table table-striped table-condensed">
 			<thead>
 				<tr>
 					<th colspan="2">Property</th>
@@ -32,7 +32,7 @@
 				</tr>
 				<tr>
 					<td colspan="2">ACLS Server port</td>
-					<td>${config.serverHost}</td>
+					<td>${config.serverPort}</td>
 				</tr>
 				<tr>
 					<td colspan="3">ACLS Proxy details:</td>
