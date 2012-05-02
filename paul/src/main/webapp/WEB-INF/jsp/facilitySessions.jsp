@@ -28,7 +28,7 @@
 					<tbody>
 						<c:forEach items="${sessions}" var="session">
 							<tr>
-								<td>${session.userName}</td>
+								<td><a href="../users/${session.userName}">${session.userName}</a></td>
 								<td>${session.account}</td>
 								<td>${session.loginTime}</td>
 								<td>${empty session.logoutTime ? '-' : session.logoutTime}</td>
