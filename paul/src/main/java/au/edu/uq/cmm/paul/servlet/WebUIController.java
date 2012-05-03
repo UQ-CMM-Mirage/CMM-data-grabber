@@ -146,6 +146,12 @@ public class WebUIController {
         return null;
     }
     
+    @RequestMapping(value="/facilities", method=RequestMethod.GET)
+    public String facilities(Model model) {
+        model.addAttribute("facilities", getFacilities());
+        return "facilities";
+    }
+    
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.GET)
     public String facilityConfig(@PathVariable String facilityName, Model model) 
             throws ConfigurationException {
@@ -352,7 +358,6 @@ public class WebUIController {
     @RequestMapping(value="/config", method=RequestMethod.GET)
     public String config(Model model) {
         model.addAttribute("config", getLatestConfig());
-        model.addAttribute("facilities", getFacilities());
         return "config";
     }
     

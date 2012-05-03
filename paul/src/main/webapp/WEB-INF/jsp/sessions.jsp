@@ -28,11 +28,18 @@
 								<td>${session.userName}</td>
 								<td>${session.loginTime}</td>
 								<td>
-									<form class="btn-group" action="sessions" method="post">
+								    <form action="sessions" method="post">
 										<input type="hidden" name="sessionUuid"
 											value="${session.sessionUuid}">
 										<button class="btn" name="endSession" type="submit">End
-											session</button>
+											Session</button>
+									</form>
+								</td>
+								<td>
+									<form action="facilities/${session.facilityName}">
+										<input type="hidden" name="returnTo" value="/sessions">
+										<button class="btn" type="submit" name="sessionLog">View Session 
+											Log</button>
 									</form>
 								</td>
 							</tr>
@@ -41,13 +48,20 @@
 							<tr>
 								<td>${session.facilityName}</td>
 								<td colspan="2">not in use</td>
-								<td>
-									<form class="btn-group" action="facilityLogin" method="post">
-										<input type="hidden"
-											name="facilityName" value="${session.facilityName}">
+								<td >
+								    <form action="facilityLogin" method="post">
+										<input type="hidden" name="facilityName"
+											value="${session.facilityName}"> 
 										<input type="hidden" name="returnTo" value="/sessions">
 										<button class="btn" name="startSession" type="submit">Start
-											session</button>
+											Session</button>
+									</form>
+								</td>
+								<td>
+									<form action="facilities/${session.facilityName}">
+										<input type="hidden" name="returnTo" value="/sessions">
+										<button class="btn" type="submit" name="sessionLog">View Session 
+											Log</button>
 									</form>
 								</td>
 							</tr>
