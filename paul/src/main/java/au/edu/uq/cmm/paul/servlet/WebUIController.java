@@ -7,6 +7,7 @@ import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -153,11 +154,38 @@ public class WebUIController {
     }
     
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.GET)
-    public String facilityConfig(@PathVariable String facilityName, Model model) 
+    public String facilityConfig(@PathVariable String facilityName, Model model,
+            @RequestParam(required=false) String edit) 
             throws ConfigurationException {
         Facility facility = lookupFacilityByName(facilityName);
         model.addAttribute("facility", facility);
+        if (edit != null) {
+            model.addAttribute("edit", true);
+            model.addAttribute("message", 
+                    "Please fill in the form and click 'Save Configuration'");
+        }
         return "facility";
+    }
+    
+    @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST,
+            params={"update"})
+    public String updateFacilityConfig(
+            @PathVariable String facilityName, Model model,
+            HttpServletRequest request) 
+            throws ConfigurationException {
+        Facility facility = new Facility();
+        Map<String, String> diags = services.getConfigManager().
+                buildFacility(facility, request.getParameterMap());
+        if (!diags.isEmpty()) {
+            model.addAttribute("edit", true);
+            model.addAttribute("facility", facility);
+            model.addAttribute("diags", diags);
+            model.addAttribute("message", "Please correct the errors and try again");
+            return "facility";
+        } else {
+            model.addAttribute("message", "Would have saved ...");
+            return "ok";
+        }
     }
     
     @RequestMapping(value="/facilities/{facilityName:.+}", 

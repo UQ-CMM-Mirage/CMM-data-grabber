@@ -10,41 +10,82 @@
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container-fluid">
 		<h1>Facility Configuration for ${facility.facilityName}</h1>
+		<p>
+			${message}
+		</p>
+		<form action="${facility.facilityName}" method="post">
 		<table class="table table-striped table-condensed">
 			<thead>
 				<tr>
-					<th colspan="3">Property</th>
-					<th>Value</th>
+					<th colspan="3" class="span4">Property</th>
+					<th class="span4">Value</th>
+					<th class="span4"></th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr>
+					<td colspan="3">Facility name</td>
+					<td><input name="facilityName" type="text" class="span4"
+						${edit ? '' : 'readonly="readonly"'}
+						value="${facility.facilityName}"></td>
+					<td>${diags.facilityName}</td>
+				</tr>
+				<tr>
+					<td colspan="3">Facility description</td>
+					<td><input name="facilityDescription" type="text" class="span4"
+						${edit ? '' : 'readonly="readonly"'}
+						value="${facility.facilityDescription}"></td>
+					<td>${diags.facilityDescription}</td>
+				</tr>
+				<tr>
 					<td colspan="3">DNS name / IP address</td>
-					<td>${facility.address}</td>
+					<td><input name="address" type="text"  class="span4"
+						${edit ? '' : 'readonly="readonly"'}
+						value="${facility.address}"></td>
+					<td>${diags.address}</td>
 				</tr>
 			    <tr>
 					<td colspan="3">Local Host ID</td>
-					<td>${facility.localHostId}</td>
+					<td><input name="localHostId" type="text" class="span4"
+						${edit ? '' : 'readonly="readonly"'}
+						value="${facility.localHostId}"></td>
+					<td>${diags.localHostId}</td>
 				</tr>
 			    <tr>
 					<td colspan="3">Drive name</td>
-					<td>${facility.driveName}</td>
+					<td><input name="driveName" type="text" class="span4"
+						${edit ? '' : 'readonly="readonly"'}
+						value="${facility.driveName}"></td>
+					<td>${diags.driveName}</td>
 				</tr>
 			    <tr>
 					<td colspan="3">Folder name</td>
-					<td>${facility.folderName}</td>
+					<td><input name="folderName" type="text" class="span4"
+						${edit ? '' : 'readonly="readonly"'}
+						value="${facility.folderName}"></td>
+					<td>${diags.folderName}</td>
 				</tr>
 			    <tr>
 					<td colspan="3">Access name</td>
-					<td>${facility.accessName}</td>
+					<td><input name="accessName" type="text" class="span4"
+						${edit ? '' : 'readonly="readonly"'}
+						value="${facility.accessName}"></td>
+					<td>${diags.accessName}</td>
 				</tr>
 			    <tr>
 					<td colspan="3">Access password</td>
-					<td>${facility.accessPassword}</td>
+					<td><input name="accessPassword" type="text" class="span4"
+						${edit ? '' : 'readonly="readonly"'}
+						value="${facility.accessPassword}"></td>
+					<td>${diags.accessPassword}</td>
 				</tr>
 			    <tr>
 					<td colspan="3">Case insensitive datafile matching</td>
-					<td>${facility.caseInsensitive}</td>
+					<td><input name="caseInsensitive" type="checkbox"
+						${edit ? ' ' : ' readonly="readonly" '}
+						${facility.caseInsensitive ? ' checked="checked" ' : ' '}
+						value="true"></td>
+					<td>${diags.caseInsensitive}</td>
 				</tr>
 			    <tr>
 					<td colspan="3">Datafile templates</td>
@@ -53,51 +94,96 @@
 				<c:forEach items="${facility.datafileTemplates}" var="template">
 				    <tr>
 					    <td>&nbsp;</td>
-						<td colspan="3">Template #i</td>
+						<td colspan="3">Template #${template.id}</td>
+						<td></td>
 					</tr>
 					<tr>
 					    <td>&nbsp;</td><td>&nbsp;</td>
-						<td>Pathname pattern</td><td>${template.filePattern}</td>
+						<td>File pattern</td>
+						<td><input name="template-${template.id}.filePattern" type="text" class="span4"
+								${edit ? '' : 'readonly="readonly"'}
+								value="${template.filePattern}"></td>
+						<td></td>
 					</tr>
 					<tr>
 						<td>&nbsp;</td><td>&nbsp;</td>
-						<td>File mimeType</td><td>${template.mimeType}</td>
+						<td>File mimeType</td>
+						<td><input name="template-${template.id}.mimeType" type="text" class="span4"
+								${edit ? '' : 'readonly="readonly"'}
+								value="${template.mimeType}"></td>
+						<td></td>
 					</tr>
 					<tr>
 						<td>&nbsp;</td><td>&nbsp;</td>
-						<td>File suffix</td><td>${template.suffix}</td>
+						<td>File suffix</td>
+						<td><input name="template-${template.id}.suffix" type="text" class="span4"
+								${edit ? '' : 'readonly="readonly"'}
+								value="${template.suffix}"></td>
+						<td></td>
 					</tr>
 					<tr>
 						<td>&nbsp;</td><td>&nbsp;</td>
-						<td>File is optional</td><td>${template.optional}</td>
+						<td>File is optional</td>
+						
+						<td><input name="template-${template.id}.optional" type="checkbox"
+							${edit ? ' ' : ' readonly="readonly" '}
+							${template.optional ? ' checked="checked" ' : ' '}
+							value="true"></td>
+						<td></td>
 					</tr>
 				</c:forEach>
 			    <tr>
-					<td colspan="3">File settling time</td>
-					<td>${facility.fileSettlingTime} ms</td>
+					<td colspan="3">File settling time (milliseconds)</td>
+					<td><input name="fileSettlingTime" type="text" class="span4"
+						${edit ? '' : 'readonly="readonly"'}
+						value="${facility.fileSettlingTime}"></td>
+					<td>${diags.fileSettlingTime}</td>
 				</tr>
 			    <tr>
 					<td colspan="3">Uses file locking</td>
-					<td>${facility.useFileLocks}</td>
+					<td><input name="useFileLocks" type="checkbox"
+						${edit ? ' ' : ' readonly="readonly" '}
+						${facility.useFileLocks ? ' checked="checked" ' : ' '}
+						value="true"></td>
+					<td>${diags.useFileLocks}</td>
 				</tr>
 			    <tr>
 					<td colspan="3">Client uses timer</td>
-					<td>${facility.useTimer}</td>
+					<td><input name="useTimer" type="checkbox"
+						${edit ? ' ' : ' readonly="readonly" '}
+						${facility.useTimer ? ' checked="checked" ' : ' '}
+						value="true"></td>
+					<td>${diags.useTimer}</td>
 				</tr>
 			    <tr>
 					<td colspan="3">Client uses full screen</td>
-					<td>${facility.useFullScreen}</td>
+					<td><input name="useFullScreen" type="checkbox"
+						${edit ? ' ' : ' readonly="readonly" '}
+						${facility.useFullScreen ? ' checked="checked" ' : ' '}
+						value="true"></td>
+					<td>${diags.useFullScreen}</td>
 				</tr>
 			    <tr>
 					<td colspan="3">Facility status</td>
 					<td>${facility.status}</td>
+					<td></td>
 				</tr>
 			    <tr>
 					<td colspan="3">Facility configuration diagnostic</td>
 					<td>${facility.message}</td>
+					<td></td>
 			    </tr>
 			</tbody>
 	    </table>
+	    <c:if test="${!empty edit}">
+			<button type="submit" name="update">Save Configuration</button>
+		</c:if>
+		</form>
+		<c:if test="${empty edit}">
+			<form action="${facility.facilityName}" method="get">
+				<button type="submit" name="edit">Edit Configuration</button>
+			</form>
+		</c:if>
 		<c:if test="${facility.status == 'ON'}">
 			<form action="${facility.facilityName}" method="post">
 				<button type="submit" name="disableWatcher">Disable File
@@ -112,7 +198,7 @@
 			</form>
 		</c:if>
 		<form action="${facility.facilityName}">
-			<button type="submit" name="sessionLog">Session Log</button>
+			<button type="submit" name="sessionLog">View Session Log</button>
 		</form>
 	</div>
 	<!-- /container -->

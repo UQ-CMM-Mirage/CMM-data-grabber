@@ -1,7 +1,10 @@
 package au.edu.uq.cmm.paul.servlet;
 
+import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -85,6 +88,86 @@ public class ConfigurationManager {
             return null;
         } finally {
             em.close();
+        }
+    }
+    
+    public Map<String, String> buildFacility(Facility res, Map<?, ?> params) {
+        Map<String, String> diags = new HashMap<String, String>();
+        res.setFacilityName(getNonEmptyString(params, "facilityName", diags));
+        res.setFacilityDescription(getStringOrNull(params, "facilityDescription", diags));
+        String address = getString(params, "address", diags);
+        if (!address.isEmpty()) {
+            try {
+                InetAddress.getByName(address);
+                res.setAddress(address);
+            } catch (UnknownHostException ex) {
+                diags.put("address", ex.getMessage());
+            }
+        }
+        res.setLocalHostId(getStringOrNull(params, "localHostId", diags));
+        if (res.getAddress() == null && res.getLocalHostId() == null) {
+            diags.put("localHostId",
+                    "this field must be non-empty if no address is provided");
+        }
+        res.setAccessName(getStringOrNull(params, "accessName", diags));
+        res.setAccessPassword(getStringOrNull(params, "accessPassword", diags));
+        res.setFolderName(getStringOrNull(params, "folderName", diags));
+        res.setDriveName(getStringOrNull(params, "driveName", diags));
+        res.setFileSettlingTime(getInteger(params, "fileSettlingTime", diags));
+        res.setCaseInsensitive(getBoolean(params, "caseInsensitive", diags));
+        res.setUseFileLocks(getBoolean(params, "useFileLocks", diags));
+        res.setUseFullScreen(getBoolean(params, "useFullScreen", diags));
+        res.setUseTimer(getBoolean(params, "useTimer", diags));
+        return diags;
+    }
+
+    private String getStringOrNull(Map<?, ?> params, String key, Map<String, String> diags) {
+        String[] values = (String[]) params.get(key);
+        if (values != null && values.length > 0) {
+            String str = values[0].trim();
+            return str.isEmpty() ? null : str;
+        } else {
+            return null;
+        }
+    }
+
+    private String getString(Map<?, ?> params, String key, Map<String, String> diags) {
+        String[] values = (String[]) params.get(key);
+        if (values != null && values.length > 0) {
+            return values[0].trim();
+        } else {
+            diags.put(key, "field is missing");
+            return "";
+        }
+    }
+    
+    private String getNonEmptyString(Map<?, ?> params, String key, Map<String, String> diags) {
+        String str = getString(params, key, diags);
+        if (str.isEmpty()) {
+            diags.put(key, "this field must not be empty");
+        }
+        return str;
+    }
+    
+    private int getInteger(Map<?, ?> params, String key, Map<String, String> diags) {
+        String str = getString(params, key, diags);
+        try {
+            return Integer.parseInt(str);
+        } catch (NumberFormatException ex) {
+            diags.put(key, "this value is not a valid number");
+            return 0;
+        }
+    }
+
+    private boolean getBoolean(Map<?, ?> params, String key, Map<String, String> diags) {
+        String str = getStringOrNull(params, key, diags);
+        if (str == null || str.equalsIgnoreCase("false")) {
+            return false;
+        } else if (str.equalsIgnoreCase("true")) {
+            return true;
+        } else {
+            diags.put(key, "this value must be 'true' or 'false' / ''");
+            return false;
         }
     }
 }
