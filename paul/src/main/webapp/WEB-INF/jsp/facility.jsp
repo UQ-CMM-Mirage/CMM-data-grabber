@@ -91,16 +91,17 @@
 					<td colspan="3">Datafile templates</td>
 					<td>${empty facility.datafileTemplates ? 'none' : ''}</td>
 				</tr>
+				<c:set var="index" value="1"/>
 				<c:forEach items="${facility.datafileTemplates}" var="template">
 				    <tr>
 					    <td>&nbsp;</td>
-						<td colspan="3">Template #${template.id}</td>
+						<td colspan="3">Template #${index}</td>
 						<td></td>
 					</tr>
 					<tr>
 					    <td>&nbsp;</td><td>&nbsp;</td>
 						<td>File pattern</td>
-						<td><input name="template-${template.id}.filePattern" type="text" class="span4"
+						<td><input name="template-${index}.filePattern" type="text" class="span4"
 								${edit ? '' : 'readonly="readonly"'}
 								value="${template.filePattern}"></td>
 						<td></td>
@@ -108,7 +109,7 @@
 					<tr>
 						<td>&nbsp;</td><td>&nbsp;</td>
 						<td>File mimeType</td>
-						<td><input name="template-${template.id}.mimeType" type="text" class="span4"
+						<td><input name="template-${index}.mimeType" type="text" class="span4"
 								${edit ? '' : 'readonly="readonly"'}
 								value="${template.mimeType}"></td>
 						<td></td>
@@ -116,7 +117,7 @@
 					<tr>
 						<td>&nbsp;</td><td>&nbsp;</td>
 						<td>File suffix</td>
-						<td><input name="template-${template.id}.suffix" type="text" class="span4"
+						<td><input name="template-${index}.suffix" type="text" class="span4"
 								${edit ? '' : 'readonly="readonly"'}
 								value="${template.suffix}"></td>
 						<td></td>
@@ -125,12 +126,13 @@
 						<td>&nbsp;</td><td>&nbsp;</td>
 						<td>File is optional</td>
 						
-						<td><input name="template-${template.id}.optional" type="checkbox"
+						<td><input name="template-${index}.optional" type="checkbox"
 							${edit ? ' ' : ' readonly="readonly" '}
 							${template.optional ? ' checked="checked" ' : ' '}
 							value="true"></td>
 						<td></td>
 					</tr>
+					<c:set var="index" value="${index + 1}"/>
 				</c:forEach>
 			    <tr>
 					<td colspan="3">File settling time (milliseconds)</td>

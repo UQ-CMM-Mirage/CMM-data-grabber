@@ -3,6 +3,7 @@ package au.edu.uq.cmm.paul.servlet;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +17,7 @@ import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.StaticPaulConfiguration;
 import au.edu.uq.cmm.paul.StaticPaulFacilities;
 import au.edu.uq.cmm.paul.StaticPaulFacility;
+import au.edu.uq.cmm.paul.status.DatafileTemplate;
 import au.edu.uq.cmm.paul.status.Facility;
 
 public class ConfigurationManager {
@@ -118,6 +120,16 @@ public class ConfigurationManager {
         res.setUseFileLocks(getBoolean(params, "useFileLocks", diags));
         res.setUseFullScreen(getBoolean(params, "useFullScreen", diags));
         res.setUseTimer(getBoolean(params, "useTimer", diags));
+        List<DatafileTemplate> templates = new LinkedList<DatafileTemplate>();
+        for (int i = 1; params.get("template-" + i + ".filePattern") != null; i++) {
+            DatafileTemplate template = new DatafileTemplate();
+            template.setFilePattern(getString(params, "template-" + i + ".filePattern", diags));
+            template.setSuffix(getString(params, "template-" + i + ".suffix", diags));
+            template.setMimeType(getString(params, "template-" + i + ".mimeType", diags));
+            template.setOptional(getBoolean(params, "template-" + i + ".optional", diags));
+            templates.add(template);
+        }
+        res.setDatafileTemplates(templates);
         return diags;
     }
 
