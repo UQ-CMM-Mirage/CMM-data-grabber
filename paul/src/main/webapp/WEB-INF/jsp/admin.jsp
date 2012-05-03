@@ -12,8 +12,9 @@
 		<h1>Data Grabber Admin Menu</h1>
 		<ul>
 			<li><a href="control">Control Panel</a></li>
-			<li><a href="config">Configuration</a></li>
-			<li><a href="sessions">Facility Sessions</a></li>
+			<li><a href="config">Main Configuration</a></li>
+			<li><a href="facilities">Facility Configuration</a></li>
+			<li><a href="sessions">Current Facility Sessions</a></li>
 			<li><a href="atom/queue">Ingestion Queue Atom Feed</a> (raw / browser rendered)</li>
 			<li><a href="queue/ingestible">Ingestion Queue Admin</a></li>
 			<li><a href="queue/held">Hold Queue Admin</a></li>

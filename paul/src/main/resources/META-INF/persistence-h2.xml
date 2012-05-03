@@ -6,6 +6,7 @@
 	<persistence-unit name="au.edu.uq.cmm.paul">
 		<description>Persistent Facility Status</description>
 		<class>au.edu.uq.cmm.eccles.UserDetails</class>
+		<class>au.edu.uq.cmm.eccles.FacilitySession</class>
 		<properties>
 			<property name="javax.persistence.jdbc.driver" value="org.h2.Driver" />
 			<property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:db1;DB_CLOSE_DELAY=-1;MVCC=TRUE" />
