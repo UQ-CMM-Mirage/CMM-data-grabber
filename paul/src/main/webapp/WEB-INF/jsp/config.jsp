@@ -106,22 +106,22 @@
 				<tr>
 					<td></td>
 					<td>Feed URL</td>
-					<td>${config.feedUrl}
+					<td>${config.feedUrl}</td>
 				</tr>
 				<tr>
 					<td></td>
 					<td>Feed id</td>
-					<td>${config.feedId}
+					<td>${config.feedId}</td>
 				</tr>
 				<tr>
 					<td></td>
 					<td>Feed title</td>
-					<td>${config.feedTitle}
+					<td>${config.feedTitle}</td>
 				</tr>
 				<tr>
 					<td></td>
 					<td>Feed author</td>
-					<td>${config.feedAuthor}
+					<td>${config.feedAuthor}</td>
 				</tr>
 				<tr>
 					<td></td>
