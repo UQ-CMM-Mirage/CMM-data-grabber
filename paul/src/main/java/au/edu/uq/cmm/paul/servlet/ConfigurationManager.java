@@ -105,7 +105,7 @@ public class ConfigurationManager {
                     Facility.class);
             query.setParameter("name", facilityName);
             Facility facility = query.getSingleResult();
-            Map<String, String> diags = buildFacility(facility, params);
+            Map<String, String> diags = buildFacility(facility, params, em);
             if (diags.isEmpty()) {
                 em.getTransaction().commit();
             } else {
@@ -113,39 +113,41 @@ public class ConfigurationManager {
             }
             return new ValidationResult<Facility>(diags, facility);
         } catch (RollbackException ex) {
-            Throwable e = ex;
-            while (e.getCause() != null) {
-                e = e.getCause();
-            }
-            if (e instanceof BatchUpdateException) {
-                LOG.error("update failed - next is",
-                        ((BatchUpdateException) e).getNextException());
-            } else {
-                LOG.error("update failed - cause is", e);
-            }
+            diagnoseRollback(ex);
             throw ex;
         } finally {
             em.close();
         }
     }
-    
-    public Map<String, String> buildFacility(Facility res, Map<?, ?> params) {
-        Map<String, String> diags = new HashMap<String, String>();
-        res.setFacilityName(getNonEmptyString(params, "facilityName", diags));
-        res.setFacilityDescription(getStringOrNull(params, "facilityDescription", diags));
-        res.setAddress(getStringOrNull(params, "address", diags));
-        if (res.getAddress() != null) {
-            try {
-                InetAddress.getByName(res.getAddress());
-            } catch (UnknownHostException ex) {
-                addDiag(diags, "address", ex.getMessage());
-            }
+
+    private void diagnoseRollback(RollbackException ex) {
+        Throwable e = ex;
+        while (e.getCause() != null) {
+            e = e.getCause();
         }
-        res.setLocalHostId(getStringOrNull(params, "localHostId", diags));
-        if (res.getAddress() == null && res.getLocalHostId() == null) {
+        if (e instanceof BatchUpdateException) {
+            LOG.error("update failed - next is",
+                    ((BatchUpdateException) e).getNextException());
+        } else {
+            LOG.error("update failed - cause is", e);
+        }
+    }
+    
+    public Map<String, String> buildFacility(Facility res, Map<?, ?> params, EntityManager em) {
+        Map<String, String> diags = new HashMap<String, String>();
+        String facilityName = getNonEmptyString(params, "facilityName", diags);
+        String localHostId = getStringOrNull(params, "localHostId", diags);
+        String address = getStringOrNull(params, "address", diags);
+        checkFacilityNameUnique(facilityName, res.getId(), diags, em);
+        if (address != null) {
+            checkAddressability(address, localHostId, res.getId(), diags, em);
+        }
+        checkLocalHostIdUnique(localHostId, res.getId(), diags, em);
+        if (address == null && localHostId == null) {
             addDiag(diags, "localHostId",
                     "the local host id must be non-empty if address is empty");
         }
+        res.setFacilityDescription(getStringOrNull(params, "facilityDescription", diags));
         res.setAccessName(getStringOrNull(params, "accessName", diags));
         res.setAccessPassword(getStringOrNull(params, "accessPassword", diags));
         res.setFolderName(getNonEmptyString(params, "folderName", diags));
@@ -155,6 +157,10 @@ public class ConfigurationManager {
                     "the drive name must be a single uppercase letter");
         }
         res.setFileSettlingTime(getInteger(params, "fileSettlingTime", diags));
+        if (res.getFileSettlingTime() < 0) {
+            addDiag(diags, "fileSettlingTime", 
+                    "the file setting time cannot be negative");
+        }
         res.setCaseInsensitive(getBoolean(params, "caseInsensitive", diags));
         res.setUseFileLocks(getBoolean(params, "useFileLocks", diags));
         res.setUseFullScreen(getBoolean(params, "useFullScreen", diags));
@@ -176,7 +182,109 @@ public class ConfigurationManager {
             templates.add(template);
         }
         res.setDatafileTemplates(templates);
+        
+        // Set the key attributes at the end after we've done the uniqueness checks.
+        // If we do them earlier, they may trigger DB level constraint errors due
+        // premature updates.  But we DO need to do them even if the checks fail
+        // so that the (possibly) bad values show up in the form.
+        res.setFacilityName(facilityName);
+        res.setAddress(address);
+        res.setLocalHostId(localHostId);
         return diags;
+    }
+
+    private void checkAddressability(String address, String localHostId, Long id,
+            Map<String, String> diags, EntityManager em) {
+        // Check that the supplied address is valiid / resolves.
+        InetAddress inetAddr;
+        try {
+            inetAddr = InetAddress.getByName(address);
+        } catch (UnknownHostException ex) {
+            addDiag(diags, "address", ex.getMessage());
+            return;
+        }
+        if (localHostId != null) {
+            return;
+        }
+        // If this facility has no local host id, then its address must
+        // be unique.  We need to extract all other facility addresses
+        // with no associated local host id, resolve them and compare the
+        // IP addresses.
+        TypedQuery<Object[]> query;
+        if (id == null) {
+            query = em.createQuery(
+                    "select f.facilityName, f.address from Facility f " +
+                            "where f.localHostId = NULL", 
+                            Object[].class);
+        } else {
+            query = em.createQuery(
+                    "select f.facilityName, f.address from Facility f " +
+                            "where f.localHostId = NULL and f.id != :id", 
+                            Object[].class);
+            query.setParameter("id", id.longValue());
+        }
+        List<Object[]> others = query.getResultList();
+        for (Object[] other : others) {
+            try {
+                InetAddress otherAddr = InetAddress.getByName((String) other[1]);
+                if (otherAddr.equals(inetAddr)) { /* compares IP addresses */
+                    addDiag(diags, "address", 
+                            "address resolves to an IP address used by " +
+                                    "another facility ('" + other[0] + "').  " +
+                            "Resolve the address conflict or use a local host id");
+                }
+            } catch (UnknownHostException ex) {
+                // We cannot report this to the user ...
+                LOG.warn("Cannot resolve hostname / address " + other[1] +
+                        " for facility " + other[0]);
+            }
+        }
+    }
+
+    private void checkFacilityNameUnique(String name, Long id,
+            Map<String, String> diags, EntityManager em) {
+        TypedQuery<String> query;
+        if (id == null) {
+            query = em.createQuery(
+                    "select f.facilityName from Facility f " +
+                    "where f.facilityName = :name", 
+                    String.class);
+        } else {
+            query = em.createQuery(
+                    "select f.facilityName from Facility f " +
+                    "where f.facilityName = :name and f.id != :id", 
+                    String.class);
+            query.setParameter("id", id.longValue());
+        }
+        query.setParameter("name", name);
+        List<String> names = query.getResultList();
+        if (!names.isEmpty()) {
+            addDiag(diags, "facilityName", "facility name '" + name + 
+                    "' already used for another facility");
+        }
+    }
+
+    private void checkLocalHostIdUnique(String localHostId, Long id,
+            Map<String, String> diags, EntityManager em) {
+        TypedQuery<String> query;
+        if (id == null) {
+            query = em.createQuery(
+                    "select f.facilityName from Facility f " +
+                    "where f.localHostId = :localHostId", 
+                    String.class);
+        } else {
+            query = em.createQuery(
+                    "select f.facilityName from Facility f " +
+                    "where f.localHostId = :localHostId and f.id != :id", 
+                    String.class);
+            query.setParameter("id", id.longValue());
+        }
+        query.setParameter("localHostId", localHostId);
+        List<String> names = query.getResultList();
+        if (!names.isEmpty()) {
+            addDiag(diags, "localHostId", "local host id '" + localHostId + 
+                    "' already assigned to facility '" + names.get(0));
+        }
     }
 
     private void addDiag(Map<String, String> diags, String key,
@@ -221,7 +329,7 @@ public class ConfigurationManager {
         try {
             return Integer.parseInt(str);
         } catch (NumberFormatException ex) {
-            addDiag(diags, key, "this value is not a valid number");
+            addDiag(diags, key, "this value is not a valid integer");
             return 0;
         }
     }

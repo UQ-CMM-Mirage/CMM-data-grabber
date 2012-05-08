@@ -35,7 +35,7 @@ import au.edu.uq.cmm.paul.grabber.FileGrabber;
 @Table(name = "facilities",
        uniqueConstraints={
             @UniqueConstraint(columnNames={"facilityName"}),
-            @UniqueConstraint(columnNames={"address"}),
+            @UniqueConstraint(columnNames={"address", "localHostId"}),
             @UniqueConstraint(columnNames={"localHostId"})})
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public class Facility implements FacilityConfig {
