@@ -153,11 +153,37 @@ public class WebUIController {
     }
     
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.GET)
-    public String facilityConfig(@PathVariable String facilityName, Model model) 
+    public String facilityConfig(@PathVariable String facilityName, Model model,
+            @RequestParam(required=false) String edit) 
             throws ConfigurationException {
         Facility facility = lookupFacilityByName(facilityName);
         model.addAttribute("facility", facility);
+        if (edit != null) {
+            model.addAttribute("edit", true);
+            model.addAttribute("message", 
+                    "Please fill in the form and click 'Save Configuration'");
+        }
         return "facility";
+    }
+    
+    @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST,
+            params={"update"})
+    public String updateFacilityConfig(
+            @PathVariable String facilityName, Model model,
+            HttpServletRequest request) 
+            throws ConfigurationException {
+        ValidationResult<Facility> res = services.getConfigManager().
+                updateFacility(facilityName, request.getParameterMap());
+        if (!res.isValid()) {
+            model.addAttribute("edit", true);
+            model.addAttribute("facility", res.getTarget());
+            model.addAttribute("diags", res.getDiags());
+            model.addAttribute("message", "Please correct the errors and try again");
+            return "facility";
+        } else {
+            model.addAttribute("message", "Facility updates saved");
+            return "ok";
+        }
     }
     
     @RequestMapping(value="/facilities/{facilityName:.+}", 
