@@ -7,7 +7,6 @@ import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -173,17 +172,16 @@ public class WebUIController {
             @PathVariable String facilityName, Model model,
             HttpServletRequest request) 
             throws ConfigurationException {
-        Facility facility = new Facility();
-        Map<String, String> diags = services.getConfigManager().
-                buildFacility(facility, request.getParameterMap());
-        if (!diags.isEmpty()) {
+        ValidationResult<Facility> res = services.getConfigManager().
+                updateFacility(facilityName, request.getParameterMap());
+        if (!res.isValid()) {
             model.addAttribute("edit", true);
-            model.addAttribute("facility", facility);
-            model.addAttribute("diags", diags);
+            model.addAttribute("facility", res.getTarget());
+            model.addAttribute("diags", res.getDiags());
             model.addAttribute("message", "Please correct the errors and try again");
             return "facility";
         } else {
-            model.addAttribute("message", "Would have saved ...");
+            model.addAttribute("message", "Facility updates saved");
             return "ok";
         }
     }

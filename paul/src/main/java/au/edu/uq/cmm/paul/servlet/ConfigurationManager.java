@@ -2,6 +2,7 @@ package au.edu.uq.cmm.paul.servlet;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.sql.BatchUpdateException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -9,6 +10,8 @@ import java.util.Map;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.RollbackException;
+import javax.persistence.TypedQuery;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,93 +95,145 @@ public class ConfigurationManager {
             em.close();
         }
     }
+
+    public ValidationResult<Facility> updateFacility(String facilityName, Map<?, ?> params) {
+        EntityManager em = entityManagerFactory.createEntityManager();
+        try {
+            em.getTransaction().begin();
+            TypedQuery<Facility> query = em.createQuery(
+                    "from Facility f where f.facilityName = :name",
+                    Facility.class);
+            query.setParameter("name", facilityName);
+            Facility facility = query.getSingleResult();
+            Map<String, String> diags = buildFacility(facility, params);
+            if (diags.isEmpty()) {
+                em.getTransaction().commit();
+            } else {
+                em.getTransaction().rollback();
+            }
+            return new ValidationResult<Facility>(diags, facility);
+        } catch (RollbackException ex) {
+            Throwable e = ex;
+            while (e.getCause() != null) {
+                e = e.getCause();
+            }
+            if (e instanceof BatchUpdateException) {
+                LOG.error("update failed - next is",
+                        ((BatchUpdateException) e).getNextException());
+            } else {
+                LOG.error("update failed - cause is", e);
+            }
+            throw ex;
+        } finally {
+            em.close();
+        }
+    }
     
     public Map<String, String> buildFacility(Facility res, Map<?, ?> params) {
         Map<String, String> diags = new HashMap<String, String>();
         res.setFacilityName(getNonEmptyString(params, "facilityName", diags));
         res.setFacilityDescription(getStringOrNull(params, "facilityDescription", diags));
-        String address = getString(params, "address", diags);
-        if (!address.isEmpty()) {
+        res.setAddress(getStringOrNull(params, "address", diags));
+        if (res.getAddress() != null) {
             try {
-                InetAddress.getByName(address);
-                res.setAddress(address);
+                InetAddress.getByName(res.getAddress());
             } catch (UnknownHostException ex) {
-                diags.put("address", ex.getMessage());
+                addDiag(diags, "address", ex.getMessage());
             }
         }
         res.setLocalHostId(getStringOrNull(params, "localHostId", diags));
         if (res.getAddress() == null && res.getLocalHostId() == null) {
-            diags.put("localHostId",
-                    "this field must be non-empty if no address is provided");
+            addDiag(diags, "localHostId",
+                    "the local host id must be non-empty if address is empty");
         }
         res.setAccessName(getStringOrNull(params, "accessName", diags));
         res.setAccessPassword(getStringOrNull(params, "accessPassword", diags));
-        res.setFolderName(getStringOrNull(params, "folderName", diags));
+        res.setFolderName(getNonEmptyString(params, "folderName", diags));
         res.setDriveName(getStringOrNull(params, "driveName", diags));
+        if (res.getDriveName() != null && !res.getDriveName().matches("[A-Z]")) {
+            addDiag(diags, "driveName", 
+                    "the drive name must be a single uppercase letter");
+        }
         res.setFileSettlingTime(getInteger(params, "fileSettlingTime", diags));
         res.setCaseInsensitive(getBoolean(params, "caseInsensitive", diags));
         res.setUseFileLocks(getBoolean(params, "useFileLocks", diags));
         res.setUseFullScreen(getBoolean(params, "useFullScreen", diags));
         res.setUseTimer(getBoolean(params, "useTimer", diags));
         List<DatafileTemplate> templates = new LinkedList<DatafileTemplate>();
-        for (int i = 1; params.get("template-" + i + ".filePattern") != null; i++) {
+        for (int i = 1; params.get("template" + i + "filePattern") != null; i++) {
             DatafileTemplate template = new DatafileTemplate();
-            template.setFilePattern(getString(params, "template-" + i + ".filePattern", diags));
-            template.setSuffix(getString(params, "template-" + i + ".suffix", diags));
-            template.setMimeType(getString(params, "template-" + i + ".mimeType", diags));
-            template.setOptional(getBoolean(params, "template-" + i + ".optional", diags));
+            template.setFilePattern(getNonEmptyString(params, "template" + i + "filePattern", diags));
+            template.setSuffix(getNonEmptyString(params, "template" + i + "suffix", diags));
+            template.setMimeType(getNonEmptyString(params, "template" + i + "mimeType", diags));
+            template.setOptional(getBoolean(params, "template" + i + "optional", diags));
+            for (DatafileTemplate existing : templates) {
+                if (template.getFilePattern() != null &&
+                        template.getFilePattern().equals(existing.getFilePattern())) {
+                    addDiag(diags, "template" + i + "filePattern", 
+                            "this file pattern has already been used");
+                }
+            }
             templates.add(template);
         }
         res.setDatafileTemplates(templates);
         return diags;
     }
 
-    private String getStringOrNull(Map<?, ?> params, String key, Map<String, String> diags) {
-        String[] values = (String[]) params.get(key);
-        if (values != null && values.length > 0) {
-            String str = values[0].trim();
-            return str.isEmpty() ? null : str;
-        } else {
-            return null;
+    private void addDiag(Map<String, String> diags, String key,
+            String message) {
+        if (diags.get(key) == null) {
+            diags.put(key, message);
         }
     }
 
-    private String getString(Map<?, ?> params, String key, Map<String, String> diags) {
+    private String getStringOrNull(Map<?, ?> params, String key, Map<String, String> diags) {
+        String str = getString(params, key, diags, false);
+        if (str != null && str.isEmpty()) {
+            return null;
+        } else {
+            return str;
+        }
+    }
+    
+    private String getString(Map<?, ?> params, String key, 
+            Map<String, String> diags, boolean canBeMissing) {
         String[] values = (String[]) params.get(key);
         if (values != null && values.length > 0) {
             return values[0].trim();
         } else {
-            diags.put(key, "field is missing");
-            return "";
+            if (!canBeMissing) {
+                diags.put(key, "field is missing");
+            }
+            return null;
         }
     }
     
     private String getNonEmptyString(Map<?, ?> params, String key, Map<String, String> diags) {
-        String str = getString(params, key, diags);
-        if (str.isEmpty()) {
-            diags.put(key, "this field must not be empty");
+        String str = getString(params, key, diags, false);
+        if (str != null && str.isEmpty()) {
+            addDiag(diags, key, "this field must not be empty");
         }
         return str;
     }
     
     private int getInteger(Map<?, ?> params, String key, Map<String, String> diags) {
-        String str = getString(params, key, diags);
+        String str = getNonEmptyString(params, key, diags);
         try {
             return Integer.parseInt(str);
         } catch (NumberFormatException ex) {
-            diags.put(key, "this value is not a valid number");
+            addDiag(diags, key, "this value is not a valid number");
             return 0;
         }
     }
 
     private boolean getBoolean(Map<?, ?> params, String key, Map<String, String> diags) {
-        String str = getStringOrNull(params, key, diags);
-        if (str == null || str.equalsIgnoreCase("false")) {
+        String str = getString(params, key, diags, true);
+        if (str == null || str.isEmpty() || str.equalsIgnoreCase("false")) {
             return false;
         } else if (str.equalsIgnoreCase("true")) {
             return true;
         } else {
-            diags.put(key, "this value must be 'true' or 'false' / ''");
+            addDiag(diags, key, "this value must be 'true' or 'false' / ''");
             return false;
         }
     }
