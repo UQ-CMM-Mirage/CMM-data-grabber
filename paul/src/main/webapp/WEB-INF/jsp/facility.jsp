@@ -13,8 +13,10 @@
 	var html = [
 	    '<tr id="template' + i + '"><td>&nbsp;</td>' +
 		'<td colspan="3">Template #' + i + '</td>' +
-		'<td><button type=\"button\" onclick="addTemplate(' + i + ')">' +
-		'Add template after this</button></td>' +
+		'<td><button type="button" onclick="addTemplate(' + i + ')">' +
+		'Add</button></td>' +
+		'<button type="button" onclick="removeTemplate(' + i + ')">' +
+		'Remove</button></td>' +
         '</tr>',
 		'<tr><td>&nbsp;</td><td>&nbsp;</td>' +
 		'<td>File pattern</td>' +
@@ -52,7 +54,7 @@
 				templateNo = parseInt(match[1]) + 1;
 				tr.setAttribute('id', 'template' + templateNo);
 				var k;
-				for (k in tr.childNodes) {
+				for (k = 0; k < tr.childNodes.length; k++) {
 					var td = tr.childNodes[k];
 					if (td.nodeType != Node.ELEMENT_NODE) continue;
 					var content = td.childNodes[0].textContent;
@@ -71,6 +73,9 @@
 						if (!onClick) continue;
 						if (onClick.match(/addTemplate\(\d+\)/)) {
 							button.setAttribute('onClick', 'addTemplate(' + templateNo + ')');
+						}
+						if (onClick.match(/removeTemplate\(\d+\)/)) {
+							button.setAttribute('onClick', 'removeTemplate(' + templateNo + ')');
 						}
 					}
 				}
@@ -107,6 +112,19 @@
 		var lastValue = lastInput.getAttribute('value');
 		lastInput.setAttribute('value', parseInt(lastValue) + 1);
 	}
+  }
+  
+  function removeTemplate(position) {
+	  var templateNode = document.getElementById('template' + position);
+	  if (templateNode) {
+		  var i = 0;
+		  while (i < 4) {
+			  var next = templateNode.nextSibling;
+			  if (next.nodeType == Node.ELEMENT_NODE) i++;
+			  templateNode.parentNode.removeChild(next);
+		  }
+		  templateNode.parentNode.removeChild(templateNode);
+	  }
   }
 -->
 </script>
@@ -199,7 +217,7 @@
 					<td>${(!edit && empty facility.datafileTemplates) ? 'none' : ''}</td>
 					<td>
 						<c:if test="${edit}">
-							<button type="button" onclick="addTemplate(0)">Add at start</button>
+							<button type="button" onclick="addTemplate(0)">Add</button>
 						</c:if>
 					</td>
 				</tr>
@@ -210,9 +228,8 @@
 						<td colspan="3">Template #${index}</td>
 						<td>
 							<c:if test="${edit}">
-								<button type="button" onclick="addTemplate(${index})">
-									Add template after this
-								</button>
+								<button type="button" onclick="addTemplate(${index})">Add</button>
+								<button type="button" onclick="removeTemplate(${index})">Remove</button>
 							</c:if>
 						</td>
 					</tr>
