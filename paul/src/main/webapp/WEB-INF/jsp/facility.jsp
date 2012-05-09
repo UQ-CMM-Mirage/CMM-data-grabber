@@ -1,10 +1,115 @@
 <!DOCTYPE html>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ page session="false"%>
 <html lang="en">
 <head>
 <%@ include file="/WEB-INF/jsp/commonHead.jspFrag"%>
 <title>Data Grabber - Facility Configuration for ${facility.facilityName}</title>
+<script type="text/javascript">
+<!--
+  function addTemplate(position) {
+	var i = parseInt(position) + 1;
+	var html = [
+	    '<tr id="template' + i + '"><td>&nbsp;</td>' +
+		'<td colspan="3">Template #' + i + '</td>' +
+		'<td><button type=\"button\" onclick="addTemplate(' + i + ')">' +
+		'Add template after this</button></td>' +
+        '</tr>',
+		'<tr><td>&nbsp;</td><td>&nbsp;</td>' +
+		'<td>File pattern</td>' +
+		'<td><input name="template' + i + 'filePattern" type="text" class="span4"></td>' +
+		'<td></td>' +
+		'</tr>',
+		'<tr><td>&nbsp;</td><td>&nbsp;</td>' +
+		'<td>File mimeType</td>' +
+		'<td><input name="template' + i + 'mimeType" type="text" class="span4"></td>' +
+		'<td></td>' +
+		'</tr>',
+		'<tr><td>&nbsp;</td><td>&nbsp;</td>' +
+		'<td>File suffix</td>' +
+		'<td><input name="template' + i + 'suffix" type="text" class="span4"</td>' +
+		'<td></td>' +
+		'</tr>',
+		'<tr><td>&nbsp;</td><td>&nbsp;</td>' +
+		'<td>File is optional</td>' +
+		'<td><input name="template' + i + 'optional" type="checkbox" checked="checked" value="true"></td>' +
+		'<td></td>' +
+		'</tr>'
+	];
+	var before = document.getElementById('template' + (position + 1));
+	if (before) {
+		var tbody = before.parentNode;
+		var templateNo = null;
+		var j;
+		for (j in tbody.childNodes) {
+			var tr = tbody.childNodes[j];
+			if (tr.nodeType != Node.ELEMENT_NODE) continue;
+			if (tr.hasAttribute('id')) {
+				var id = tr.getAttribute('id');
+				var match = id.match(/template(\d+)/);
+				if (!(match && parseInt(match[1]) > position)) continue;
+				templateNo = parseInt(match[1]) + 1;
+				tr.setAttribute('id', 'template' + templateNo);
+				var k;
+				for (k in tr.childNodes) {
+					var td = tr.childNodes[k];
+					if (td.nodeType != Node.ELEMENT_NODE) continue;
+					var content = td.childNodes[0].textContent;
+					if (content) {
+						if (content.match(/Template #\d+/)) {
+							td.childNodes[0].textContent = "Template #" + templateNo;
+							break;
+						}
+					}
+				}
+				var buttons = tr.getElementsByTagName('button');
+				if (buttons) {
+					for (k = 0; k < buttons.length; k++) {
+						var button = buttons[k];
+						var onClick = button.getAttribute('onClick');
+						if (!onClick) continue;
+						if (onClick.match(/addTemplate\(\d+\)/)) {
+							button.setAttribute('onClick', 'addTemplate(' + templateNo + ')');
+						}
+					}
+				}
+			} else {
+				if (templateNo) {
+					var inputs = tr.getElementsByTagName('input');
+					if (inputs) {
+						var j;
+						for (j = 0; j < inputs.length; j++) {
+							var input = inputs[j];
+							var name = input.getAttribute('name');
+							if (name) {
+								var match = name.match(/template(\d+)(.+)/);
+								if (match) {
+									input.setAttribute('name', 'template' + templateNo + match[2]);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	} else {
+		before = document.getElementById('templateEnd');
+	}
+	for (i in html) {
+		var elem = document.createElement('tbody');
+		elem.innerHTML = html[i];
+		var node = elem.childNodes[0];
+		before.parentNode.insertBefore(node, before);
+	}
+	var lastInput = document.getElementById('lastTemplate');
+	if (lastInput) {
+		var lastValue = lastInput.getAttribute('value');
+		lastInput.setAttribute('value', parseInt(lastValue) + 1);
+	}
+  }
+-->
+</script>
 </head>
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
@@ -14,6 +119,8 @@
 			${message}
 		</p>
 		<form action="${facility.facilityName}" method="post">
+		<input id="lastTemplate" type="hidden" name="lastTemplate" 
+		       value="${fn:length(facility.datafileTemplates)}">
 		<table class="table table-striped table-condensed">
 			<thead>
 				<tr>
@@ -87,17 +194,27 @@
 						value="true"></td>
 					<td><strong>${diags.caseInsensitive}</strong></td>
 				</tr>
-			    <tr>
+			    <tr id="templateStart">
 					<td colspan="3">Datafile templates</td>
-					<td>${empty facility.datafileTemplates ? 'none' : ''}</td>
-					<td></td>
+					<td>${(!edit && empty facility.datafileTemplates) ? 'none' : ''}</td>
+					<td>
+						<c:if test="${edit}">
+							<button type="button" onclick="addTemplate(0)">Add at start</button>
+						</c:if>
+					</td>
 				</tr>
 				<c:set var="index" value="1"/>
 				<c:forEach items="${facility.datafileTemplates}" var="template">
-				    <tr>
+				    <tr id="template${index}">
 					    <td>&nbsp;</td>
 						<td colspan="3">Template #${index}</td>
-						<td></td>
+						<td>
+							<c:if test="${edit}">
+								<button type="button" onclick="addTemplate(${index})">
+									Add template after this
+								</button>
+							</c:if>
+						</td>
 					</tr>
 					<tr>
 					    <td>&nbsp;</td><td>&nbsp;</td>
@@ -146,7 +263,7 @@
 					</tr>
 					<c:set var="index" value="${index + 1}"/>
 				</c:forEach>
-			    <tr>
+			    <tr id="templateEnd">
 					<td colspan="3">File settling time (milliseconds)</td>
 					<td><input name="fileSettlingTime" type="text" class="span4"
 						${edit ? '' : 'readonly="readonly"'}
