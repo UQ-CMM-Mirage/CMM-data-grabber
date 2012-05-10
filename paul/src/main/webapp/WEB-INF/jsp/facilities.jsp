@@ -28,7 +28,12 @@
 						<td><a href="facilities/${facility.facilityName}">
 								${facility.facilityName}</a></td>
 						<td>${facility.facilityDescription}</td>
-						<td>${facility.status}</td>
+						<td>
+							${facility.status}
+							<c:if test="${! empty facility.message}">
+								<br>${facility.message}
+							</c:if>
+						</td>
 						<td class="form-inline,btn-toolbar">
 							<form action="facilities/${facility.facilityName}" method="post">
 								<c:if test="${facility.status == 'ON'}">

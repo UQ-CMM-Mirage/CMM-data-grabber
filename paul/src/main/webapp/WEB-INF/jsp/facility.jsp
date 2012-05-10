@@ -332,16 +332,6 @@
 						value="true"></td>
 						<td><strong>${diags.useFullScreen}</strong></td>
 					</tr>
-					<tr>
-						<td colspan="3">Facility status</td>
-						<td>${facility.status}</td>
-						<td></td>
-					</tr>
-					<tr>
-						<td colspan="3">Facility configuration diagnostic</td>
-						<td>${facility.message}</td>
-						<td></td>
-					</tr>
 				</tbody>
 			</table>
 			<c:choose>
