@@ -152,6 +152,17 @@ public class WebUIController {
         return "facilities";
     }
     
+    @RequestMapping(value="/facilities", method=RequestMethod.GET,
+            params="newForm")
+    public String newFacilityForm(Model model) {
+        model.addAttribute("facilities", getFacilities());
+        model.addAttribute("edit", true);
+        model.addAttribute("create", true);
+        model.addAttribute("message", 
+                "Please fill in the form and click 'Save Configuration'");
+        return "facility";
+    }
+    
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.GET)
     public String facilityConfig(@PathVariable String facilityName, Model model,
             @RequestParam(required=false) String edit) 
@@ -164,6 +175,26 @@ public class WebUIController {
                     "Please fill in the form and click 'Save Configuration'");
         }
         return "facility";
+    }
+    
+    @RequestMapping(value="/facilities", method=RequestMethod.POST,
+            params={"create"})
+    public String createFacilityConfig(
+            Model model, HttpServletRequest request) 
+            throws ConfigurationException {
+        ValidationResult<Facility> res = services.getConfigManager().
+                createFacility(request.getParameterMap());
+        if (!res.isValid()) {
+            model.addAttribute("edit", true);
+            model.addAttribute("create", true);
+            model.addAttribute("facility", res.getTarget());
+            model.addAttribute("diags", res.getDiags());
+            model.addAttribute("message", "Please correct the errors and try again");
+            return "facility";
+        } else {
+            model.addAttribute("message", "Facility configuration created");
+            return "ok";
+        }
     }
     
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST,
@@ -181,7 +212,7 @@ public class WebUIController {
             model.addAttribute("message", "Please correct the errors and try again");
             return "facility";
         } else {
-            model.addAttribute("message", "Facility updates saved");
+            model.addAttribute("message", "Facility configuration updated");
             return "ok";
         }
     }

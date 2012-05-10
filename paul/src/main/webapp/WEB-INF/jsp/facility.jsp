@@ -323,13 +323,18 @@
 			    </tr>
 			</tbody>
 	    </table>
-	    <c:if test="${!empty edit}">
-			<button type="submit" name="update">Save Configuration</button>
-		</c:if>
+	    <c:choose>
+	    	<c:when test="${!empty create}">
+				<button type="submit" name="create">Save New Facility</button>
+			</c:when>
+	    	<c:when test="${!empty edit}">
+				<button type="submit" name="update">Save Facility Changes</button>
+			</c:when>
+		</c:choose>
 		</form>
 		<c:if test="${empty edit}">
 			<form action="${facility.facilityName}" method="get">
-				<button type="submit" name="edit">Edit Configuration</button>
+				<button type="submit" name="edit">Edit Facility</button>
 			</form>
 		</c:if>
 		<c:if test="${facility.status == 'ON'}">

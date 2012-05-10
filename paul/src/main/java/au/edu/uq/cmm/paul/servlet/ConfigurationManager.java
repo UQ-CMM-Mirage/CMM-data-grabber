@@ -96,6 +96,28 @@ public class ConfigurationManager {
         }
     }
 
+
+    public ValidationResult<Facility> createFacility(Map<?, ?> params) {
+        EntityManager em = entityManagerFactory.createEntityManager();
+        try {
+            em.getTransaction().begin();
+            Facility facility = new Facility();
+            Map<String, String> diags = buildFacility(facility, params, em);
+            if (diags.isEmpty()) {
+                em.persist(facility);
+                em.getTransaction().commit();
+            } else {
+                em.getTransaction().rollback();
+            }
+            return new ValidationResult<Facility>(diags, facility);
+        } catch (RollbackException ex) {
+            diagnoseRollback(ex);
+            throw ex;
+        } finally {
+            em.close();
+        }
+    }
+
     public ValidationResult<Facility> updateFacility(String facilityName, Map<?, ?> params) {
         EntityManager em = entityManagerFactory.createEntityManager();
         try {
