@@ -96,6 +96,28 @@ public class ConfigurationManager {
         }
     }
 
+
+    public ValidationResult<Facility> createFacility(Map<?, ?> params) {
+        EntityManager em = entityManagerFactory.createEntityManager();
+        try {
+            em.getTransaction().begin();
+            Facility facility = new Facility();
+            Map<String, String> diags = buildFacility(facility, params, em);
+            if (diags.isEmpty()) {
+                em.persist(facility);
+                em.getTransaction().commit();
+            } else {
+                em.getTransaction().rollback();
+            }
+            return new ValidationResult<Facility>(diags, facility);
+        } catch (RollbackException ex) {
+            diagnoseRollback(ex);
+            throw ex;
+        } finally {
+            em.close();
+        }
+    }
+
     public ValidationResult<Facility> updateFacility(String facilityName, Map<?, ?> params) {
         EntityManager em = entityManagerFactory.createEntityManager();
         try {
@@ -120,6 +142,25 @@ public class ConfigurationManager {
         }
     }
 
+    public void deleteFacility(String facilityName) {
+        EntityManager em = entityManagerFactory.createEntityManager();
+        try {
+            em.getTransaction().begin();
+            TypedQuery<Facility> query = em.createQuery(
+                    "from Facility f where f.facilityName = :name",
+                    Facility.class);
+            query.setParameter("name", facilityName);
+            Facility facility = query.getSingleResult();
+            em.remove(facility);
+            em.getTransaction().commit();
+        } catch (RollbackException ex) {
+            diagnoseRollback(ex);
+            throw ex;
+        } finally {
+            em.close();
+        }
+    }
+    
     private void diagnoseRollback(RollbackException ex) {
         Throwable e = ex;
         while (e.getCause() != null) {
@@ -165,17 +206,38 @@ public class ConfigurationManager {
         res.setUseFileLocks(getBoolean(params, "useFileLocks", diags));
         res.setUseFullScreen(getBoolean(params, "useFullScreen", diags));
         res.setUseTimer(getBoolean(params, "useTimer", diags));
+        
         List<DatafileTemplate> templates = new LinkedList<DatafileTemplate>();
-        for (int i = 1; params.get("template" + i + "filePattern") != null; i++) {
+        int last = getInteger(params, "lastTemplate", diags);
+        for (int i = 1; i <= last; i++) {
+            String baseName = "template" + i;
+            // If we have no parameters starting with the basename, skip.
+            boolean found = false;
+            for (Object paramName : params.keySet()) {
+                if (paramName.toString().startsWith(baseName)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                continue;
+            }
+            if (getStringOrNull(params, baseName + "filePattern", diags) == null &&
+                    getStringOrNull(params, baseName + "suffix", diags) == null &&
+                    getStringOrNull(params, baseName + "mimeType", diags) == null) {
+                // This is a blank template ... ignore it.
+                continue;
+            }
+            // We have a template 'i' ...
             DatafileTemplate template = new DatafileTemplate();
-            template.setFilePattern(getNonEmptyString(params, "template" + i + "filePattern", diags));
-            template.setSuffix(getNonEmptyString(params, "template" + i + "suffix", diags));
-            template.setMimeType(getNonEmptyString(params, "template" + i + "mimeType", diags));
-            template.setOptional(getBoolean(params, "template" + i + "optional", diags));
+            template.setFilePattern(getNonEmptyString(params, baseName + "filePattern", diags));
+            template.setSuffix(getNonEmptyString(params, baseName + "suffix", diags));
+            template.setMimeType(getNonEmptyString(params, baseName + "mimeType", diags));
+            template.setOptional(getBoolean(params, baseName+ "optional", diags));
             for (DatafileTemplate existing : templates) {
                 if (template.getFilePattern() != null &&
                         template.getFilePattern().equals(existing.getFilePattern())) {
-                    addDiag(diags, "template" + i + "filePattern", 
+                    addDiag(diags, baseName + "filePattern", 
                             "this file pattern has already been used");
                 }
             }

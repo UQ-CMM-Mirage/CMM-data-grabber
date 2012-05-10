@@ -26,7 +26,7 @@ public class PaulFacilityMapper implements FacilityMapper {
 
     @Override
     public FacilityConfig lookup(String localHostId, String facilityName,
-            InetAddress clientAddr) throws ConfigurationException {
+            InetAddress clientAddr) {
         EntityManager em = entityManagerFactory.createEntityManager();
         TypedQuery<Facility> query;
         Facility res;
@@ -73,15 +73,14 @@ public class PaulFacilityMapper implements FacilityMapper {
         }
     }
 
-    private Facility getFirst(TypedQuery<Facility> query, String key, String keyValue) 
-            throws ConfigurationException {
+    private Facility getFirst(TypedQuery<Facility> query, String key, String keyValue) {
         List<Facility> list = query.getResultList();
         if (list.size() == 0) {
             return null;
         } else if (list.size() == 1) {
             return list.get(0);
         } else {
-            throw new ConfigurationException(
+            throw new AssertionError(
                     "Multiple facilities have " + key + " equal to " + keyValue);
         }
     }
