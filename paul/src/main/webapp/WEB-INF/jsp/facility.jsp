@@ -141,7 +141,7 @@
 				for ${facility.facilityName}
 			</c:if>
 		</h1>
-		<p>${message}</p>
+		<p><strong>${message}</strong></p>
 		<form action="${facility.facilityName}" method="post">
 			<input id="lastTemplate" type="hidden" name="lastTemplate"
 				value="${fn:length(facility.datafileTemplates)}">
@@ -346,33 +346,20 @@
 			</table>
 			<c:choose>
 				<c:when test="${!empty create}">
-					<button type="submit" name="create">Save New Facility</button>
+					<button class="btn" type="submit" name="create">Save New Facility</button>
 				</c:when>
 				<c:when test="${!empty edit}">
-					<button type="submit" name="update">Save Facility Changes</button>
+					<button class="btn" type="submit" name="update">Save Facility Changes</button>
 				</c:when>
 			</c:choose>
 		</form>
 		<c:if test="${empty edit}">
-			<form action="${facility.facilityName}" method="get">
-				<button type="submit" name="edit">Change Facility Configuration</button>
-			</form>
-			<c:if test="${facility.status == 'ON'}">
-				<form action="${facility.facilityName}" method="post">
-					<button type="submit" name="disableWatcher">Disable File
-						Watching</button>
+			<div class="form-inline">
+				<form class="form-inline" action="${facility.facilityName}">
+					<button class="btn" type="submit" name="edit">Change
+						Facility Configuration</button>
 				</form>
-			</c:if>
-			<c:if
-				test="${facility.status == 'DISABLED' || facility.status == 'OFF'}">
-				<form action="${facility.facilityName}" method="post">
-					<button type="submit" name="enableWatcher">Enable File
-						Watching</button>
-				</form>
-			</c:if>
-			<form action="${facility.facilityName}">
-				<button type="submit" name="sessionLog">View Session Log</button>
-			</form>
+			</div>
 		</c:if>
 	</div>
 	<!-- /container -->

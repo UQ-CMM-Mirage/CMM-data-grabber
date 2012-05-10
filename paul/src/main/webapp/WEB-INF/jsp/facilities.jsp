@@ -16,9 +16,10 @@
 					<th>Current Facilities</th>
 				</tr>
 				<tr>
-					<th class="span4">Facility</th>
-					<th class="span4">Description</th>
-					<th class="span4">Status</th>
+					<th class="span3">Facility</th>
+					<th class="span3">Description</th>
+					<th class="span1">Status</th>
+					<th class="span5"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -28,17 +29,26 @@
 								${facility.facilityName}</a></td>
 						<td>${facility.facilityDescription}</td>
 						<td>${facility.status}</td>
+						<td class="form-inline,btn-toolbar">
+							<form action="${facility.facilityName}" method="post">
+								<c:if test="${facility.status == 'ON'}">
+									<button class="btn" type="submit" name="disableWatcher">Stop</button>
+								</c:if>
+									<c:if test="${facility.status == 'DISABLED' || facility.status == 'OFF'}">
+										<button class="btn" type="submit" name="enableWatcher">Start</button>
+								</c:if>
+								<button class="btn" type="submit" name="sessionLog">Session Log</button>
+								<button class="btn" type="submit" name="copy">Copy</button>
+								<button class="btn" type="submit" name="delete">Delete</button>
+							</form>
+						</td>
 					</tr>
 				</c:forEach>
 			</tbody>
 		</table>
 		<div class="form-inline">
 			<form action="/paul/facilities" method="get">
-				<button type="submit" name="newForm">Add a new facility</button>
-			</form>
-			<form>
-				<button type="submit">Copy a facility</button>
-				<input type="text" name="facilityName">
+				<button class="btn" type="submit" name="newForm">Add a new facility</button>
 			</form>
 		</div>
 	</div>
