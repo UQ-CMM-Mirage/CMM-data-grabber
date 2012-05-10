@@ -152,6 +152,18 @@ public class WebUIController {
         return "facilities";
     }
     
+    @RequestMapping(value="/facilities", method=RequestMethod.GET,
+            params="newForm")
+    public String newFacilityForm(Model model) {
+        model.addAttribute("facility", new Facility());  // (just for the defaults ...)
+        model.addAttribute("edit", true);
+        model.addAttribute("create", true);
+        model.addAttribute("message", 
+                "Please fill in the form and click 'Save New Facility'");
+        model.addAttribute("returnTo", "/paul/facilities");
+        return "facility";
+    }
+    
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.GET)
     public String facilityConfig(@PathVariable String facilityName, Model model,
             @RequestParam(required=false) String edit) 
@@ -161,9 +173,32 @@ public class WebUIController {
         if (edit != null) {
             model.addAttribute("edit", true);
             model.addAttribute("message", 
-                    "Please fill in the form and click 'Save Configuration'");
+                    "Please fill in the form and click 'Save Facility Changes'");
         }
+        model.addAttribute("returnTo", "/paul/facilities");
         return "facility";
+    }
+    
+    @RequestMapping(value="/facilities", method=RequestMethod.POST,
+            params={"create"})
+    public String createFacilityConfig(
+            Model model, HttpServletRequest request) 
+            throws ConfigurationException {
+        ValidationResult<Facility> res = services.getConfigManager().
+                createFacility(request.getParameterMap());
+        if (!res.isValid()) {
+            model.addAttribute("edit", true);
+            model.addAttribute("create", true);
+            model.addAttribute("facility", res.getTarget());
+            model.addAttribute("diags", res.getDiags());
+            model.addAttribute("message", "Please correct the errors and try again");
+            model.addAttribute("returnTo", "/paul/facilities");
+            return "facility";
+        } else {
+            model.addAttribute("message", "Facility configuration created");
+            model.addAttribute("returnTo", "/paul/facilities");
+            return "ok";
+        }
     }
     
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST,
@@ -179,15 +214,39 @@ public class WebUIController {
             model.addAttribute("facility", res.getTarget());
             model.addAttribute("diags", res.getDiags());
             model.addAttribute("message", "Please correct the errors and try again");
+            model.addAttribute("returnTo", "/paul/facilities");
             return "facility";
         } else {
-            model.addAttribute("message", "Facility updates saved");
+            model.addAttribute("message", "Facility configuration updated");
+            model.addAttribute("returnTo", "/paul/facilities");
             return "ok";
         }
     }
     
-    @RequestMapping(value="/facilities/{facilityName:.+}", 
-            method=RequestMethod.GET, params={"sessionLog"})
+    @RequestMapping(value = "/facilities/{facilityName:.+}", method = RequestMethod.POST, 
+            params = {"delete"})
+    public String deleteFacilityConfig(@PathVariable String facilityName,
+            Model model, HttpServletRequest request,
+            @RequestParam(required = false) String confirmed) {
+        model.addAttribute("returnTo", "/paul/facilities");
+        model.addAttribute("facilityName", facilityName);
+        if (confirmed == null) {
+            return "facilityDeleteConfirmation";
+        } 
+        Facility facility = lookupFacilityByName(facilityName);
+        if (facility == null) {
+            model.addAttribute("message", 
+                    "Can't find facility configuration for '" + facilityName + "'");
+            return "failed";
+        }
+        getFileWatcher().stopFileWatching(facility, true);
+        services.getConfigManager().deleteFacility(facilityName);
+        model.addAttribute("message", "Facility configuration deleted");
+        return "ok";
+    }
+    
+    @RequestMapping(value="/facilities/{facilityName:.+}",
+            params={"sessionLog"})
     public String facilitySessions(@PathVariable String facilityName, Model model) 
             throws ConfigurationException {
         model.addAttribute("sessions", 
@@ -685,8 +744,7 @@ public class WebUIController {
         return services.getConfigManager().getActiveConfig();
     }
     
-    private Facility lookupFacilityByName(String facilityName) 
-            throws ConfigurationException {
+    private Facility lookupFacilityByName(String facilityName) {
         return (Facility) services.getFacilityMapper().lookup(null, facilityName, null);
     }
     

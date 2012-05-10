@@ -10,7 +10,7 @@
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container-fluid">
 		<h1>Data Grabber Queue Deletion</h1>
-		<form name="form" method="POST" action="${returnTo}">
+		<form class="form-inline btn-toolbar" method="POST" action="${returnTo}">
 			Archive files <input id="archive" name="mode" type="radio"
 				value="archive" checked="checked"
 				onclick="document.form.archive.checked = true; document.form.discard.checked = false;">
@@ -18,8 +18,8 @@
 				type="radio" value="discard"
 				onclick="document.form.archive.checked = false; document.form.discard.checked = true;">
 			<br>
-			<button type="submit" name="deleteAll">Yes - do it now</button>
-			<button type="button" onclick="window.location = '${returnTo}'">
+			<button class="btn-large" type="submit" name="deleteAll">Yes - do it now</button>
+			<button class="btn-large" type="button" onclick="window.location = '${returnTo}'">
 				No - get me out of here</button>
 			<input type="hidden" name="confirmed">
 		</form>
