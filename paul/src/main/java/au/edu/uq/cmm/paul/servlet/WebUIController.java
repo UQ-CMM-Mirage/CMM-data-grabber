@@ -223,6 +223,28 @@ public class WebUIController {
         }
     }
     
+    @RequestMapping(value = "/facilities/{facilityName:.+}", method = RequestMethod.POST, 
+            params = {"delete"})
+    public String deleteFacilityConfig(@PathVariable String facilityName,
+            Model model, HttpServletRequest request,
+            @RequestParam(required = false) String confirmed) {
+        model.addAttribute("returnTo", "/paul/facilities");
+        model.addAttribute("facilityName", facilityName);
+        if (confirmed == null) {
+            return "facilityDeleteConfirmation";
+        } 
+        Facility facility = lookupFacilityByName(facilityName);
+        if (facility == null) {
+            model.addAttribute("message", 
+                    "Can't find facility configuration for '" + facilityName + "'");
+            return "failed";
+        }
+        getFileWatcher().stopFileWatching(facility, true);
+        services.getConfigManager().deleteFacility(facilityName);
+        model.addAttribute("message", "Facility configuration deleted");
+        return "ok";
+    }
+    
     @RequestMapping(value="/facilities/{facilityName:.+}",
             params={"sessionLog"})
     public String facilitySessions(@PathVariable String facilityName, Model model) 
@@ -722,8 +744,7 @@ public class WebUIController {
         return services.getConfigManager().getActiveConfig();
     }
     
-    private Facility lookupFacilityByName(String facilityName) 
-            throws ConfigurationException {
+    private Facility lookupFacilityByName(String facilityName) {
         return (Facility) services.getFacilityMapper().lookup(null, facilityName, null);
     }
     

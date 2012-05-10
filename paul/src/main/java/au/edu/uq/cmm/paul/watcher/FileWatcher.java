@@ -164,6 +164,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
     }
 
     public void startFileWatching(Facility facility, boolean enable) {
+        // FIXME - file grabber start / stop is not properly synchronized.
         LOG.debug("StartFileWatching(" + facility.getFacilityName() + 
                 "," + enable + ")");
         String name = facility.getFolderName();
@@ -210,10 +211,15 @@ public class FileWatcher extends MonitoredThreadServiceBase {
     }
     
     public void stopFileWatching(Facility facility, boolean disable) {
+        // FIXME - file grabber start / stop is not properly synchronized.
         LOG.debug("StopFileWatching(" + facility.getFacilityName() + 
                 "," + disable + ")");
         try {
+            if (facility.getFileGrabber() == null) {
+                return;
+            }
             facility.getFileGrabber().shutdown();
+            facility.setFileGrabber(null);
             for (WatcherEntry entry : watchMap.values()) {
                 if (entry.facility == facility && entry.parent == null) {
                     removeKey(entry, true);

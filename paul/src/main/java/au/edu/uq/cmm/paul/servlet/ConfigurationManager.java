@@ -142,6 +142,25 @@ public class ConfigurationManager {
         }
     }
 
+    public void deleteFacility(String facilityName) {
+        EntityManager em = entityManagerFactory.createEntityManager();
+        try {
+            em.getTransaction().begin();
+            TypedQuery<Facility> query = em.createQuery(
+                    "from Facility f where f.facilityName = :name",
+                    Facility.class);
+            query.setParameter("name", facilityName);
+            Facility facility = query.getSingleResult();
+            em.remove(facility);
+            em.getTransaction().commit();
+        } catch (RollbackException ex) {
+            diagnoseRollback(ex);
+            throw ex;
+        } finally {
+            em.close();
+        }
+    }
+    
     private void diagnoseRollback(RollbackException ex) {
         Throwable e = ex;
         while (e.getCause() != null) {

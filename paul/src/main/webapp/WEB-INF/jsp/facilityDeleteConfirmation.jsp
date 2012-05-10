@@ -4,20 +4,21 @@
 <html lang="en">
 <head>
 <%@ include file="/WEB-INF/jsp/commonHead.jspFrag"%>
-<title>Data Grabber Configuration Reset</title>
+<title>Confirm Facility Deletion</title>
 </head>
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container-fluid">
-		<h1>Data Grabber Configuration Reset</h1>
-		<form class="form-inline btn-toolbar" name="form" method="POST" action="${returnTo}">
-			Resetting the configuration will permanently delete any manual
-			configuration changes. <br> <input type="hidden" name="reset">
+		<h1>Confirm Facility Deletion for ${facilityName}</h1>
+		<form class="form-inline btn-toolbar" name="form" method="POST" action="${facilityName}">
+			This will permanently delete the configuration details for
+			this facility.
+			<br>
 			<input type="hidden" name="confirmed">
-			<button class="btn-large" type="submit" name="reset">Yes - do it now</button>
+			<input type="hidden" name="delete">
+			<button class="btn-large" type="submit" name="delete">Yes - do it now</button>
 			<button class="btn-large" type="button" onclick="window.location = '${returnTo}'">
 				No - get me out of here</button>
-			<input type="hidden" name="confirmed">
 		</form>
 	</div>
 	<!-- /container -->
