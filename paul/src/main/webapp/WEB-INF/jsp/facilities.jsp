@@ -25,12 +25,12 @@
 			<tbody>
 				<c:forEach items="${facilities}" var="facility">
 					<tr>
-						<td><a href="/paul/facilities/${facility.facilityName}">
+						<td><a href="facilities/${facility.facilityName}">
 								${facility.facilityName}</a></td>
 						<td>${facility.facilityDescription}</td>
 						<td>${facility.status}</td>
 						<td class="form-inline,btn-toolbar">
-							<form action="${facility.facilityName}" method="post">
+							<form action="facilities/${facility.facilityName}" method="post">
 								<c:if test="${facility.status == 'ON'}">
 									<button class="btn" type="submit" name="disableWatcher">Stop</button>
 								</c:if>

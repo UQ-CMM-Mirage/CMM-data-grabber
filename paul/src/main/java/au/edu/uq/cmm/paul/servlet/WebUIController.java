@@ -223,8 +223,8 @@ public class WebUIController {
         }
     }
     
-    @RequestMapping(value="/facilities/{facilityName:.+}", 
-            method=RequestMethod.GET, params={"sessionLog"})
+    @RequestMapping(value="/facilities/{facilityName:.+}",
+            params={"sessionLog"})
     public String facilitySessions(@PathVariable String facilityName, Model model) 
             throws ConfigurationException {
         model.addAttribute("sessions", 
