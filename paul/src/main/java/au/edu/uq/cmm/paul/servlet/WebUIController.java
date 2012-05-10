@@ -155,11 +155,12 @@ public class WebUIController {
     @RequestMapping(value="/facilities", method=RequestMethod.GET,
             params="newForm")
     public String newFacilityForm(Model model) {
-        model.addAttribute("facilities", getFacilities());
+        model.addAttribute("facility", new Facility());  // (just for the defaults ...)
         model.addAttribute("edit", true);
         model.addAttribute("create", true);
         model.addAttribute("message", 
-                "Please fill in the form and click 'Save Configuration'");
+                "Please fill in the form and click 'Save New Facility'");
+        model.addAttribute("returnTo", "/paul/facilities");
         return "facility";
     }
     
@@ -172,8 +173,9 @@ public class WebUIController {
         if (edit != null) {
             model.addAttribute("edit", true);
             model.addAttribute("message", 
-                    "Please fill in the form and click 'Save Configuration'");
+                    "Please fill in the form and click 'Save Facility Changes'");
         }
+        model.addAttribute("returnTo", "/paul/facilities");
         return "facility";
     }
     
@@ -190,9 +192,11 @@ public class WebUIController {
             model.addAttribute("facility", res.getTarget());
             model.addAttribute("diags", res.getDiags());
             model.addAttribute("message", "Please correct the errors and try again");
+            model.addAttribute("returnTo", "/paul/facilities");
             return "facility";
         } else {
             model.addAttribute("message", "Facility configuration created");
+            model.addAttribute("returnTo", "/paul/facilities");
             return "ok";
         }
     }
@@ -210,9 +214,11 @@ public class WebUIController {
             model.addAttribute("facility", res.getTarget());
             model.addAttribute("diags", res.getDiags());
             model.addAttribute("message", "Please correct the errors and try again");
+            model.addAttribute("returnTo", "/paul/facilities");
             return "facility";
         } else {
             model.addAttribute("message", "Facility configuration updated");
+            model.addAttribute("returnTo", "/paul/facilities");
             return "ok";
         }
     }
