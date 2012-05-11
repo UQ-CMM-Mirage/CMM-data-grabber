@@ -1,6 +1,5 @@
 package au.edu.uq.cmm.paul.status;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,7 +22,6 @@ import org.hibernate.annotations.GenericGenerator;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.paul.DatafileTemplateConfig;
 import au.edu.uq.cmm.paul.GrabberFacilityConfig;
-import au.edu.uq.cmm.paul.grabber.FileGrabber;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager.FacilityStatus;
 
 /**
@@ -57,8 +55,6 @@ public class Facility implements FacilityConfig {
     private String address;
     private List<DatafileTemplate> datafileTemplates;
     private boolean disabled;
-    private FileGrabber fileGrabber;
-    private File localDirectory;
     private FacilityStatus status;
     
 
@@ -225,25 +221,7 @@ public class Facility implements FacilityConfig {
         this.id = id;
     }
 
-    @JsonIgnore
-    @Transient
-    public FileGrabber getFileGrabber() {
-        return this.fileGrabber;
-    }
-
-    public void setFileGrabber(FileGrabber fileGrabber) {
-        this.fileGrabber = fileGrabber;
-    }
-
-    @JsonIgnore
-    @Transient
-    public File getLocalDirectory() {
-        return localDirectory;
-    }
     
-    public void setLocalDirectory(File localDirectory) {
-        this.localDirectory = localDirectory;
-    }
 
     @JsonIgnore
     @Transient
@@ -267,7 +245,6 @@ public class Facility implements FacilityConfig {
                 + caseInsensitive + ", fileSettlingTime=" + fileSettlingTime
                 + ", address=" + address + ", datafileTemplates="
                 + datafileTemplates + ", disabled=" + disabled
-                + ", fileGrabber=" + fileGrabber + ", localDirectory="
-                + localDirectory + ", status=" + status + "]";
+                + ", status=" + status + "]";
     }
 }

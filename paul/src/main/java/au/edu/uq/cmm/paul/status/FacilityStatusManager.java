@@ -1,5 +1,6 @@
 package au.edu.uq.cmm.paul.status;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -37,6 +38,8 @@ public class FacilityStatusManager {
         private final Long facilityId;
         private Status status;
         private String message;
+        private File localDirectory;
+        private FileGrabber fileGrabber;
         
         public FacilityStatus(Long facilityId, Status status, String message) {
             super();
@@ -65,6 +68,22 @@ public class FacilityStatusManager {
             return facilityId;
         }
 
+        public FileGrabber getFileGrabber() {
+            return this.fileGrabber;
+        }
+
+        public void setFileGrabber(FileGrabber fileGrabber) {
+            this.fileGrabber = fileGrabber;
+        }
+
+        public File getLocalDirectory() {
+            return localDirectory;
+        }
+        
+        public void setLocalDirectory(File localDirectory) {
+            this.localDirectory = localDirectory;
+        }
+        
         @Override
         public String toString() {
             return "FacilityStatus [facilityId=" + facilityId + ", status="
@@ -111,19 +130,24 @@ public class FacilityStatusManager {
         }
     }
     
-    public FacilityStatus attachStatus(Facility facility) {
+    public FacilityStatus getStatus(Facility facility) {
         FacilityStatus status = facilityStatuses.get(facility.getId());
         if (status == null) {
             status = new FacilityStatus(facility.getId(), 
                     facility.isDisabled() ? Status.DISABLED : Status.OFF, "");
             facilityStatuses.put(facility.getId(), status);
-        } else if (status.getStatus() == Status.OFF && facility.isDisabled()) {
+        }
+        return status;
+    }
+
+    public void attachStatus(Facility facility) {
+        FacilityStatus status = getStatus(facility);
+        if (status.getStatus() == Status.OFF && facility.isDisabled()) {
             status.setStatus(Status.DISABLED);
         } else if (status.getStatus() == Status.DISABLED && !facility.isDisabled()) {
             status.setStatus(Status.OFF);
         }
         facility.setStatus(status);
-        return status;
     }
 
     public List<FacilitySession> getLatestSessions() {

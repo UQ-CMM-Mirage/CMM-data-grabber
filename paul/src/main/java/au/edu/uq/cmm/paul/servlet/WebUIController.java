@@ -261,26 +261,40 @@ public class WebUIController {
     
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
             params={"start"})
-    public String startWatcher(@PathVariable String facilityName, Model model) 
-            throws ConfigurationException {
+    public String startWatcher(@PathVariable String facilityName, Model model,
+            HttpServletRequest request, HttpServletResponse response) 
+            throws IOException {
         Facility facility = lookupFacilityByName(facilityName);
         if (facility != null) {
             getFileWatcher().startFileWatching(facility);
         }
-        model.addAttribute("facility", facility);
-        return "facility";
+        String returnTo = request.getParameter("returnTo");
+        if (returnTo == null || returnTo.isEmpty()) {
+            returnTo = request.getContextPath() + "/facilities";
+        } else if (returnTo.startsWith("/")) {
+            returnTo = request.getContextPath() + returnTo;
+        }
+        response.sendRedirect(returnTo);
+        return null;
     }
     
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
             params={"stop"})
-    public String stopWatcher(@PathVariable String facilityName, Model model) 
-            throws ConfigurationException {
+    public String stopWatcher(@PathVariable String facilityName, Model model,
+            HttpServletRequest request, HttpServletResponse response) 
+            throws IOException {
         Facility facility = lookupFacilityByName(facilityName);
         if (facility != null) {
             getFileWatcher().stopFileWatching(facility);
         }
-        model.addAttribute("facility", facility);
-        return "facility";
+        String returnTo = request.getParameter("returnTo");
+        if (returnTo == null || returnTo.isEmpty()) {
+            returnTo = request.getContextPath() + "/facilities";
+        } else if (returnTo.startsWith("/")) {
+            returnTo = request.getContextPath() + returnTo;
+        }
+        response.sendRedirect(returnTo);
+        return null;
     }
     
     @RequestMapping(value="/mirage", method=RequestMethod.GET)

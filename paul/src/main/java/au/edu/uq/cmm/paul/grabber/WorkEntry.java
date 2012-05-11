@@ -26,6 +26,8 @@ import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.status.DatafileTemplate;
 import au.edu.uq.cmm.paul.status.Facility;
+import au.edu.uq.cmm.paul.status.FacilityStatusManager;
+import au.edu.uq.cmm.paul.status.FacilityStatusManager.FacilityStatus;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
 
 /**
@@ -40,6 +42,7 @@ class WorkEntry implements Runnable {
 
     private final FileGrabber fileGrabber;
     private final QueueManager queueManager;
+    private final FacilityStatusManager statusManager;
     private final BlockingDeque<FileWatcherEvent> events;
     private final File baseFile;
     private final String instrumentBasePath;
@@ -51,7 +54,8 @@ class WorkEntry implements Runnable {
     public WorkEntry(Paul services, FileWatcherEvent event, File baseFile) {
         this.facility = (Facility) event.getFacility();
         this.timestamp = new Date(event.getTimestamp());
-        this.fileGrabber = facility.getFileGrabber();
+        this.statusManager = services.getFacilityStatusManager();
+        this.fileGrabber = statusManager.getStatus(facility).getFileGrabber();
         this.queueManager = services.getQueueManager();
         this.baseFile = baseFile;
         this.instrumentBasePath = mapToInstrumentPath(facility, baseFile);
@@ -64,7 +68,8 @@ class WorkEntry implements Runnable {
 
     private String mapToInstrumentPath(Facility facility, File file) {
         String filePath = file.getAbsolutePath();
-        String directoryPath = facility.getLocalDirectory().getAbsolutePath();
+        FacilityStatus status = statusManager.getStatus(facility);
+        String directoryPath = status.getLocalDirectory().getAbsolutePath();
         if (!filePath.startsWith(directoryPath)) {
             throw new PaulException("Bad path base: '" + filePath +
                     "' does not start with '" + directoryPath);
