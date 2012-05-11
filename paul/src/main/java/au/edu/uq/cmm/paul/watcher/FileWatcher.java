@@ -27,7 +27,8 @@ import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.grabber.FileGrabber;
 import au.edu.uq.cmm.paul.status.Facility;
-import au.edu.uq.cmm.paul.status.Facility.Status;
+import au.edu.uq.cmm.paul.status.FacilityStatusManager.FacilityStatus;
+import au.edu.uq.cmm.paul.status.FacilityStatusManager.Status;
 
 public class FileWatcher extends MonitoredThreadServiceBase {
     private static class WatcherEntry {
@@ -159,36 +160,36 @@ public class FileWatcher extends MonitoredThreadServiceBase {
         FileSystem fs = FileSystems.getDefault();
         watcher = fs.newWatchService();
         for (FacilityConfig facility : services.getFacilityMapper().allFacilities()) {
-            startFileWatching((Facility) facility, false);
+            startFileWatching((Facility) facility);
         }
     }
 
-    public void startFileWatching(Facility facility, boolean enable) {
+    public void startFileWatching(Facility facility) {
         // FIXME - file grabber start / stop is not properly synchronized.
-        LOG.debug("StartFileWatching(" + facility.getFacilityName() + 
-                "," + enable + ")");
+        LOG.debug("StartFileWatching(" + facility.getFacilityName() + ")");
         String name = facility.getFolderName();
         File local;
-        if (getState() != Service.State.STARTED) {
-            facility.setStatus(Status.OFF);
-            facility.setMessage("File watcher service is not running");
-        } else if (facility.getStatus() == Status.DISABLED && !enable) {
-            // leave it disabled
+        FacilityStatus status = services.getFacilityStatusManager().attachStatus(facility);
+        if (facility.isDisabled()) {
+            status.setStatus(Status.DISABLED);
+        } else if (getState() != Service.State.STARTED) {
+            status.setStatus(Status.OFF);
+            status.setMessage("File watcher service is not running");
         } else if (name == null) {
             LOG.info("Facility's folder name is unset");
-            facility.setStatus(Status.OFF);
-            facility.setMessage("Facility's folder name is unset");
+            status.setStatus(Status.OFF);
+            status.setMessage("Facility's folder name is unset");
         } else if ((local = uncNameMapper.mapUncPathname(name)) == null) {
             LOG.info("Facility's folder name (" +
                     name + ") isn't a Samba share on this host");
-            facility.setStatus(Status.OFF);
-            facility.setMessage("Facility's folder name (" +
+            status.setStatus(Status.OFF);
+            status.setMessage("Facility's folder name (" +
                     name + ") isn't a Samba share on this host");
         } else if (!local.exists()) {
             LOG.info("Facility folder name '" + name + 
                     "' maps to non-existent local path '" + local + "'");
-            facility.setStatus(Status.OFF);
-            facility.setMessage("Facility folder name '" + name + 
+            status.setStatus(Status.OFF);
+            status.setMessage("Facility folder name '" + name + 
                     "' maps to non-existent local path '" + local + "'");
         } else {
             try {
@@ -197,23 +198,22 @@ public class FileWatcher extends MonitoredThreadServiceBase {
                 facility.setFileGrabber(grabber);
                 grabber.startStartup();
                 addKeys(facility, local, null);
-                facility.setStatus(Status.ON);
-                facility.setMessage("");
+                status.setStatus(Status.ON);
+                status.setMessage("");
             } catch (IOException ex) {
                 LOG.error("IOException occured while enabling watcher for '" + 
                         name + "'", ex);
-                facility.setStatus(Status.OFF);
-                facility.setMessage(
+                status.setStatus(Status.OFF);
+                status.setMessage(
                         "An IO exception occured while enabling watcher for '" + 
                                 name + "' - see logs for details");
             }
         }
     }
     
-    public void stopFileWatching(Facility facility, boolean disable) {
+    public void stopFileWatching(Facility facility) {
         // FIXME - file grabber start / stop is not properly synchronized.
-        LOG.debug("StopFileWatching(" + facility.getFacilityName() + 
-                "," + disable + ")");
+        LOG.debug("StopFileWatching(" + facility.getFacilityName() + ")");
         try {
             if (facility.getFileGrabber() == null) {
                 return;
@@ -226,8 +226,10 @@ public class FileWatcher extends MonitoredThreadServiceBase {
                     break;
                 }
             }
-            facility.setStatus(disable ? Status.DISABLED : Status.OFF);
-            facility.setMessage("");
+            FacilityStatus status =
+                    services.getFacilityStatusManager().attachStatus(facility);
+            status.setStatus(facility.isDisabled() ? Status.DISABLED : Status.OFF);
+            status.setMessage("");
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
         }

@@ -71,7 +71,7 @@ public class FileGrabber extends CompositeServiceBase
         this.services = services;
         this.facility = facility;
         facility.setFileGrabber(this);
-        statusManager = services.getFacilitySessionManager();
+        statusManager = services.getFacilityStatusManager();
         safeDirectory = new File(
                 services.getConfiguration().getCaptureDirectory());
         if (!safeDirectory.exists() || !safeDirectory.isDirectory()) {

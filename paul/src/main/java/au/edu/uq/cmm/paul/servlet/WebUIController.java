@@ -130,7 +130,7 @@ public class WebUIController {
     
     @RequestMapping(value="/sessions", method=RequestMethod.GET)
     public String status(Model model) {
-        model.addAttribute("sessions", services.getFacilitySessionManager().getLatestSessions());
+        model.addAttribute("sessions", services.getFacilityStatusManager().getLatestSessions());
         return "sessions";
     }
     
@@ -140,7 +140,7 @@ public class WebUIController {
             @RequestParam String sessionUuid, 
             HttpServletResponse response, HttpServletRequest request) 
     throws IOException, AclsAuthenticationException {
-        services.getFacilitySessionManager().logoutSession(sessionUuid);
+        services.getFacilityStatusManager().logoutSession(sessionUuid);
         response.sendRedirect(response.encodeRedirectURL(
                 request.getContextPath() + "/sessions"));
         return null;
@@ -148,7 +148,11 @@ public class WebUIController {
     
     @RequestMapping(value="/facilities", method=RequestMethod.GET)
     public String facilities(Model model) {
-        model.addAttribute("facilities", getFacilities());
+        Collection<FacilityConfig> facilities = getFacilities();
+        for (FacilityConfig fc : facilities) {
+            services.getFacilityStatusManager().attachStatus((Facility) fc);
+        }
+        model.addAttribute("facilities", facilities);
         return "facilities";
     }
     
@@ -239,7 +243,7 @@ public class WebUIController {
                     "Can't find facility configuration for '" + facilityName + "'");
             return "failed";
         }
-        getFileWatcher().stopFileWatching(facility, true);
+        getFileWatcher().stopFileWatching(facility);
         services.getConfigManager().deleteFacility(facilityName);
         model.addAttribute("message", "Facility configuration deleted");
         return "ok";
@@ -250,42 +254,30 @@ public class WebUIController {
     public String facilitySessions(@PathVariable String facilityName, Model model) 
             throws ConfigurationException {
         model.addAttribute("sessions", 
-                services.getFacilitySessionManager().sessionsForFacility(facilityName));
+                services.getFacilityStatusManager().sessionsForFacility(facilityName));
         model.addAttribute("facilityName", facilityName);
         return "facilitySessions";
     }
     
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
-            params={"enableWatcher"})
-    public String enableWatcher(@PathVariable String facilityName, Model model) 
+            params={"start"})
+    public String startWatcher(@PathVariable String facilityName, Model model) 
             throws ConfigurationException {
         Facility facility = lookupFacilityByName(facilityName);
         if (facility != null) {
-            getFileWatcher().startFileWatching(facility, true);
+            getFileWatcher().startFileWatching(facility);
         }
         model.addAttribute("facility", facility);
         return "facility";
     }
     
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
-            params={"disableWatcher"})
-    public String disableWatcher(@PathVariable String facilityName, Model model) 
+            params={"stop"})
+    public String stopWatcher(@PathVariable String facilityName, Model model) 
             throws ConfigurationException {
         Facility facility = lookupFacilityByName(facilityName);
         if (facility != null) {
-            getFileWatcher().stopFileWatching(facility, true);
-        }
-        model.addAttribute("facility", facility);
-        return "facility";
-    }
-    
-    @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
-            params={"pauseWatcher"})
-    public String pauseWatcher(@PathVariable String facilityName, Model model) 
-            throws ConfigurationException {
-        Facility facility = lookupFacilityByName(facilityName);
-        if (facility != null) {
-            getFileWatcher().stopFileWatching(facility, false);
+            getFileWatcher().stopFileWatching(facility);
         }
         model.addAttribute("facility", facility);
         return "facility";
@@ -343,7 +335,7 @@ public class WebUIController {
             @RequestParam(required=false) String returnTo,
             Model model, HttpServletResponse response, HttpServletRequest request) 
                     throws IOException {
-        FacilityStatusManager fsm = services.getFacilitySessionManager();
+        FacilityStatusManager fsm = services.getFacilityStatusManager();
         facilityName = tidy(facilityName);
         returnTo = tidy(returnTo);
         if (!returnTo.startsWith(request.getContextPath())) {

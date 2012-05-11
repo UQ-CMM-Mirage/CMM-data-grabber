@@ -129,7 +129,7 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
         LOG.info("Startup completed");
     }
 
-    public FacilityStatusManager getFacilitySessionManager() {
+    public FacilityStatusManager getFacilityStatusManager() {
         return statusManager;
     }
 

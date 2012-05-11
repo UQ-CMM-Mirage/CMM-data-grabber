@@ -24,6 +24,7 @@ import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.paul.DatafileTemplateConfig;
 import au.edu.uq.cmm.paul.GrabberFacilityConfig;
 import au.edu.uq.cmm.paul.grabber.FileGrabber;
+import au.edu.uq.cmm.paul.status.FacilityStatusManager.FacilityStatus;
 
 /**
  * The Paul implementation of FacilityConfig persists the configuration data
@@ -39,10 +40,6 @@ import au.edu.uq.cmm.paul.grabber.FileGrabber;
             @UniqueConstraint(columnNames={"localHostId"})})
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public class Facility implements FacilityConfig {
-    public enum Status {
-        ON, DISABLED, OFF
-    }
-
     private Long id;
     
     private boolean useFullScreen;
@@ -59,10 +56,10 @@ public class Facility implements FacilityConfig {
     private int fileSettlingTime;
     private String address;
     private List<DatafileTemplate> datafileTemplates;
-    private Status status = Status.OFF;
-    private String message = "";
+    private boolean disabled;
     private FileGrabber fileGrabber;
     private File localDirectory;
+    private FacilityStatus status;
     
 
     public Facility() {
@@ -200,23 +197,13 @@ public class Facility implements FacilityConfig {
     public void setDatafileTemplates(List<DatafileTemplate> templates) {
         this.datafileTemplates = templates;
     }
-    
-    public Status getStatus() {
-        return status;
+
+    public boolean isDisabled() {
+        return disabled;
     }
 
-    public void setStatus(Status status) {
-        this.status = status;
-    }
-
-    @JsonIgnore
-    @Transient
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
+    public void setDisabled(boolean disabled) {
+        this.disabled = disabled;
     }
 
     @Id
@@ -256,5 +243,31 @@ public class Facility implements FacilityConfig {
     
     public void setLocalDirectory(File localDirectory) {
         this.localDirectory = localDirectory;
+    }
+
+    @JsonIgnore
+    @Transient
+    public FacilityStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(FacilityStatus status) {
+        this.status = status;
+    }
+
+    @Override
+    public String toString() {
+        return "Facility [id=" + id + ", useFullScreen=" + useFullScreen
+                + ", driveName=" + driveName + ", accessPassword="
+                + accessPassword + ", accessName=" + accessName
+                + ", folderName=" + folderName + ", facilityName="
+                + facilityName + ", localHostId=" + localHostId + ", useTimer="
+                + useTimer + ", facilityDescription=" + facilityDescription
+                + ", useFileLocks=" + useFileLocks + ", caseInsensitive="
+                + caseInsensitive + ", fileSettlingTime=" + fileSettlingTime
+                + ", address=" + address + ", datafileTemplates="
+                + datafileTemplates + ", disabled=" + disabled
+                + ", fileGrabber=" + fileGrabber + ", localDirectory="
+                + localDirectory + ", status=" + status + "]";
     }
 }
