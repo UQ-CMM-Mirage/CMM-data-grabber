@@ -1,8 +1,11 @@
 package au.edu.uq.cmm.paul.status;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -27,10 +30,73 @@ import au.edu.uq.cmm.paul.grabber.FileGrabber;
  * @author scrawley
  */
 public class FacilityStatusManager {
+    public enum Status {
+        ON, DISABLED, OFF
+    }
+
+    public static class FacilityStatus {
+        private final Long facilityId;
+        private Status status;
+        private String message;
+        private File localDirectory;
+        private FileGrabber fileGrabber;
+        
+        public FacilityStatus(Long facilityId, Status status, String message) {
+            super();
+            this.facilityId = facilityId;
+            this.status = status;
+            this.message = message;
+        }
+
+        public Status getStatus() {
+            return status;
+        }
+
+        public void setStatus(Status status) {
+            this.status = status;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+
+        public Long getFacilityId() {
+            return facilityId;
+        }
+
+        public FileGrabber getFileGrabber() {
+            return this.fileGrabber;
+        }
+
+        public void setFileGrabber(FileGrabber fileGrabber) {
+            this.fileGrabber = fileGrabber;
+        }
+
+        public File getLocalDirectory() {
+            return localDirectory;
+        }
+        
+        public void setLocalDirectory(File localDirectory) {
+            this.localDirectory = localDirectory;
+        }
+        
+        @Override
+        public String toString() {
+            return "FacilityStatus [facilityId=" + facilityId + ", status="
+                    + status + ", message=" + message + "]";
+        }
+    }
+    
     private static final Logger LOG = LoggerFactory.getLogger(FileGrabber.class);
     // FIXME - the facility statuses need to be persisted.
     private EntityManagerFactory emf;
     private AclsHelper aclsHelper;
+    private Map<Long, FacilityStatus> facilityStatuses = 
+            new HashMap<Long, FacilityStatus>();
 
     public FacilityStatusManager(Paul services) {
         this.emf = services.getEntityManagerFactory();
@@ -62,6 +128,26 @@ public class FacilityStatusManager {
         } finally {
             em.close();
         }
+    }
+    
+    public FacilityStatus getStatus(Facility facility) {
+        FacilityStatus status = facilityStatuses.get(facility.getId());
+        if (status == null) {
+            status = new FacilityStatus(facility.getId(), 
+                    facility.isDisabled() ? Status.DISABLED : Status.OFF, "");
+            facilityStatuses.put(facility.getId(), status);
+        }
+        return status;
+    }
+
+    public void attachStatus(Facility facility) {
+        FacilityStatus status = getStatus(facility);
+        if (status.getStatus() == Status.OFF && facility.isDisabled()) {
+            status.setStatus(Status.DISABLED);
+        } else if (status.getStatus() == Status.DISABLED && !facility.isDisabled()) {
+            status.setStatus(Status.OFF);
+        }
+        facility.setStatus(status);
     }
 
     public List<FacilitySession> getLatestSessions() {

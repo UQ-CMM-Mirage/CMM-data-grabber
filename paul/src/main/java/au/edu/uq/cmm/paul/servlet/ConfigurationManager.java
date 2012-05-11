@@ -206,6 +206,7 @@ public class ConfigurationManager {
         res.setUseFileLocks(getBoolean(params, "useFileLocks", diags));
         res.setUseFullScreen(getBoolean(params, "useFullScreen", diags));
         res.setUseTimer(getBoolean(params, "useTimer", diags));
+        res.setDisabled(getBoolean(params, "disabled", diags));
         
         List<DatafileTemplate> templates = new LinkedList<DatafileTemplate>();
         int last = getInteger(params, "lastTemplate", diags);
