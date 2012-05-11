@@ -157,81 +157,78 @@
 					<tr>
 						<td colspan="3">Facility name</td>
 						<td><input name="facilityName" type="text" class="span4"
-							${edit ? '' : 'readonly="readonly"
-							'}
-						value="${facility.facilityName}"></td>
+								${edit ? '' : 'readonly="readonly"'}
+								value="${facility.facilityName}"></td>
 						<td><strong>${diags.facilityName}</strong></td>
+					</tr>
+					<tr>
+						<td colspan="3">Facility disabled</td>
+						<td><input name="disabled" type="checkbox"
+								${edit ? '' : 'readonly="readonly"'}
+								${facility.disabled ? 'checked="checked"' : ''}
+						value="true"></td>
+						<td><strong>${diags.disabled}</strong></td>
 					</tr>
 					<tr>
 						<td colspan="3">Facility description</td>
 						<td><input name="facilityDescription" type="text"
-							class="span4" ${edit ? '' : 'readonly="readonly"
-							'}
-						value="${facility.facilityDescription}"></td>
+								class="span4" ${edit ? '' : 'readonly="readonly"'}
+								value="${facility.facilityDescription}"></td>
 						<td><strong>${diags.facilityDescription}</strong></td>
 					</tr>
 					<tr>
 						<td colspan="3">DNS name / IP address</td>
 						<td><input name="address" type="text" class="span4"
-							${edit ? '' : 'readonly="readonly"
-							'}
-						value="${facility.address}"></td>
+								${edit ? '' : 'readonly="readonly"'}
+								value="${facility.address}"></td>
 						<td><strong>${diags.address}</strong></td>
 					</tr>
 					<tr>
 						<td colspan="3">Local Host ID</td>
 						<td><input name="localHostId" type="text" class="span4"
-							${edit ? '' : 'readonly="readonly"
-							'}
-						value="${facility.localHostId}"></td>
+								${edit ? '' : 'readonly="readonly"'}
+								value="${facility.localHostId}"></td>
 						<td><strong>${diags.localHostId}</strong></td>
 					</tr>
 					<tr>
 						<td colspan="3">Drive name</td>
 						<td><input name="driveName" type="text" class="span4"
-							${edit ? '' : 'readonly="readonly"
-							'}
+							${edit ? '' : 'readonly="readonly"'}
 						value="${facility.driveName}"></td>
 						<td><strong>${diags.driveName}</strong></td>
 					</tr>
 					<tr>
 						<td colspan="3">Folder name</td>
 						<td><input name="folderName" type="text" class="span4"
-							${edit ? '' : 'readonly="readonly"
-							'}
-						value="${facility.folderName}"></td>
+								${edit ? '' : 'readonly="readonly"'}
+								value="${facility.folderName}"></td>
 						<td><strong>${diags.folderName}</strong></td>
 					</tr>
 					<tr>
 						<td colspan="3">Access name</td>
 						<td><input name="accessName" type="text" class="span4"
-							${edit ? '' : 'readonly="readonly"
-							'}
-						value="${facility.accessName}"></td>
+								${edit ? '' : 'readonly="readonly"'}
+								value="${facility.accessName}"></td>
 						<td><strong>${diags.accessName}</strong></td>
 					</tr>
 					<tr>
 						<td colspan="3">Access password</td>
 						<td><input name="accessPassword" type="text" class="span4"
-							${edit ? '' : 'readonly="readonly"
-							'}
-						value="${facility.accessPassword}"></td>
+								${edit ? '' : 'readonly="readonly"'}
+								value="${facility.accessPassword}"></td>
 						<td><strong>${diags.accessPassword}</strong></td>
 					</tr>
 					<tr>
 						<td colspan="3">Case insensitive datafile matching</td>
 						<td><input name="caseInsensitive" type="checkbox"
-							${edit ? ' ' : ' readonly="readonly"
-							'}
-						${facility.caseInsensitive ? ' checked="checked"
-							' : ' '}
+								${edit ? '' : 'readonly="readonly"'}
+								${facility.caseInsensitive ? ' checked="checked"' : ''}
 						value="true"></td>
 						<td><strong>${diags.caseInsensitive}</strong></td>
 					</tr>
 					<tr id="templateStart">
 						<td colspan="3">Datafile templates</td>
-						<td>${(!edit && empty facility.datafileTemplates) ? 'none' :
-							''}</td>
+						<td>${(!edit && empty facility.datafileTemplates) ? 'none' :''}</td>
 						<td><c:if test="${edit}">
 								<button type="button" onclick="addTemplate(0)">Add</button>
 							</c:if></td>
@@ -251,9 +248,8 @@
 							<td>&nbsp;</td>
 							<td>File pattern</td>
 							<td><input name="template${index}filePattern" type="text"
-								class="span4" ${edit ? '' : 'readonly="readonly"
-								'}
-								value="${template.filePattern}"></td>
+									class="span4" ${edit ? '' : 'readonly="readonly"'}
+									value="${template.filePattern}"></td>
 							<td><c:set var="key" value="template${index}filePattern" />
 								<strong>${diags[key]}</strong></td>
 						</tr>
@@ -262,9 +258,8 @@
 							<td>&nbsp;</td>
 							<td>File mimeType</td>
 							<td><input name="template${index}mimeType" type="text"
-								class="span4" ${edit ? '' : 'readonly="readonly"
-								'}
-								value="${template.mimeType}"></td>
+									class="span4" ${edit ? '' : 'readonly="readonly"'}
+									value="${template.mimeType}"></td>
 							<td><c:set var="key" value="template${index}mimeType" /> <strong>${diags[key]}</strong>
 							</td>
 						</tr>
@@ -273,9 +268,8 @@
 							<td>&nbsp;</td>
 							<td>File suffix</td>
 							<td><input name="template${index}suffix" type="text"
-								class="span4" ${edit ? '' : 'readonly="readonly"
-								'}
-								value="${template.suffix}"></td>
+									class="span4" ${edit ? '' : 'readonly="readonly"'}
+									value="${template.suffix}"></td>
 							<td><c:set var="key" value="template${index}suffix" /> <strong>${diags[key]}</strong>
 							</td>
 						</tr>
@@ -284,11 +278,9 @@
 							<td>&nbsp;</td>
 							<td>File is optional</td>
 							<td><input name="template${index}optional" type="checkbox"
-								${edit ? ' ' : ' readonly="readonly"
-								'}
-							${template.optional ? ' checked="checked"
-								' : ' '}
-							value="true"></td>
+									${edit ? '' : 'readonly="readonly"'}
+									${template.optional ? 'checked="checked"' : ''}
+									value="true"></td>
 							<td><c:set var="key" value="template${index}optional" /> <strong>${diags[key]}</strong>
 							</td>
 						</tr>
@@ -297,38 +289,31 @@
 					<tr id="templateEnd">
 						<td colspan="3">File settling time (milliseconds)</td>
 						<td><input name="fileSettlingTime" type="text" class="span4"
-							${edit ? '' : 'readonly="readonly"
-							'}
-						value="${facility.fileSettlingTime}"></td>
+								${edit ? '' : 'readonly="readonly"'}
+								value="${facility.fileSettlingTime}"></td>
 						<td><strong>${diags.fileSettlingTime}</strong></td>
 					</tr>
 					<tr>
 						<td colspan="3">Uses file locking</td>
 						<td><input name="useFileLocks" type="checkbox"
-							${edit ? ' ' : ' readonly="readonly"
-							'}
-						${facility.useFileLocks ? ' checked="checked"
-							' : ' '}
-						value="true"></td>
+								${edit ? '' : 'readonly="readonly"'}
+								${facility.useFileLocks ? 'checked="checked"' : ''}
+								value="true"></td>
 						<td><strong>${diags.useFileLocks}</strong></td>
 					</tr>
 					<tr>
 						<td colspan="3">Client uses timer</td>
 						<td><input name="useTimer" type="checkbox"
-							${edit ? ' ' : ' readonly="readonly"
-							'}
-						${facility.useTimer ? ' checked="checked"
-							' : ' '}
+								${edit ? '' : 'readonly="readonly"'}
+								${facility.useTimer ? 'checked="checked"' : ''}
 						value="true"></td>
 						<td><strong>${diags.useTimer}</strong></td>
 					</tr>
 					<tr>
 						<td colspan="3">Client uses full screen</td>
 						<td><input name="useFullScreen" type="checkbox"
-							${edit ? ' ' : ' readonly="readonly"
-							'}
-						${facility.useFullScreen ? ' checked="checked"
-							' : ' '}
+								${edit ? '' : 'readonly="readonly"'}
+								${facility.useFullScreen ? 'checked="checked"' : ''}
 						value="true"></td>
 						<td><strong>${diags.useFullScreen}</strong></td>
 					</tr>

@@ -27,7 +27,8 @@ import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.grabber.FileGrabber;
 import au.edu.uq.cmm.paul.status.Facility;
-import au.edu.uq.cmm.paul.status.Facility.Status;
+import au.edu.uq.cmm.paul.status.FacilityStatusManager.FacilityStatus;
+import au.edu.uq.cmm.paul.status.FacilityStatusManager.Status;
 
 public class FileWatcher extends MonitoredThreadServiceBase {
     private static class WatcherEntry {
@@ -90,7 +91,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
     public void run() {
         watcher = null;
         try {
-            configureWatcher();
+            startWatcher();
             while (true) {
                 WatchKey key = watcher.take();
                 WatcherEntry entry = watchMap.get(key);
@@ -106,15 +107,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
         } catch (InterruptedException ex) {
             LOG.debug("Interrupted ... we're done");
         } finally {
-            if (watcher != null) {
-                try {
-                    watcher.close();
-                } catch (IOException ex) {
-                    LOG.debug("Exception in watcher close", ex);
-                } finally {
-                    watcher = null;
-                }
-            }
+            stopWatcher();
         }
     }
 
@@ -149,88 +142,110 @@ public class FileWatcher extends MonitoredThreadServiceBase {
     
     private void notifyEvent(Facility facility, File file, boolean create) {
         long now = System.currentTimeMillis();
-        FileGrabber grabber = facility.getFileGrabber();
+        FacilityStatus status = services.getFacilityStatusManager().getStatus(facility);
+        FileGrabber grabber = status.getFileGrabber();
         if (grabber != null) {
             grabber.eventOccurred(new FileWatcherEvent(facility, file, create, now));
         }
     }
 
-    private void configureWatcher() throws IOException {
+    private void startWatcher() throws IOException {
         FileSystem fs = FileSystems.getDefault();
         watcher = fs.newWatchService();
         for (FacilityConfig facility : services.getFacilityMapper().allFacilities()) {
-            startFileWatching((Facility) facility, false);
+            startFileWatching((Facility) facility);
         }
     }
 
-    public void startFileWatching(Facility facility, boolean enable) {
+    private void stopWatcher() {
+        if (watcher == null) {
+            return;
+        }
+        try {
+            for (FacilityConfig facility : services.getFacilityMapper().allFacilities()) {
+                stopFileWatching((Facility) facility);
+            }
+        } finally {
+            try {
+                watcher.close();
+            } catch (IOException ex) {
+                LOG.debug("Exception in watcher close", ex);
+            } finally {
+                watcher = null;
+            }
+        }
+    }
+    
+    public void startFileWatching(Facility facility) {
         // FIXME - file grabber start / stop is not properly synchronized.
-        LOG.debug("StartFileWatching(" + facility.getFacilityName() + 
-                "," + enable + ")");
+        LOG.debug("StartFileWatching(" + facility.getFacilityName() + ")");
         String name = facility.getFolderName();
         File local;
-        if (getState() != Service.State.STARTED) {
-            facility.setStatus(Status.OFF);
-            facility.setMessage("File watcher service is not running");
-        } else if (facility.getStatus() == Status.DISABLED && !enable) {
-            // leave it disabled
+        FacilityStatus status = services.getFacilityStatusManager().getStatus(facility);
+        if (facility.isDisabled()) {
+            status.setStatus(Status.DISABLED);
+        } else if (getState() != Service.State.STARTED) {
+            status.setStatus(Status.OFF);
+            status.setMessage("File watcher service is not running");
         } else if (name == null) {
             LOG.info("Facility's folder name is unset");
-            facility.setStatus(Status.OFF);
-            facility.setMessage("Facility's folder name is unset");
+            status.setStatus(Status.OFF);
+            status.setMessage("Facility's folder name is unset");
         } else if ((local = uncNameMapper.mapUncPathname(name)) == null) {
             LOG.info("Facility's folder name (" +
                     name + ") isn't a Samba share on this host");
-            facility.setStatus(Status.OFF);
-            facility.setMessage("Facility's folder name (" +
+            status.setStatus(Status.OFF);
+            status.setMessage("Facility's folder name (" +
                     name + ") isn't a Samba share on this host");
         } else if (!local.exists()) {
             LOG.info("Facility folder name '" + name + 
                     "' maps to non-existent local path '" + local + "'");
-            facility.setStatus(Status.OFF);
-            facility.setMessage("Facility folder name '" + name + 
+            status.setStatus(Status.OFF);
+            status.setMessage("Facility folder name '" + name + 
                     "' maps to non-existent local path '" + local + "'");
         } else {
             try {
-                facility.setLocalDirectory(local);
+                status.setLocalDirectory(local);
                 FileGrabber grabber = new FileGrabber(services, facility);
-                facility.setFileGrabber(grabber);
+                status.setFileGrabber(grabber);
                 grabber.startStartup();
                 addKeys(facility, local, null);
-                facility.setStatus(Status.ON);
-                facility.setMessage("");
+                status.setStatus(Status.ON);
+                status.setMessage("");
             } catch (IOException ex) {
                 LOG.error("IOException occured while enabling watcher for '" + 
                         name + "'", ex);
-                facility.setStatus(Status.OFF);
-                facility.setMessage(
+                status.setStatus(Status.OFF);
+                status.setMessage(
                         "An IO exception occured while enabling watcher for '" + 
                                 name + "' - see logs for details");
             }
         }
     }
     
-    public void stopFileWatching(Facility facility, boolean disable) {
+    public void stopFileWatching(Facility facility) {
         // FIXME - file grabber start / stop is not properly synchronized.
-        LOG.debug("StopFileWatching(" + facility.getFacilityName() + 
-                "," + disable + ")");
+        LOG.debug("StopFileWatching(" + facility.getFacilityName() + ")");
         try {
-            if (facility.getFileGrabber() == null) {
-                return;
+            FacilityStatus status = services.getFacilityStatusManager().getStatus(facility);
+            if (status.getFileGrabber() == null) {
+                LOG.debug("No file grabber found");
+            } else {
+                status.getFileGrabber().shutdown();
+                status.setFileGrabber(null);
             }
-            facility.getFileGrabber().shutdown();
-            facility.setFileGrabber(null);
             for (WatcherEntry entry : watchMap.values()) {
                 if (entry.facility == facility && entry.parent == null) {
                     removeKey(entry, true);
                     break;
                 }
             }
-            facility.setStatus(disable ? Status.DISABLED : Status.OFF);
-            facility.setMessage("");
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
         }
+        FacilityStatus status = services.getFacilityStatusManager().getStatus(facility);
+        status.setStatus(facility.isDisabled() ? Status.DISABLED : Status.OFF);
+        status.setMessage("");
     }
 
     private void addKeys(Facility facility, File local, WatcherEntry parent) 

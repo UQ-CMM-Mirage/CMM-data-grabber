@@ -18,8 +18,8 @@
 				<tr>
 					<th class="span3">Facility</th>
 					<th class="span3">Description</th>
-					<th class="span1">Status</th>
-					<th class="span5"></th>
+					<th class="span2">Data Grabbing</th>
+					<th class="span4"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -29,19 +29,25 @@
 								${facility.facilityName}</a></td>
 						<td>${facility.facilityDescription}</td>
 						<td>
-							${facility.status}
-							<c:if test="${! empty facility.message}">
-								<br>${facility.message}
+							${facility.status.status}
+							<c:if test="${! empty facility.status.message}">
+								<br>${facility.status.message}
 							</c:if>
 						</td>
 						<td class="form-inline,btn-toolbar">
 							<form action="facilities/${facility.facilityName}" method="post">
-								<c:if test="${facility.status == 'ON'}">
-									<button class="btn" type="submit" name="disableWatcher">Stop</button>
-								</c:if>
-									<c:if test="${facility.status == 'DISABLED' || facility.status == 'OFF'}">
-										<button class="btn" type="submit" name="enableWatcher">Start</button>
-								</c:if>
+								<c:choose>
+									<c:when test="${facility.status.status == 'ON'}">
+										<button class="btn" type="submit" name="stop">Stop</button>
+									</c:when>
+									<c:when test="${facility.status.status == 'OFF'}">
+										<button class="btn" type="submit" name="start">Start</button>
+									</c:when>
+									<c:otherwise>
+										<button class="btn" type="submit" name="start"
+												disabled="disabled">Start</button>
+									</c:otherwise>
+								</c:choose>
 								<button class="btn" type="submit" name="sessionLog">Session Log</button>
 								<button class="btn" type="submit" name="copy">Copy</button>
 								<button class="btn" type="submit" name="delete">Delete</button>

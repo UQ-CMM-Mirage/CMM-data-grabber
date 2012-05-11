@@ -28,6 +28,7 @@ import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.status.Facility;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
+import au.edu.uq.cmm.paul.status.FacilityStatusManager.FacilityStatus;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEventListener;
 
@@ -70,8 +71,9 @@ public class FileGrabber extends CompositeServiceBase
     public FileGrabber(Paul services, Facility facility) {
         this.services = services;
         this.facility = facility;
-        facility.setFileGrabber(this);
-        statusManager = services.getFacilitySessionManager();
+        statusManager = services.getFacilityStatusManager();
+        FacilityStatus status = statusManager.getStatus(facility);
+        status.setFileGrabber(this);
         safeDirectory = new File(
                 services.getConfiguration().getCaptureDirectory());
         if (!safeDirectory.exists() || !safeDirectory.isDirectory()) {
@@ -111,7 +113,8 @@ public class FileGrabber extends CompositeServiceBase
             heldEvents = new ArrayList<FileWatcherEvent>();
         }
         executor = new ThreadPoolExecutor(0, 1, 999, TimeUnit.SECONDS, work);
-        doCatchup(facility.getLocalDirectory(), determineCatchupTime(facility));
+        FacilityStatus status = services.getFacilityStatusManager().getStatus(facility);
+        doCatchup(status.getLocalDirectory(), determineCatchupTime(facility));
         List<FileWatcherEvent> tmp;
         synchronized (this) {
             hold = false;
