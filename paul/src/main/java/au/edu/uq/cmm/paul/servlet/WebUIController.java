@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -222,6 +223,23 @@ public class WebUIController {
             model.addAttribute("returnTo", "/paul/facilities");
             return "ok";
         }
+    }
+    
+    @RequestMapping(value = "/facilities/{facilityName:.+}", method = RequestMethod.POST, 
+            params = {"copy"})
+    public String copyFacilityConfig(@PathVariable String facilityName,
+            Model model) throws ConfigurationException {
+        Facility facility = lookupFacilityByName(facilityName);
+        facility.setFacilityName(null);
+        facility.setId(null);
+        model.addAttribute("edit", true);
+        model.addAttribute("create", true);
+        model.addAttribute("facility", facility);
+        model.addAttribute("diags", Collections.emptyMap());
+        model.addAttribute("message", "Fill in the new facility name, "
+                + "edit the other details and click 'Save New Facility'");
+        model.addAttribute("returnTo", "/paul/facilities");
+        return "facility";
     }
     
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST,
