@@ -10,8 +10,8 @@
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container-fluid">
 		<h1>Data Grabber Operation Succeeded</h1>
-		${message} <br>
-		<button onclick="window.location = '${returnTo}'">OK</button>
+		<div class="alert alert-success">${message}</div>
+		<button class="btn btn-small" onclick="window.location = '${returnTo}'">OK</button>
 	</div>
 	<!-- /container -->
 	<%@ include file="/WEB-INF/jsp/commonFooter.jspFrag"%>

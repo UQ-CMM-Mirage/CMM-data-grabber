@@ -281,7 +281,7 @@ public class FacilityStatusManager {
         try {
             FacilitySession session = latestSession(em, facilityName);
             if (session != null && session.getLogoutTime() == null) {
-                throw new AclsInUseException("Facility " + facilityName + " is in use");
+                throw new AclsInUseException(facilityName, session.getUserName());
             }
             facility = getFacility(em, facilityName);
             if (facility == null) {

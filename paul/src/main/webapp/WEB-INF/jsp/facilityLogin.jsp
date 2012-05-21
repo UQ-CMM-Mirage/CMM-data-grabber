@@ -3,53 +3,67 @@
 <%@ page session="false"%>
 <html lang="en">
 <head>
-<%@ include file="/WEB-INF/jsp/commonHead.jspFrag" %>
-        <title>Data Grabber - Facility Login</title>
-    </head>
-    <body>
-<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag" %>
+<%@ include file="/WEB-INF/jsp/commonHead.jspFrag"%>
+<title>Data Grabber - Instrument Login</title>
+</head>
+<body>
+	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container-fluid">
-        <h1>ACLS Facility Login for "${facilityName}"</h1>
-        
-        <p>
-        Please enter your normal ACLS username and password.  (You will be prompted for
-        your ACLS account name if you have multiple ACLS accounts.)
-        </p>
-        
-        ${message}
-        
-        <form name="form" method="post" action="/paul/facilityLogin">
-          <c:if test="${empty accounts}">
-              User name: <input type="text" name="userName" value="${userName}">
-              <br>
-              Password: <input type="password" name="password" value="${password}">
-          </c:if>
-          <c:if test="${! empty accounts}">
-              User name:  <input type="text" name="userName" 
-              					 value="${userName}" readonly>
-              <br>
-              Password: <input type="password" name="password" 
-                               value="${password}" readonly>
-              <br>
-              <select name="account">
-                  <c:forEach items="${accounts}" var="account">
-                      <option value="${account}">${account}</option>
-                  </c:forEach>
-              </select>
-          </c:if>
-          <br>
-          <input type="hidden" name="facilityName" value="${facilityName}">
-          <input type="hidden" name="returnTo" value="${returnTo}">
-          <c:if test='${empty inUse}'>
-          	  <button type="submit" name="startSession">OK</button>
-          </c:if>
-          <c:if test='${!empty inUse}'>
-          	  <button type="submit" name="startSession">Logout Existing Session</button>
-          	  <input type="hidden" name="endOldSession" value="yes">
-          </c:if>
-          <button type="button" onclick="window.location = '${returnTo}'">Cancel</button>
-        </form>
-	</div><!-- /container -->
-<%@ include file="/WEB-INF/jsp/commonFooter.jspFrag" %>
-    </body>
+		<h1>ACLS Instrument Login</h1>
+
+		<c:choose>
+			<c:when test="${! empty message}">
+				<div class="alert alert-error">${message}</div>
+			</c:when>
+			<c:otherwise>
+				<div class="alert alert-information">Please enter your normal
+					ACLS username and password. (You will be prompted for your ACLS
+					account name if you have multiple ACLS accounts.)</div>
+			</c:otherwise>
+		</c:choose>
+
+		<form class="form-horizontal" name="form" method="post"
+			action="/paul/facilityLogin">
+			<fieldset>
+				<div class="control-group">
+					<label class="control-label" for="userName">User name</label> 
+					<input type="text" name="userName" id="userName"
+					    value="${userName}" ${! empty accounts ? 'readonly' : ''}>
+				</div>
+				<div class="control-group">
+					<label class="control-label" for="password">Password</label> 
+					<input type="password" name="password" id="password" 
+						value="${password}" ${! empty accounts ? 'readonly' : ''}>
+				</div>
+				<c:if test="$! empty accounts}">
+					<div class="control-group">
+						<label class="control-label" for="account">Account</label> <select
+							name="account" id="account">
+							<c:forEach items="${accounts}" var="account">
+								<option value="${account}">${account}</option>
+							</c:forEach>
+						</select>
+					</div>
+				</c:if>
+				<input type="hidden" name="facilityName" value="${facilityName}">
+				<input type="hidden" name="returnTo" value="${returnTo}">
+				<div class="form-actions">
+				<c:choose>
+					<c:when test='${empty inUse}'>
+						<button class="btn btn-primary" type="submit" name="startSession">Start session</button>
+					</c:when>
+					<c:otherwise>
+						<button class="btn btn-danger" type="submit" name="startSession">Override existing
+							session</button>
+						<input type="hidden" name="endOldSession" value="yes">
+					</c:otherwise>
+				</c:choose>
+				<button type="button" onclick="window.location = '${returnTo}'">Cancel</button>
+				</div>
+			</fieldset>
+		</form>
+	</div>
+	<!-- /container -->
+	<%@ include file="/WEB-INF/jsp/commonFooter.jspFrag"%>
+</body>
 </html>
