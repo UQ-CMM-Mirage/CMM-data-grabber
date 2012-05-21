@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <%@ page session="false"%>
 <html lang="en">
 <head>
@@ -26,7 +27,9 @@
 							<tr>
 								<td>${session.facilityName}</td>
 								<td>${session.userName}</td>
-								<td>${session.loginTime}</td>
+								<td><fmt:formatDate value="${session.loginTime}" 
+										type="both" dateStyle="medium"/>
+								</td>
 								<td class="form-inline">
 								    <form class="btn" action="sessions" method="post">
 										<input type="hidden" name="sessionUuid"

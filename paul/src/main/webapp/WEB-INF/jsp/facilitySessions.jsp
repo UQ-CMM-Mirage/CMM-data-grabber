@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <%@ page session="false"%>
 <html lang="en">
 <head>
@@ -30,8 +31,17 @@
 							<tr>
 								<td><a href="../users/${session.userName}">${session.userName}</a></td>
 								<td>${session.account}</td>
-								<td>${session.loginTime}</td>
-								<td>${empty session.logoutTime ? '-' : session.logoutTime}</td>
+								<td><fmt:formatDate value="${session.loginTime}" 
+										type="both" dateStyle="medium"/></td>
+								<td>
+									<c:choose>
+										<c:when test="${empty session.logoutTime}">-</c:when>
+										<c:otherwise>
+											<fmt:formatDate value="${session.logoutTime}" 
+												type="both" dateStyle="medium"/>
+										</c:otherwise>
+									</c:choose>
+								</td>
 								<td>${session.sessionUuid}</td>
 							</tr>
 						</c:forEach>
