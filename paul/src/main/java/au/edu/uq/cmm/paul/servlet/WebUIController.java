@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -60,6 +61,7 @@ import au.edu.uq.cmm.aclslib.proxy.AclsAuthenticationException;
 import au.edu.uq.cmm.aclslib.proxy.AclsInUseException;
 import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.aclslib.service.Service.State;
+import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.eccles.UnknownUserException;
 import au.edu.uq.cmm.eccles.UserDetails;
 import au.edu.uq.cmm.paul.Paul;
@@ -224,6 +226,23 @@ public class WebUIController {
         }
     }
     
+    @RequestMapping(value = "/facilities/{facilityName:.+}", method = RequestMethod.POST, 
+            params = {"copy"})
+    public String copyFacilityConfig(@PathVariable String facilityName,
+            Model model) throws ConfigurationException {
+        Facility facility = lookupFacilityByName(facilityName);
+        facility.setFacilityName(null);
+        facility.setId(null);
+        model.addAttribute("edit", true);
+        model.addAttribute("create", true);
+        model.addAttribute("facility", facility);
+        model.addAttribute("diags", Collections.emptyMap());
+        model.addAttribute("message", "Fill in the new facility name, "
+                + "edit the other details and click 'Save New Facility'");
+        model.addAttribute("returnTo", "/paul/facilities");
+        return "facility";
+    }
+    
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST,
             params={"update"})
     public String updateFacilityConfig(
@@ -333,7 +352,6 @@ public class WebUIController {
     @RequestMapping(value="/facilitySelect", method=RequestMethod.GET)
     public String facilitySelector(Model model, 
             @RequestParam String next) {
-        model.addAttribute("message", "Select a facility from the pulldown");
         model.addAttribute("next", next);
         model.addAttribute("facilities", getFacilities());
         return "facilitySelect";
@@ -359,8 +377,36 @@ public class WebUIController {
         }
     }
     
+    @RequestMapping(value="/facilityLogout")
+    public String facilityLogout(Model model, HttpServletRequest request,
+            @RequestParam String facilityName,
+            @RequestParam(required=false) String returnTo) {
+        model.addAttribute("returnTo", returnTo);
+        GenericPrincipal principal = (GenericPrincipal) request.getUserPrincipal();
+        if (principal == null || !principal.hasRole("ROLE_ACLS_USER")) {
+            model.addAttribute("message", "I don't know your ACLS userName");
+            return "failed";
+        }
+        String userName = principal.getName();
+        FacilityStatusManager fsm = services.getFacilityStatusManager();
+        FacilitySession session = fsm.getLoginDetails(facilityName, System.currentTimeMillis());
+        if (session == null || !session.getUserName().equals(userName)) {
+            model.addAttribute("message", "You are not logged in on '" + facilityName + "'");
+            return "failed";
+        }
+        try {
+            fsm.logoutSession(session.getSessionUuid());
+            model.addAttribute("message", "Your session has been logged out");
+            return "ok";
+        } catch (AclsAuthenticationException ex) {
+            LOG.error("Session logout failed", ex);
+            model.addAttribute("message", "Session logout failed due to an internal error");
+            return "failed";
+        }
+    }
+    
     @RequestMapping(value="/facilityLogin")
-    public String startSession(@RequestParam String facilityName, 
+    public String facilityLogin(@RequestParam String facilityName, 
             @RequestParam(required=false) String startSession,  
             @RequestParam(required=false) String endOldSession, 
             @RequestParam(required=false) String userName, 
@@ -375,6 +421,7 @@ public class WebUIController {
             returnTo = request.getContextPath() + returnTo;
         }
         model.addAttribute("facilityName", facilityName);
+        model.addAttribute("facilities", getFacilities());
         model.addAttribute("returnTo", returnTo);
 
 
@@ -429,7 +476,9 @@ public class WebUIController {
         } catch (AclsAuthenticationException ex) {
             model.addAttribute("message", "Login failed: " + ex.getMessage());
         } catch (AclsInUseException ex) {
-            model.addAttribute("message", ex.getMessage());
+            model.addAttribute("message", 
+                    "Instrument " + ex.getFacilityName() + 
+                    " is currently logged in under the name of " + ex.getUserName());
             model.addAttribute("inUse", true);
         }
         return "facilityLogin";

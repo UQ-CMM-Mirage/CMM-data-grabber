@@ -10,27 +10,38 @@
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container-fluid">
 		<h1>Data Grabber Login</h1>
-
-        <p>You need to be logged in to perform this operation</p>
-		<p>
-			Please enter your normal ACLS username and password, or the
-		    credentials of a local administrator account.
-		</p> 
-		
-		${message}
-
-		<form name="form" method="POST" method="post"
+		<c:choose>
+			<c:when test="${empty message}">
+				<div class="alert alert-information">Please enter your normal
+					ACLS username and password, or the credentials of a local
+					administrator account.</div>
+			</c:when>
+			<c:otherwise>
+				<div class="alert alert-error">${message}</div>
+			</c:otherwise>
+		</c:choose>
+		<form class="form-horizontal" name="form" method="post"
 			action='<%=response.encodeURL("j_security_check")%>'>
-			<c:if test="${empty accounts}">
-              User name: <input type="text" name="j_username"
-					value="${param.userName}">
-				<br>
-              Password: <input type="password" name="j_password"
-					value="${param.userName}">
-			</c:if>
-			<br>
-			<button type="submit" name="startSession">Login</button>
-			<button type="button" onclick="window.location = '/paul'">Cancel</button>
+			<fieldset>
+				<c:if test="${empty accounts}">
+					<div class="control-group">
+						<label class="control-label" for="userName">User name</label> 
+						<input type="text" name="j_username" id="userName"
+							value="${param.userName}">
+					</div>
+					<div class="control-group">
+						<label class="control-label" for="password">Password</label> 
+						<input type="password" name="j_password" id="password"
+							value="${param.userName}">
+					</div>
+				</c:if>
+				<div class="form-actions">
+					<button class="btn btn-small btn-primary" type="submit" 
+						name="startSession">Login</button>
+					<button class="btn btn-small" type="button" 
+						onclick="window.location = '/paul'">Cancel</button>
+				</div>
+			</fieldset>
 		</form>
 	</div>
 	<!-- /container -->

@@ -142,7 +142,7 @@
 			</c:if>
 		</h1>
 		<p><strong>${message}</strong></p>
-		<form action="${facility.facilityName}" method="post">
+		<form action="${create ? '/paul/facilities/' : facility.facilityName}" method="post">
 			<input id="lastTemplate" type="hidden" name="lastTemplate"
 				value="${fn:length(facility.datafileTemplates)}">
 			<table class="table table-striped table-condensed">

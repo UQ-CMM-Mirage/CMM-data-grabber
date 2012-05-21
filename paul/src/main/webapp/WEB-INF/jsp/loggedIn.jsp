@@ -10,7 +10,9 @@
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container-fluid">
 		<h1>Data Grabber Access Control</h1>
-		You have successfully logged in as '<%=request.getRemoteUser()%>'.
+		<div class="alert alert-success">
+			You have successfully logged in as '<%=request.getRemoteUser()%>'.
+		</div>
 	</div>
 	<!-- /container -->
 	<%@ include file="/WEB-INF/jsp/commonFooter.jspFrag"%>

@@ -12,6 +12,7 @@
               <li class="active"><a href="/paul/">Home</a></li>
               <li><a href="/paul/#about">About</a></li>
               <li><a href="/paul/#contact">Contact</a></li>
+              <li><a href="/paul/admin">Adminstration</a></li>
 		      <li><a href="/paul/loggedIn">Login</a></li>
 		      <li><a href="/paul/logout">Logout</a></li>
             </ul>
