@@ -26,13 +26,17 @@
 				<c:if test="${empty accounts}">
 					<div class="control-group">
 						<label class="control-label" for="userName">User name</label> 
-						<input type="text" name="j_username" id="userName"
-							value="${param.userName}">
+						<div class="controls">
+							<input type="text" name="j_username" id="userName"
+								value="${param.userName}">
+						</div>
 					</div>
 					<div class="control-group">
 						<label class="control-label" for="password">Password</label> 
-						<input type="password" name="j_password" id="password"
-							value="${param.userName}">
+						<div class="controls"> 
+							<input type="password" name="j_password" id="password"
+								value="${param.userName}">
+					    </div>
 					</div>
 				</c:if>
 				<div class="form-actions">

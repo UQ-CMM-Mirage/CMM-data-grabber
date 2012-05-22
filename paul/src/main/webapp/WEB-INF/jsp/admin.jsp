@@ -16,8 +16,8 @@
 			<li><a href="facilities">Facility Configuration</a></li>
 			<li><a href="sessions">Current Facility Sessions</a></li>
 			<li><a href="atom/queue">Ingestion Queue Atom Feed</a> (raw / browser rendered)</li>
-			<li><a href="queue/ingestible">Ingestion Queue Admin</a></li>
-			<li><a href="queue/held">Hold Queue Admin</a></li>
+			<li><a href="queue/ingestible/">Ingestion Queue Admin</a></li>
+			<li><a href="queue/held/">Hold Queue Admin</a></li>
 			<li><a href="users">Known Users Cache</a></li>
 		</ul>
 	</div>
