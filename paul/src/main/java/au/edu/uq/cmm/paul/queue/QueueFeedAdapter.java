@@ -205,7 +205,7 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
             entry.addLink(config.getBaseFileUrl() + 
                     new File(datafile.getCapturedFilePathname()).getName(),
                     "enclosure", datafile.getMimeType(), 
-                    datafile.getFacilityFilePathname(),
+                    new File(datafile.getSourceFilePathname()).getName(),
                     "en", datafile.getFileSize());
         }
         entry.addLink(config.getBaseFileUrl() + 

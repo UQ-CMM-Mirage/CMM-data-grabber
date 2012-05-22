@@ -30,12 +30,12 @@
 					<tbody>
 						<c:forEach items="${queue}" var="entry">
 							<tr>
-								<td><a href="ingestible/${entry.id}">${entry.id}</a></td>
+								<td><a href="${entry.id}">${entry.id}</a></td>
 								<td>${entry.facilityName}</td>
 								<td>${entry.userName}</td>
 								<td>${entry.captureTimestamp}</td>
 								<td>
-									<form method="POST" action="ingestible/${entry.id}"
+									<form method="POST" action="${entry.id}"
 									      class="btn-group">
 										<button class="btn" type="submit" name="mode" value="discard">Delete</button>
 										<button class="btn" type="submit" name="mode" value="archive">Archive</button>

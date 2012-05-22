@@ -26,23 +26,29 @@
 			action="/paul/facilityLogin">
 			<fieldset>
 				<div class="control-group">
-					<label class="control-label" for="userName">User name</label> 
-					<input type="text" name="userName" id="userName"
-					    value="${userName}" ${! empty accounts ? 'readonly' : ''}>
+					<label class="control-label" for="userName">User name</label>
+					<div class="controls">
+						<input type="text" name="userName" id="userName"
+					   		 value="${userName}" ${! empty accounts ? 'readonly' : ''}>
+					</div>
 				</div>
 				<div class="control-group">
 					<label class="control-label" for="password">Password</label> 
-					<input type="password" name="password" id="password" 
-						value="${password}" ${! empty accounts ? 'readonly' : ''}>
+					<div class="controls">
+						<input type="password" name="password" id="password" 
+							value="${password}" ${! empty accounts ? 'readonly' : ''}>
+					</div>
 				</div>
 				<c:if test="$! empty accounts}">
 					<div class="control-group">
-						<label class="control-label" for="account">Account</label> <select
-							name="account" id="account">
-							<c:forEach items="${accounts}" var="account">
-								<option value="${account}">${account}</option>
-							</c:forEach>
-						</select>
+						<label class="control-label" for="account">Account</label> 
+						<div class="controls">
+						    <select name="account" id="account">
+							    <c:forEach items="${accounts}" var="account">
+								    <option value="${account}">${account}</option>
+							    </c:forEach>
+						    </select>
+						</div>
 					</div>
 				</c:if>
 				<input type="hidden" name="facilityName" value="${facilityName}">
