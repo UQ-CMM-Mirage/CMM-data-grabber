@@ -64,6 +64,7 @@ public class PaulConfiguration implements GrabberConfiguration {
     private boolean useProject;
     private String captureDirectory;
     private String archiveDirectory;
+    private int grabberTimeout;
     private String baseFileUrl;
     private String feedId;
     private String feedTitle;
@@ -96,6 +97,7 @@ public class PaulConfiguration implements GrabberConfiguration {
         setBaseFileUrl(staticConfig.getBaseFileUrl());
         setCaptureDirectory(staticConfig.getCaptureDirectory());
         setArchiveDirectory(staticConfig.getArchiveDirectory());
+        setGrabberTimeout(staticConfig.getGrabberTimeout());
         setFeedId(staticConfig.getFeedId());
         setFeedTitle(staticConfig.getFeedTitle());
         setFeedAuthor(staticConfig.getFeedAuthor());
@@ -181,6 +183,14 @@ public class PaulConfiguration implements GrabberConfiguration {
 
     public void setArchiveDirectory(String archiveDirectory) {
         this.archiveDirectory = archiveDirectory;
+    }
+
+    public int getGrabberTimeout() {
+        return grabberTimeout;
+    }
+
+    public void setGrabberTimeout(int grabberTimeout) {
+        this.grabberTimeout = grabberTimeout;
     }
 
     public String getBaseFileUrl() {

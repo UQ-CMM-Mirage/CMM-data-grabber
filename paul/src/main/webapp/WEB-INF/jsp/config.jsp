@@ -77,6 +77,12 @@
 				</tr>
 				<tr>
 					<td></td>
+					<td>Grabber timeout</td>
+					<td>${config.grabberTimeout} (milliseconds) - 
+						zero means use default, negative means never time out(!)</td>
+				</tr>
+				<tr>
+					<td></td>
 					<td>Queue expiry time</td>
 					<td>${config.queueExpiryTime} (minutes)</td>
 				</tr>

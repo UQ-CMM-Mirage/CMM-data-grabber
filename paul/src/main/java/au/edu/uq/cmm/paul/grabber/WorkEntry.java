@@ -60,7 +60,9 @@ import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
  */
 class WorkEntry implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(WorkEntry.class);
-    private static final int GRABBER_TIMEOUT = 1000 * 60 * 10;
+    private static final long DEFAULT_GRABBER_TIMEOUT = 600000; // milliseconds == 10 minutes
+    
+    private final long grabberTimeout;
 
     private final FileGrabber fileGrabber;
     private final QueueManager queueManager;
@@ -72,6 +74,7 @@ class WorkEntry implements Runnable {
     private final Facility facility;
     private final Date timestamp;
     private final boolean holdDatasetsWithNoUser;
+    
     
     public WorkEntry(Paul services, FileWatcherEvent event, File baseFile) {
         this.facility = (Facility) event.getFacility();
@@ -85,6 +88,8 @@ class WorkEntry implements Runnable {
         this.events = new LinkedBlockingDeque<FileWatcherEvent>();
         this.holdDatasetsWithNoUser = 
                 services.getConfiguration().isHoldDatasetsWithNoUser();
+        long timeout = services.getConfiguration().getGrabberTimeout();
+        this.grabberTimeout = timeout == 0 ? DEFAULT_GRABBER_TIMEOUT : timeout;
         addEvent(event);
     }
 
@@ -194,7 +199,8 @@ class WorkEntry implements Runnable {
     private boolean datasetCompleted() throws InterruptedException {
         // Wait until the dataset is completed.
         boolean incomplete = true;
-        long start = System.currentTimeMillis();
+        long limit = grabberTimeout < 0 ? Long.MAX_VALUE :
+            System.currentTimeMillis() + grabberTimeout;
         do {
             int settling = facility.getFileSettlingTime();
             if (settling <= 0) {
@@ -232,11 +238,10 @@ class WorkEntry implements Runnable {
                     break;
                 }
             } 
-        } while (incomplete && start + GRABBER_TIMEOUT > System.currentTimeMillis());
+        } while (incomplete && limit > System.currentTimeMillis());
         if (incomplete) {
             LOG.info("Dataset for baseFile " + baseFile + 
-                    " did not complete within " + (GRABBER_TIMEOUT / 1000) + 
-                    " seconds.  Dropping it.");
+                    " did not complete within timeout.  Dropping it.");
             return false;
         }
         
