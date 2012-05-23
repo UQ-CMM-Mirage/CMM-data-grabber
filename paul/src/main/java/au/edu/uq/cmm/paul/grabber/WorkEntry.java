@@ -26,8 +26,10 @@ import java.io.IOException;
 import java.nio.channels.FileLock;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -58,6 +60,7 @@ import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
  */
 class WorkEntry implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(WorkEntry.class);
+    private static final int GRABBER_TIMEOUT = 1000 * 60 * 10;
 
     private final FileGrabber fileGrabber;
     private final QueueManager queueManager;
@@ -154,18 +157,7 @@ class WorkEntry implements Runnable {
     }
 
     private void grabFiles() throws InterruptedException {
-        int settling = facility.getFileSettlingTime();
-        if (settling <= 0) {
-            settling = FileGrabber.DEFAULT_FILE_SETTLING_TIME;
-        }
-        // Wait until the file modification events stop arriving ... plus
-        // the settling time.
-        while (events.poll(settling, TimeUnit.MILLISECONDS) != null) {
-            LOG.debug("poll");
-        }
-        // Avoid creating an empty Dataset (containing just an admin metadata file)
-        if (files.isEmpty()) {
-            LOG.debug("Dropping empty dataset for baseFile " + baseFile);
+        if (!datasetCompleted()) {
             return;
         }
         // Prepare for grabbing
@@ -197,6 +189,74 @@ class WorkEntry implements Runnable {
         } catch (IOException ex) {
             LOG.error("Unexpected IO Error", ex);
         }
+    }
+
+    private boolean datasetCompleted() throws InterruptedException {
+        // Wait until the dataset is completed.
+        boolean incomplete = true;
+        long start = System.currentTimeMillis();
+        do {
+            int settling = facility.getFileSettlingTime();
+            if (settling <= 0) {
+                settling = FileGrabber.DEFAULT_FILE_SETTLING_TIME;
+            }
+            // Wait for the file modification events stop arriving ... plus
+            // the settling time.
+            while (events.poll(settling, TimeUnit.MILLISECONDS) != null) {
+                LOG.debug("poll");
+            }
+            // Check that the dataset's non-optional files are all present,
+            // and that they meet the minimum size requirements.
+            incomplete = false;
+            for (DatafileTemplate template : facility.getDatafileTemplates()) {
+                if (template.isOptional()) {
+                    continue;
+                }
+                Pattern pattern = template.getCompiledFilePattern(
+                        facility.isCaseInsensitive());
+                boolean satisfied = false;
+                for (File file : files.keySet()) {
+                    Matcher matcher = pattern.matcher(file.getAbsolutePath());
+                    if (matcher.matches()) {
+                        if (file.length() >= template.getMinimumSize()) {
+                            satisfied = true;
+                        } else {
+                            LOG.debug("Datafile " + file + " isn't big enough yet");
+                        }
+                        break;
+                    }
+                }
+                if (!satisfied) {
+                    LOG.debug("Datafile for template " + template.getFilePattern() + " isn't ready");
+                    incomplete = true;
+                    break;
+                }
+            } 
+        } while (incomplete && start + GRABBER_TIMEOUT > System.currentTimeMillis());
+        if (incomplete) {
+            LOG.info("Dataset for baseFile " + baseFile + 
+                    " did not complete within " + (GRABBER_TIMEOUT / 1000) + 
+                    " seconds.  Dropping it.");
+            return false;
+        }
+        
+        // Prune any files that don't meet their minimum size requirement.
+        for (Iterator<Entry<File, GrabbedFile>> it = files.entrySet().iterator();
+                it.hasNext(); /* */) {
+            Entry<File, GrabbedFile> entry = it.next();
+            long length = entry.getKey().length();
+            if (length < entry.getValue().getTemplate().getMinimumSize()) {
+                LOG.info("Dropping datafile " + entry.getKey() + " with size " + length);
+                it.remove();
+            }
+        }
+        
+        // Avoid creating an empty Dataset (containing just an admin metadata file)
+        if (files.isEmpty()) {
+            LOG.info("Dropping empty dataset for baseFile " + baseFile);
+            return false;
+        }
+        return true;
     }
 
     private void doGrabFile(GrabbedFile file, FileInputStream is) 
