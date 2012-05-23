@@ -14,7 +14,9 @@
       "fileSettlingTime" : 5000,
       "datafileTemplates" : [
         {"filePattern" : "(.*)\\.txt", "mimeType" : "text/plain", "suffix" : ".txt"},
-        {"filePattern" : "(.*)\\.guf", "mimeType" : "vendor/guf", "suffix" : ".guf"}
+        {"filePattern" : "(.*)\\.guf", "mimeType" : "vendor/guf", "suffix" : ".guf"},
+        {"filePattern" : "(.*)\\.tif", "mimeType" : "image/tiff", "suffix" : ".tif", "minimumSize" : 1024 },
+        {"filePattern" : "(.*)\\.jpg", "mimeType" : "image/jpeg", "suffix" : ".jpg", "minimumSize" : 1024 }
       ],
       "localHostId" : "SOMETHING-2"
     },

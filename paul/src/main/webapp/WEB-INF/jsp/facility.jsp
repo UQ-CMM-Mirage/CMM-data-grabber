@@ -38,6 +38,11 @@
 		'<td></td>' +
 		'</tr>',
 		'<tr><td>&nbsp;</td><td>&nbsp;</td>' +
+		'<td>Minimum file size</td>' +
+		'<td><input name="template' + i + 'minimumSize" type="text" value="0" class="span4"</td>' +
+		'<td></td>' +
+		'</tr>',
+		'<tr><td>&nbsp;</td><td>&nbsp;</td>' +
 		'<td>File is optional</td>' +
 		'<td><input name="template' + i + 'optional" type="checkbox" checked="checked" value="true"></td>' +
 		'<td></td>' +
@@ -271,6 +276,16 @@
 									class="span4" ${edit ? '' : 'readonly="readonly"'}
 									value="${template.suffix}"></td>
 							<td><c:set var="key" value="template${index}suffix" /> <strong>${diags[key]}</strong>
+							</td>
+						</tr>
+						<tr>
+							<td>&nbsp;</td>
+							<td>&nbsp;</td>
+							<td>Minimum file size</td>
+							<td><input name="template${index}minimumSize" type="text"
+									class="span4" ${edit ? '' : 'readonly="readonly"'}
+									value="${template.minimumSize}"></td>
+							<td><c:set var="key" value="template${index}minimumSize" /> <strong>${diags[key]}</strong>
 							</td>
 						</tr>
 						<tr>
