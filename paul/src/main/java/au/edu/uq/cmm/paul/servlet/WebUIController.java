@@ -27,10 +27,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -54,6 +56,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.context.ServletContextAware;
 
 import au.edu.uq.cmm.aclslib.config.ConfigurationException;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
@@ -81,7 +84,7 @@ import au.edu.uq.cmm.paul.watcher.FileWatcher;
  * @author scrawley
  */
 @Controller
-public class WebUIController {
+public class WebUIController implements ServletContextAware {
     public enum Status {
         ON, OFF, TRANSITIONAL
     }
@@ -98,6 +101,14 @@ public class WebUIController {
     
     @Autowired(required=true)
     Paul services;
+
+    @Override
+    public void setServletContext(ServletContext servletContext) {
+        LOG.debug("Setting the timezone (" + TimeZone.getDefault().getID() + 
+                ") in the servlet context");
+        servletContext.setAttribute("javax.servlet.jsp.jstl.fmt.timeZone", 
+                TimeZone.getDefault());
+    }
 
     @RequestMapping(value="/control", method=RequestMethod.GET)
     public String control(Model model) {
