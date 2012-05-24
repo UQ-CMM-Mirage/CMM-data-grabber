@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <%@ page session="false"%>
 <html lang="en">
 <head>
@@ -33,7 +34,8 @@
 								<td><a href="${entry.id}">${entry.id}</a></td>
 								<td>${entry.facilityName}</td>
 								<td>${entry.sourceFilePathnameBase}</td>
-								<td>${entry.captureTimestamp}</td>
+								<td><fmt:formatDate value="${entry.captureTimestamp}" 
+										type="both" dateStyle="medium"/></td>
 								<td><form class="btn-group" method="POST" action="${entry.id}">
 										<button class="btn" type="submit" 
 												name="mode" value="discard">Delete</button>
