@@ -39,6 +39,7 @@ public class DatafileTemplate implements DatafileTemplateConfig {
     private String mimeType;
     private String filePattern;
     private String suffix;
+    private int minimumSize;
     private Long id;
     private Pattern compiledPattern;
     
@@ -83,6 +84,14 @@ public class DatafileTemplate implements DatafileTemplateConfig {
 
     public void setSuffix(String suffix) {
         this.suffix = suffix;
+    }
+
+    public int getMinimumSize() {
+        return minimumSize;
+    }
+
+    public void setMinimumSize(int minimumSize) {
+        this.minimumSize = minimumSize;
     }
 
     @Id
