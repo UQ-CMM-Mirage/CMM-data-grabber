@@ -688,8 +688,7 @@ public class WebUIController {
     public String deleteQueueEntry(@PathVariable String entry, Model model, 
             HttpServletResponse response,
             @PathVariable String sliceName,
-            @RequestParam(required=false) String mode, 
-            @RequestParam(required=false) String confirmed) 
+            @RequestParam(required=false) String mode) 
             throws IOException {
         long id;
         try {
@@ -703,7 +702,7 @@ public class WebUIController {
         services.getQueueManager().delete(id, discard);
         model.addAttribute("message",
                 "Queue entry " + (discard ? "deleted" : "archived"));
-        model.addAttribute("returnTo", sliceName);
+        model.addAttribute("returnTo", ".");
         return "ok";
     }
     
