@@ -54,6 +54,13 @@ public interface GrabberConfiguration extends ACLSProxyConfiguration {
     String getArchiveDirectory();
 
     /**
+     * Get the maximum time (in milliseconds) that the data grabber 
+     * should wait for an instrument to finish writing out files in
+     * a dataset.
+     */
+    int getGrabberTimeout();
+
+    /**
      * Get the URL or IRI for the atom feed.  This is what is used as
      * the "atom:id" for the feed.
      */

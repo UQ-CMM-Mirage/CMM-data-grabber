@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <%@ page session="false"%>
 <html lang="en">
 <head>
@@ -40,7 +41,8 @@
 						    <tr>
 								<td><input type="checkbox" name="ids" value="${dataset.id}"></td>
 								<td>${dataset.id}</td>
-								<td>${dataset.captureTimestamp}</td>
+								<td><fmt:formatDate value="${dataset.captureTimestamp}" 
+										type="both" dateStyle="medium"/></td>
 								<td>${dataset.sourceFilePathnameBase}</td>
 							</tr>
 						</c:forEach>

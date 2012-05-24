@@ -194,6 +194,9 @@ public class FacilityStatusManager {
     public FacilitySession getLoginDetails(String facilityName, long timestamp) {
         EntityManager em = emf.createEntityManager();
         try {
+            // First, we select the sessions that potentially contain this timestamp.
+            // These start at or before the timestamp and either end after it, or don't end.
+            // We want the last of these ... so sort descending on start time.
             TypedQuery<FacilitySession> query = em.createQuery(
                     "from FacilitySession s where s.facilityName = :facilityName " +
                     "and s.loginTime <= :timestamp " +
@@ -204,10 +207,33 @@ public class FacilityStatusManager {
             query.setMaxResults(1);
             List<FacilitySession> list = query.getResultList();
             if (list.size() == 0) {
+                LOG.debug("No session on '" + facilityName + "' matches timestamp " + timestamp);
                 return null;
-            } else {
-                return list.get(0);
             }
+            FacilitySession session = list.get(0);
+            if (session.getLogoutTime() == null) {
+                // If we have a session with no definite end, we need to infer an
+                // end point from the start of the next session, if any.
+                LOG.debug("Inferring session end ...");
+                TypedQuery<FacilitySession> query2 = em.createQuery(
+                        "from FacilitySession s where s.facilityName = :facilityName " +
+                        "and s.loginTime > :timestamp " +
+                        "order by s.loginTime asc", FacilitySession.class);
+                query2.setParameter("facilityName", facilityName);
+                query2.setParameter("timestamp", session.getLoginTime());
+                query2.setMaxResults(1);
+                list = query2.getResultList();
+                if (list.size() > 0) {
+                    FacilitySession session2 = list.get(0);
+                    if (session2.getLoginTime().getTime() < timestamp) {
+                        LOG.debug("No session on '" + facilityName + 
+                                "' matches timestamp " + timestamp + " (2)");
+                        return null;
+                    }
+                }
+            }
+            LOG.debug("Session for timestamp " + timestamp + " is " + session);
+            return list.get(0);
         } finally {
             em.close();
         }

@@ -53,6 +53,7 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
     private String dummyFacilityHostId;
     private String captureDirectory;
     private String archiveDirectory;
+    private int grabberTimeout;
     private String baseFileUrl;
     private String feedId;
     private String feedTitle;
@@ -123,6 +124,14 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
 
     public void setArchiveDirectory(String archiveDirectory) {
         this.archiveDirectory = archiveDirectory;
+    }
+
+    public int getGrabberTimeout() {
+        return grabberTimeout;
+    }
+
+    public void setGrabberTimeout(int grabberTimeout) {
+        this.grabberTimeout = grabberTimeout;
     }
 
     public String getBaseFileUrl() {

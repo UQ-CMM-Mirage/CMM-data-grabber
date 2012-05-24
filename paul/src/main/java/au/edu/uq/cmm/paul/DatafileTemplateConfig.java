@@ -46,4 +46,10 @@ public interface DatafileTemplateConfig {
      * If true, the datafile is an optional member of the dataset
      */
     boolean isOptional();
+    
+    /**
+     * If non-zero, this is the minimum size that this file has to be before
+     * it can be grabbed.
+     */
+    int getMinimumSize();
 }

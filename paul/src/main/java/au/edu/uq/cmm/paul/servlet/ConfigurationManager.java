@@ -253,6 +253,15 @@ public class ConfigurationManager {
             template.setFilePattern(getNonEmptyString(params, baseName + "filePattern", diags));
             template.setSuffix(getNonEmptyString(params, baseName + "suffix", diags));
             template.setMimeType(getNonEmptyString(params, baseName + "mimeType", diags));
+            if (getStringOrNull(params, baseName + "minimumSize", diags) != null) {
+                int size = getInteger(params, baseName + "minimumSize", diags);
+                if (size < 0) {
+                    addDiag(diags, baseName + "minimumSize", 
+                            "minimum size cannot be negative");
+                } else {
+                    template.setMinimumSize(size);
+                }
+            }
             template.setOptional(getBoolean(params, baseName+ "optional", diags));
             for (DatafileTemplate existing : templates) {
                 if (template.getFilePattern() != null &&

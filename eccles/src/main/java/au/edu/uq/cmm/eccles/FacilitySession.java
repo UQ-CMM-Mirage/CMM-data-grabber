@@ -156,4 +156,13 @@ public class FacilitySession {
         res.setSessionUuid(FacilitySession.UNKNOWN);
         return res;
     }
+
+    @Override
+    public String toString() {
+        return "FacilitySession [userName=" + userName + ", account=" + account
+                + ", facilityName=" + facilityName + ", loginTime=" + loginTime
+                + ", logoutTime=" + logoutTime + ", id=" + id
+                + ", sessionUuid=" + sessionUuid + ", emailAddress="
+                + emailAddress + "]";
+    }
 }
