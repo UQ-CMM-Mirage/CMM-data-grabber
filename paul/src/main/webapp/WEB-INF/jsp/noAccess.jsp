@@ -10,11 +10,11 @@
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container-fluid">
 		<h1>Data Grabber- Access Restricted</h1>
-		<p>
+		<div class="alert alert-success">
 			Access to this information or functionality is limited
 			to people with Administrator rights.
-		</p>
-		<button onclick="window.location = 'index.jsp'">OK</button>
+		</div>
+		<button class="btn btn-small" type="button" onclick="window.location = 'index.jsp'">OK</button>
 	</div>
 	<!-- /container -->
 	<%@ include file="/WEB-INF/jsp/commonFooter.jspFrag"%>

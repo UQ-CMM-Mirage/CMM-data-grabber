@@ -24,7 +24,9 @@
 					the Lab staff.  The files may have been mistakenly assigned
 					to or claimed by the wrong user.</li>
 			</ul>
-			<p>${message}</p>
+			<c:if test="${!empty message}">
+				<div class="alert alert-error">${message}</div>
+			</c:if>
 			<c:choose>
 				<c:when test="${!empty datasets}">
 					<table class="table table-striped table-bordered table-condensed">
@@ -49,13 +51,22 @@
 						</tbody>
 					</table>
 					<input type="hidden" name="facilityName" value="${facilityName}">
-					<button type="submit" name="claim">Claim Datasets</button>
+					<input type="hidden" name="returnTo" value="${returnTo}">
+					<c:choose>
+						<c:when test="${admin}">
+							<button type="submit" name="claim">Assign Datasets to</button>
+							<input type="text" name="userName">
+						</c:when>
+						<c:otherwise>
+							<button type="submit" name="claim">Claim Datasets</button>
+						</c:otherwise>
+					</c:choose>
 				</c:when>
 				<c:otherwise>
-					<p>There are no unclaimed datasets</p>
+					<div class="alert alert-success">There are no unclaimed datasets</div>
 				</c:otherwise>
 			</c:choose>
-			<button onclick="window.location = '/paul'">Cancel</button>
+			<button type="button" onclick="window.location = '/paul'">Cancel</button>
 		</form>
 	</div>
 	<!-- /container -->
