@@ -561,11 +561,22 @@ public class WebUIController implements ServletContextAware {
     }
     
     @RequestMapping(value="/claimDatasets", method=RequestMethod.GET)
-    public String showClaimDatasets(Model model,
-            @RequestParam String facilityName) {
+    public String showClaimDatasets(Model model, 
+            HttpServletRequest request, HttpServletResponse response,
+            @RequestParam String facilityName,
+            @RequestParam(required=false) String returnTo) 
+    throws IOException {
+        GenericPrincipal principal = (GenericPrincipal) request.getUserPrincipal();
+        if (principal == null) {
+            LOG.error("No principal ... can't proceed");
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            return null;
+        }
         model.addAttribute("facilityName", facilityName);
+        model.addAttribute("returnTo", returnTo);
         model.addAttribute("datasets", 
                 services.getQueueManager().getSnapshot(Slice.HELD, facilityName));
+        model.addAttribute("admin", principal.hasRole("ROLE_ADMIN"));
         return "claimDatasets";
     }
     
@@ -575,8 +586,18 @@ public class WebUIController implements ServletContextAware {
             HttpServletRequest request, HttpServletResponse response,
             @RequestParam(required=false) String[] ids,
             @RequestParam(required=false) String userName,
+            @RequestParam(required=false) String returnTo,
             @RequestParam String facilityName) 
     throws IOException {
+        GenericPrincipal principal = (GenericPrincipal) request.getUserPrincipal();
+        if (principal == null) {
+            LOG.error("No principal ... can't proceed");
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            return null;
+        }
+        boolean admin = principal.hasRole("ROLE_ADMIN");
+        model.addAttribute("admin", admin);
+        model.addAttribute("returnTo", returnTo);
         if (ids == null) {
             model.addAttribute("facilityName", facilityName);
             model.addAttribute("datasets", 
@@ -585,25 +606,17 @@ public class WebUIController implements ServletContextAware {
                     "Datasets you want to claim");
             return "claimDatasets";
         }
-        GenericPrincipal principal = (GenericPrincipal) request.getUserPrincipal();
-        if (principal == null) {
-            LOG.error("No principal ... can't proceed");
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            return null;
-        }
         if (userName == null) {
             if (!principal.hasRole("ROLE_ACLS_USER")) {
                 model.addAttribute("message", "You must be logged in using " +
-                		"your ACLS credentials to claim files");
-                model.addAttribute("returnTo", request.getContextPath());
+                		"ACLS credentials to claim files");
                 return "failed";
             }
             userName = principal.getName();
         } else {
             if (!principal.hasRole("ROLE_ADMIN")) {
-                model.addAttribute("message", "Only an administrator can claim " +
-                        "files for someone else");
-                model.addAttribute("returnTo", request.getContextPath());
+                model.addAttribute("message", "Only an administrator can assign " +
+                        "files to someone else");
                 return "failed";
             }
         }
@@ -616,8 +629,9 @@ public class WebUIController implements ServletContextAware {
         }
         model.addAttribute("message",
                 (ids.length == 0 ? "No datasets " :
-                    ids.length == 1 ? "1 datasets " :
-                        (ids.length + " datasets ")) + " claimed");
+                    ids.length == 1 ? "1 dataset " :
+                        (ids.length + " datasets ")) + 
+                        (admin ? " assigned" : " claimed"));
         return "ok";
     }
 

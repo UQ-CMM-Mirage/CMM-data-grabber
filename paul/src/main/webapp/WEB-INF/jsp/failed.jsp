@@ -11,7 +11,7 @@
 	<div class="container-fluid">
 		<h1>Data Grabber Operation Failed</h1>
 		<div class="alert alert-error">${message}</div>
-		<button class="btn btn-small" onclick="window.location = '${returnTo}'">OK</button>
+		<button class="btn btn-small" type="button" onclick="window.location = '${returnTo}'">OK</button>
 	</div>
 	<!-- /container -->
 	<%@ include file="/WEB-INF/jsp/commonFooter.jspFrag"%>
