@@ -11,7 +11,7 @@
 	<div class="container-fluid">
 		<h1>Data Grabber Access Control</h1>
 		<div class="alert alert-success">
-			You have successfully logged in as '<%=request.getRemoteUser()%>'.
+			You have successfully logged in as '${pageContext.request.remoteUser}'.
 		</div>
 	</div>
 	<!-- /container -->
