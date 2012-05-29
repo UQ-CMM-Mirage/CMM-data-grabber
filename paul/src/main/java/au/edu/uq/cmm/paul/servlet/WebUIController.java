@@ -622,7 +622,14 @@ public class WebUIController implements ServletContextAware {
     throws IOException {
         model.addAttribute("facilityName", facilityName);
         model.addAttribute("returnTo", inferReturnTo(request));
-        Slice s = slice == null ? Slice.ALL : Slice.valueOf(slice);
+        Slice s = Slice.ALL;
+        try {
+            if (slice != null) {
+                s = Slice.valueOf(slice);
+            }
+        } catch (IllegalArgumentException ex) {
+            LOG.debug("unrecognized slice - ignoring");
+        }
         model.addAttribute("slice", s);
         model.addAttribute("datasets", 
                 services.getQueueManager().getSnapshot(s, facilityName));
