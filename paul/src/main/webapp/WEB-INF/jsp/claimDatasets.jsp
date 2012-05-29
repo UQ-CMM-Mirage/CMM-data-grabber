@@ -10,10 +10,9 @@
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container-fluid">
-		<h1>Held Datasets for Instrument '${facilityName}'</h1>
+		<h1>Unclaimed Datasets from '${facilityName}'</h1>
 		<form action="claimDatasets" method="post">
-			<p>These datasets captured from the '${facilityName}' don't have
-				a known owner.
+			<p>These datasets currently have no designated owner.</p>
 			<ul>
 				<li><em>Carefully</em> scan the data capture dates and times, and tick
 				    the tickbox for entries that match the time you were using the 
@@ -52,18 +51,10 @@
 					</table>
 					<input type="hidden" name="facilityName" value="${facilityName}">
 					<input type="hidden" name="returnTo" value="${returnTo}">
-					<c:choose>
-						<c:when test="${admin}">
-							<button type="submit" name="claim">Assign Datasets to</button>
-							<input type="text" name="userName">
-						</c:when>
-						<c:otherwise>
-							<button type="submit" name="claim">Claim Datasets</button>
-						</c:otherwise>
-					</c:choose>
+					<button type="submit" name="claim">Claim Datasets</button>
 				</c:when>
 				<c:otherwise>
-					<div class="alert alert-success">There are no unclaimed datasets</div>
+					<div class="alert alert-success">There are no unclaimed datasets meeting your criteria</div>
 				</c:otherwise>
 			</c:choose>
 			<button type="button" onclick="window.location = '/paul'">Cancel</button>

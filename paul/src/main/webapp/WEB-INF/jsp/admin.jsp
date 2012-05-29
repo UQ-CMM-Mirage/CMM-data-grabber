@@ -18,6 +18,8 @@
 			<li><a href="atom/queue">Ingestion Queue Atom Feed</a> (raw / browser rendered)</li>
 			<li><a href="queue/ingestible/">Ingestion Queue Admin</a></li>
 			<li><a href="queue/held/">Hold Queue Admin</a></li>
+			<li><a href="facilitySelect?next=assignDatasets&slice=ALL&returnTo=/paul/admin">
+				Assign / Reassign Datasets</a></li>
 			<li><a href="users">Known Users Cache</a></li>
 		</ul>
 	</div>

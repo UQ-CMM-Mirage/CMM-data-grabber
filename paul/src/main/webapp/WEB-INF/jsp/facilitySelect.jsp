@@ -13,17 +13,17 @@
 			<h1>
 				<c:choose>
 					<c:when test="${next == 'claimDatasets'}">
-					Select the Instrument you were using
-				</c:when>
+						Select the Instrument you were using
+					</c:when>
 					<c:when test="${next == 'facilityLogout'}">
-					Select the Instrument you are using.
-				</c:when>
+						Select the Instrument you are using.
+					</c:when>
 					<c:when test="${next == 'facilityLogin'}">
-					Select the Instrument you need to use
-				</c:when>
+						Select the Instrument you need to use
+					</c:when>
 					<c:otherwise>
-					Facility Selection
-				</c:otherwise>
+						Facility Selection
+					</c:otherwise>
 				</c:choose>
 				<c:if test="${! empty message}">
 					<small>${message}</small>
@@ -43,7 +43,23 @@
 							</select>
 						</div>
 					</div>
+					<c:if test="${! empty slice}">
+						<div class="controlGroup">
+							<label class="control-label" for="slice">Dataset kind</label>
+							<div class="controls">
+								<select name="slice" id="slice">
+									<option value="ALL" ${slice == 'ALL' ? 'selected' : ''}>
+											any datasets</option>
+									<option value="HELD" ${slice == 'HELD' ? 'selected' : ''}>
+											held datasets</option>
+									<option value="INGESTIBLE" ${slice == 'INGESTIBLE' ? 'selected' : ''}>
+											ingestible datasets</option>
+								</select>
+							</div>
+						</div>
+					</c:if>
 					<input type="hidden" name="next" value="${next}">
+					<input type="hidden" name="returnTo" value="${returnTo}">
 					<div class="form-actions">
 						<button class="btn btn-medium btn-primary" type="submit">OK</button>
 						<button class="btn btn-medium" type="button"
