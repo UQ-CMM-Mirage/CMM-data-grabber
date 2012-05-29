@@ -190,18 +190,19 @@ public class WebUIController implements ServletContextAware {
     
     @RequestMapping(value="/facilities", method=RequestMethod.GET,
             params="newForm")
-    public String newFacilityForm(Model model) {
+    public String newFacilityForm(Model model, HttpServletRequest request) {
         model.addAttribute("facility", new Facility());  // (just for the defaults ...)
         model.addAttribute("edit", true);
         model.addAttribute("create", true);
         model.addAttribute("message", 
                 "Please fill in the form and click 'Save New Facility'");
-        model.addAttribute("returnTo", "/paul/facilities");
+        model.addAttribute("returnTo", inferReturnTo(request, "/facilities"));
         return "facility";
     }
     
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.GET)
-    public String facilityConfig(@PathVariable String facilityName, Model model,
+    public String facilityConfig(@PathVariable String facilityName, 
+            Model model, HttpServletRequest request,
             @RequestParam(required=false) String edit) 
             throws ConfigurationException {
         Facility facility = lookupFacilityByName(facilityName);
@@ -211,7 +212,6 @@ public class WebUIController implements ServletContextAware {
             model.addAttribute("message", 
                     "Please fill in the form and click 'Save Facility Changes'");
         }
-        model.addAttribute("returnTo", "/paul/facilities");
         return "facility";
     }
     
@@ -222,17 +222,16 @@ public class WebUIController implements ServletContextAware {
             throws ConfigurationException {
         ValidationResult<Facility> res = services.getConfigManager().
                 createFacility(request.getParameterMap());
+        model.addAttribute("returnTo", inferReturnTo(request, "/facilities"));
         if (!res.isValid()) {
             model.addAttribute("edit", true);
             model.addAttribute("create", true);
             model.addAttribute("facility", res.getTarget());
             model.addAttribute("diags", res.getDiags());
             model.addAttribute("message", "Please correct the errors and try again");
-            model.addAttribute("returnTo", "/paul/facilities");
             return "facility";
         } else {
             model.addAttribute("message", "Facility configuration created");
-            model.addAttribute("returnTo", "/paul/facilities");
             return "ok";
         }
     }
@@ -240,7 +239,8 @@ public class WebUIController implements ServletContextAware {
     @RequestMapping(value = "/facilities/{facilityName:.+}", method = RequestMethod.POST, 
             params = {"copy"})
     public String copyFacilityConfig(@PathVariable String facilityName,
-            Model model) throws ConfigurationException {
+            Model model, HttpServletRequest request) 
+            throws ConfigurationException {
         Facility facility = lookupFacilityByName(facilityName);
         facility.setFacilityName(null);
         facility.setId(null);
@@ -250,7 +250,7 @@ public class WebUIController implements ServletContextAware {
         model.addAttribute("diags", Collections.emptyMap());
         model.addAttribute("message", "Fill in the new facility name, "
                 + "edit the other details and click 'Save New Facility'");
-        model.addAttribute("returnTo", "/paul/facilities");
+        model.addAttribute("returnTo", inferReturnTo(request, "/facilities"));
         return "facility";
     }
     
@@ -262,16 +262,15 @@ public class WebUIController implements ServletContextAware {
             throws ConfigurationException {
         ValidationResult<Facility> res = services.getConfigManager().
                 updateFacility(facilityName, request.getParameterMap());
+        model.addAttribute("returnTo", inferReturnTo(request, "/facilities"));
         if (!res.isValid()) {
             model.addAttribute("edit", true);
             model.addAttribute("facility", res.getTarget());
             model.addAttribute("diags", res.getDiags());
             model.addAttribute("message", "Please correct the errors and try again");
-            model.addAttribute("returnTo", "/paul/facilities");
             return "facility";
         } else {
             model.addAttribute("message", "Facility configuration updated");
-            model.addAttribute("returnTo", "/paul/facilities");
             return "ok";
         }
     }
@@ -281,7 +280,7 @@ public class WebUIController implements ServletContextAware {
     public String deleteFacilityConfig(@PathVariable String facilityName,
             Model model, HttpServletRequest request,
             @RequestParam(required = false) String confirmed) {
-        model.addAttribute("returnTo", "/paul/facilities");
+        model.addAttribute("returnTo", inferReturnTo(request, "/facilities"));
         model.addAttribute("facilityName", facilityName);
         if (confirmed == null) {
             return "facilityDeleteConfirmation";
@@ -361,9 +360,13 @@ public class WebUIController implements ServletContextAware {
     }
     
     @RequestMapping(value="/facilitySelect", method=RequestMethod.GET)
-    public String facilitySelector(Model model, 
-            @RequestParam String next) {
+    public String facilitySelector(Model model,
+            HttpServletRequest request, 
+            @RequestParam String next,
+            @RequestParam(required=false) String slice) {
         model.addAttribute("next", next);
+        model.addAttribute("slice", slice);
+        model.addAttribute("returnTo", inferReturnTo(request));
         model.addAttribute("facilities", getFacilities());
         return "facilitySelect";
     }
@@ -371,10 +374,14 @@ public class WebUIController implements ServletContextAware {
     @RequestMapping(value="/facilitySelect", method=RequestMethod.POST)
     public String facilitySelect(Model model, 
             @RequestParam String next,
+            @RequestParam(required=false) String slice,
+            @RequestParam(required=false) String zz,
             HttpServletRequest request, HttpServletResponse response,
             @RequestParam(required=false) String facilityName) 
     throws UnsupportedEncodingException, IOException {
         if (facilityName == null) {
+            model.addAttribute("slice", slice);
+            model.addAttribute("returnTo", inferReturnTo(request));
             model.addAttribute("facilities", getFacilities());
             model.addAttribute("message", "Select a facility from the pulldown");
             model.addAttribute("next", next);
@@ -383,16 +390,15 @@ public class WebUIController implements ServletContextAware {
             response.sendRedirect(request.getContextPath() + 
                     "/" + next +
                     "?facilityName=" + URLEncoder.encode(facilityName, "UTF-8") + 
-                    "&returnTo=" + request.getContextPath());
+                    "&returnTo=" + inferReturnTo(request));
             return null;
         }
     }
-    
+
     @RequestMapping(value="/facilityLogout")
     public String facilityLogout(Model model, HttpServletRequest request,
-            @RequestParam String facilityName,
-            @RequestParam(required=false) String returnTo) {
-        model.addAttribute("returnTo", returnTo);
+            @RequestParam String facilityName) {
+        model.addAttribute("returnTo", inferReturnTo(request));
         GenericPrincipal principal = (GenericPrincipal) request.getUserPrincipal();
         if (principal == null || !principal.hasRole("ROLE_ACLS_USER")) {
             model.addAttribute("message", "I don't know your ACLS userName");
@@ -422,18 +428,13 @@ public class WebUIController implements ServletContextAware {
             @RequestParam(required=false) String endOldSession, 
             @RequestParam(required=false) String userName, 
             @RequestParam(required=false) String account,
-            @RequestParam(required=false) String returnTo,
             Model model, HttpServletResponse response, HttpServletRequest request) 
                     throws IOException {
         FacilityStatusManager fsm = services.getFacilityStatusManager();
         facilityName = tidy(facilityName);
-        returnTo = tidy(returnTo);
-        if (!returnTo.startsWith(request.getContextPath())) {
-            returnTo = request.getContextPath() + returnTo;
-        }
         model.addAttribute("facilityName", facilityName);
         model.addAttribute("facilities", getFacilities());
-        model.addAttribute("returnTo", returnTo);
+        model.addAttribute("returnTo", inferReturnTo(request));
 
 
         userName = tidy(userName);
@@ -532,9 +533,9 @@ public class WebUIController implements ServletContextAware {
     }
     
     @RequestMapping(value="/config", method=RequestMethod.POST, params={"reset"})
-    public String configReset(Model model,
+    public String configReset(Model model, HttpServletRequest request,
             @RequestParam(required=false) String confirmed) {
-        model.addAttribute("returnTo", "config");
+        model.addAttribute("returnTo", inferReturnTo(request, "config"));
         if (confirmed == null) {
             return "resetConfirmation";
         } else {
@@ -563,21 +564,29 @@ public class WebUIController implements ServletContextAware {
     @RequestMapping(value="/claimDatasets", method=RequestMethod.GET)
     public String showClaimDatasets(Model model, 
             HttpServletRequest request, HttpServletResponse response,
-            @RequestParam String facilityName,
-            @RequestParam(required=false) String returnTo) 
+            @RequestParam(required=false) String slice,
+            @RequestParam String facilityName) 
     throws IOException {
-        GenericPrincipal principal = (GenericPrincipal) request.getUserPrincipal();
-        if (principal == null) {
-            LOG.error("No principal ... can't proceed");
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            return null;
-        }
         model.addAttribute("facilityName", facilityName);
-        model.addAttribute("returnTo", returnTo);
+        model.addAttribute("returnTo", inferReturnTo(request));
         model.addAttribute("datasets", 
                 services.getQueueManager().getSnapshot(Slice.HELD, facilityName));
-        model.addAttribute("admin", principal.hasRole("ROLE_ADMIN"));
         return "claimDatasets";
+    }
+    
+    @RequestMapping(value="/assignDatasets", method=RequestMethod.GET)
+    public String showAssignDatasets(Model model, 
+            HttpServletRequest request, HttpServletResponse response,
+            @RequestParam(required=false) String slice,
+            @RequestParam String facilityName) 
+    throws IOException {
+        model.addAttribute("facilityName", facilityName);
+        model.addAttribute("returnTo", inferReturnTo(request));
+        Slice s = slice == null ? Slice.ALL : Slice.valueOf(slice);
+        model.addAttribute("slice", s);
+        model.addAttribute("datasets", 
+                services.getQueueManager().getSnapshot(s, facilityName));
+        return "assignDatasets";
     }
     
     @RequestMapping(value="/claimDatasets", 
@@ -585,8 +594,6 @@ public class WebUIController implements ServletContextAware {
     public String claimDatasets(Model model,
             HttpServletRequest request, HttpServletResponse response,
             @RequestParam(required=false) String[] ids,
-            @RequestParam(required=false) String userName,
-            @RequestParam(required=false) String returnTo,
             @RequestParam String facilityName) 
     throws IOException {
         GenericPrincipal principal = (GenericPrincipal) request.getUserPrincipal();
@@ -595,9 +602,7 @@ public class WebUIController implements ServletContextAware {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             return null;
         }
-        boolean admin = principal.hasRole("ROLE_ADMIN");
-        model.addAttribute("admin", admin);
-        model.addAttribute("returnTo", returnTo);
+        model.addAttribute("returnTo", inferReturnTo(request));
         if (ids == null) {
             model.addAttribute("facilityName", facilityName);
             model.addAttribute("datasets", 
@@ -606,42 +611,79 @@ public class WebUIController implements ServletContextAware {
                     "Datasets you want to claim");
             return "claimDatasets";
         }
-        if (userName == null) {
-            if (!principal.hasRole("ROLE_ACLS_USER")) {
+        if (!principal.hasRole("ROLE_ACLS_USER")) {
                 model.addAttribute("message", "You must be logged in using " +
-                		"ACLS credentials to claim files");
+                        "ACLS credentials to claim files");
                 return "failed";
             }
-            userName = principal.getName();
-        } else {
-            if (!principal.hasRole("ROLE_ADMIN")) {
-                model.addAttribute("message", "Only an administrator can assign " +
-                        "files to someone else");
-                return "failed";
-            }
-        }
+        String userName = principal.getName();
         try {
-            services.getQueueManager().changeUser(ids, userName);
+            int nosChanged = services.getQueueManager().changeUser(ids, userName, false);
+            model.addAttribute("message",
+                    (nosChanged == 0 ? "No datasets " :
+                        nosChanged == 1 ? "1 dataset " :
+                            (nosChanged + " datasets ")) + " claimed");
+            return "ok";
         } catch (NumberFormatException ex) {
             LOG.debug("Rejected request with bad entry id(s)");
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return null;
         }
-        model.addAttribute("message",
-                (ids.length == 0 ? "No datasets " :
-                    ids.length == 1 ? "1 dataset " :
-                        (ids.length + " datasets ")) + 
-                        (admin ? " assigned" : " claimed"));
-        return "ok";
+        
+    }
+    
+    @RequestMapping(value="/assignDatasets", 
+            method=RequestMethod.POST, params={"claim"})
+    public String assignDatasets(Model model,
+            HttpServletRequest request, HttpServletResponse response,
+            @RequestParam(required=false) String[] ids,
+            @RequestParam(required=false) String userName,
+            @RequestParam String facilityName) 
+    throws IOException {
+        GenericPrincipal principal = (GenericPrincipal) request.getUserPrincipal();
+        if (principal == null) {
+            LOG.error("No principal ... can't proceed");
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            return null;
+        }
+        model.addAttribute("returnTo", inferReturnTo(request));
+        if (ids == null) {
+            model.addAttribute("facilityName", facilityName);
+            model.addAttribute("datasets", 
+                    services.getQueueManager().getSnapshot(Slice.HELD, facilityName));
+            model.addAttribute("message", "Check the checkboxes for the " +
+                    "Datasets you want to assign");
+            return "claimDatasets";
+        }
+        if (!principal.hasRole("ROLE_ADMIN")) {
+            model.addAttribute("message", "Only an administrator can assign " +
+                     "Datasets to someone else");
+            return "failed";
+        }
+        try {
+            int nosChanged = services.getQueueManager().changeUser(ids, userName, true);
+            model.addAttribute("message",
+                    (nosChanged == 0 ? "No datasets " :
+                        nosChanged == 1 ? "1 dataset " :
+                            (nosChanged + " datasets ")) + " assigned");
+            return "ok";
+        } catch (NumberFormatException ex) {
+            LOG.debug("Rejected request with bad entry id(s)");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return null;
+        }
+        
     }
 
     @RequestMapping(value="/queue/{sliceName:held|ingestible}", 
             method=RequestMethod.POST, params={"deleteAll"})
-    public String deleteAll(Model model, 
+    public String deleteAll(Model model,
+            HttpServletRequest request, 
             @PathVariable String sliceName,
             @RequestParam(required=false) String mode, 
             @RequestParam(required=false) String confirmed) {
-        model.addAttribute("returnTo", sliceName);
+        model.addAttribute("returnTo", inferReturnTo(request, "/queue/" + sliceName));
+        		
         if (confirmed == null) {
             return "queueDeleteConfirmation";
         }
@@ -659,7 +701,8 @@ public class WebUIController implements ServletContextAware {
     @RequestMapping(value="/queue/{sliceName:held|ingestible}", 
             method=RequestMethod.POST, 
             params={"expire"})
-    public String expire(Model model, 
+    public String expire(Model model,
+            HttpServletRequest request, 
             @PathVariable String sliceName,
             @RequestParam(required=false) String mode, 
             @RequestParam(required=false) String confirmed,
@@ -667,7 +710,7 @@ public class WebUIController implements ServletContextAware {
             @RequestParam(required=false) String period,
             @RequestParam(required=false) String unit) {
         Date cutoff = determineCutoff(model, tidy(olderThan), tidy(period), tidy(unit));
-        model.addAttribute("returnTo", sliceName);
+        model.addAttribute("returnTo", inferReturnTo(request, "/queue/" + sliceName));
         if (cutoff == null || confirmed == null) {
             return "queueExpiryForm";
         }
@@ -685,7 +728,7 @@ public class WebUIController implements ServletContextAware {
             method=RequestMethod.GET)
     public String queueEntry(@PathVariable String entry, Model model, 
             @PathVariable String sliceName,
-            HttpServletResponse response) 
+            HttpServletRequest request, HttpServletResponse response) 
             throws IOException {
         long id;
         try {
@@ -702,7 +745,7 @@ public class WebUIController implements ServletContextAware {
             return null;
         }
         model.addAttribute("entry", metadata);
-        model.addAttribute("returnTo", sliceName);
+        model.addAttribute("returnTo", inferReturnTo(request, "/queue/" + sliceName));
         model.addAttribute("userNames", services.getUserDetailsManager().getUserNames());
         return "queueEntry";
     }
@@ -711,7 +754,7 @@ public class WebUIController implements ServletContextAware {
             method=RequestMethod.POST, 
             params={"delete"})
     public String deleteQueueEntry(@PathVariable String entry, Model model, 
-            HttpServletResponse response,
+            HttpServletRequest request, HttpServletResponse response,
             @PathVariable String sliceName,
             @RequestParam(required=false) String mode) 
             throws IOException {
@@ -727,7 +770,7 @@ public class WebUIController implements ServletContextAware {
         services.getQueueManager().delete(id, discard);
         model.addAttribute("message",
                 "Queue entry " + (discard ? "deleted" : "archived"));
-        model.addAttribute("returnTo", ".");
+        model.addAttribute("returnTo", inferReturnTo(request));
         return "ok";
     }
     
@@ -736,13 +779,15 @@ public class WebUIController implements ServletContextAware {
             params={"assign"})
     public String assignQueueEntry(@PathVariable String entry, Model model, 
             @PathVariable String sliceName,
-            HttpServletResponse response, @RequestParam String userName) throws IOException {
+            HttpServletRequest request, HttpServletResponse response, 
+            @RequestParam String userName) 
+            throws IOException {
         if (userName.trim().isEmpty()) {
             model.addAttribute("message", "Set the user name");
             return "queueEntry";
         }
         try {
-            services.getQueueManager().changeUser(new String[]{entry}, userName);
+            services.getQueueManager().changeUser(new String[]{entry}, userName, true);
         } catch (NumberFormatException ex) {
             LOG.debug("Rejected request with bad entry id");
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -750,7 +795,7 @@ public class WebUIController implements ServletContextAware {
         }
         
         model.addAttribute("message", "Queue entry assigned to " + userName);
-        model.addAttribute("returnTo", ".");
+        model.addAttribute("returnTo", inferReturnTo(request));
         return "ok";
     }
     
@@ -798,6 +843,28 @@ public class WebUIController implements ServletContextAware {
             return null;
         }
         return "user";
+    }
+    
+    private String tidy(String str) {
+        return str == null ? "" : str.trim();
+    }
+    
+    private String inferReturnTo(HttpServletRequest request) {
+        return inferReturnTo(request, "");
+    }
+    
+    private String inferReturnTo(HttpServletRequest request, String dflt) {
+        String param = request.getParameter("returnTo");
+        if (param == null) {
+            param = dflt;
+        } else {
+            param = param.trim();
+        }
+        if (param.startsWith(request.getContextPath())) {
+            return param;
+        } else {
+            return request.getContextPath() + "/" + param;
+        }
     }
     
     private DatafileMetadata fetchMetadata(File file) {
@@ -852,10 +919,6 @@ public class WebUIController implements ServletContextAware {
     
     private EntityManager createEntityManager() {
         return services.getEntityManagerFactory().createEntityManager();
-    }
-    
-    private String tidy(String str) {
-        return str == null ? "" : str.trim();
     }
     
     private Date determineCutoff(Model model, String olderThan, 

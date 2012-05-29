@@ -78,8 +78,13 @@ public class QueueManager {
                 query = em.createQuery("from DatasetMetadata m " +
                     whereClause + "order by m.id", DatasetMetadata.class);
             } else {
+                if (whereClause.isEmpty()) {
+                    whereClause = "where ";
+                } else {
+                    whereClause += "and ";
+                }
                 query = em.createQuery("from DatasetMetadata m " +
-                    whereClause + "and facilityName = :name " +
+                    whereClause + "facilityName = :name " +
                         "order by m.id", DatasetMetadata.class);
                 query.setParameter("name", facilityName);
             }
@@ -240,8 +245,9 @@ public class QueueManager {
         }
     }
 
-    public void changeUser(String[] ids, String userName) {
+    public int changeUser(String[] ids, String userName, boolean reassign) {
         EntityManager em = createEntityManager();
+        int nosChanged = 0;
         try {
             em.getTransaction().begin();
             TypedQuery<DatasetMetadata> query =
@@ -250,15 +256,20 @@ public class QueueManager {
             for (String idstr : ids) {
                 query.setParameter("id", new Long(idstr));
                 DatasetMetadata dataset = query.getSingleResult();
-                dataset.setUserName(userName);
-                dataset.setUpdateTimestamp(new Date());
+                if (reassign || dataset.getUserName() == null) {
+                    // FIXME - should rewrite the ".admin" file ...
+                    dataset.setUserName(userName.isEmpty() ? null : userName);
+                    dataset.setUpdateTimestamp(new Date());
+                    nosChanged++;
+                }
             }
             em.getTransaction().commit();
         } catch (NoResultException ex) {
-            LOG.info("Record not found", ex);
+            LOG.info("Records not found", ex);
         } finally {
             em.close();
         }
+        return nosChanged;
     }
     
     private EntityManager createEntityManager() {

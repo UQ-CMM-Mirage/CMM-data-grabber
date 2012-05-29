@@ -58,6 +58,7 @@
 			<url-pattern>/queue/held</url-pattern>
 			<url-pattern>/users</url-pattern>
 			<url-pattern>/users/*</url-pattern>
+			<url-pattern>/assignDatasets</url-pattern>
 		</web-resource-collection>
 		<auth-constraint>
 			<role-name>ROLE_ADMIN</role-name>
@@ -68,7 +69,7 @@
 		<web-resource-collection>
 			<web-resource-name>User Interfaces</web-resource-name>
 			<url-pattern>/loggedIn</url-pattern>
-			<url-pattern>/claim</url-pattern>
+			<url-pattern>/claimDatasets</url-pattern>
 			<url-pattern>/facilitySelect</url-pattern>
 		</web-resource-collection>
 		<auth-constraint>

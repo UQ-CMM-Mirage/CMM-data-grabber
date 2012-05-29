@@ -13,6 +13,7 @@
 		<div class="alert alert-success">
 			You have successfully logged in as '${pageContext.request.remoteUser}'.
 		</div>
+        <button class="btn btn-small" type="button" onclick="window.location = '/paul'">OK</button>
 	</div>
 	<!-- /container -->
 	<%@ include file="/WEB-INF/jsp/commonFooter.jspFrag"%>

@@ -10,19 +10,11 @@
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container-fluid">
-		<h1>Unclaimed Datasets from '${facilityName}'</h1>
-		<form action="claimDatasets" method="post">
-			<p>These datasets currently have no designated owner.</p>
-			<ul>
-				<li><em>Carefully</em> scan the data capture dates and times, and tick
-				    the tickbox for entries that match the time you were using the 
-				    instrument. Then click the "Claim Datasets" button.</li>
-				<li>Please <em>don't claim datasets that were created by someone else.</em>
-					It will make it difficult for them to get access to their data.</li>
-				<li>If your missing datasets are not listed below, please talk to
-					the Lab staff.  The files may have been mistakenly assigned
-					to or claimed by the wrong user.</li>
-			</ul>
+		<h1>
+		    ${slice == 'ALL' ? 'All' : slice == 'HELD' ? 'Held' : 'Ingestible' }
+		    Datasets for Instrument '${facilityName}'
+		</h1>
+		<form action="assignDatasets" method="post">
 			<c:if test="${!empty message}">
 				<div class="alert alert-error">${message}</div>
 			</c:if>
@@ -31,10 +23,11 @@
 					<table class="table table-striped table-bordered table-condensed">
 						<thead>
 							<tr>
-								<td></td>
-								<th>Dataset's queue id #</th>
-								<th>Data capture timestamp</th>
-								<th>Base filename</th>
+								<td class="span1"></td>
+								<th class="span2">Dataset's queue id #</th>
+								<th class="span2">Current owner</th>
+								<th class="span2">Data capture timestamp</th>
+								<th class="span5">Base filename</th>
 							</tr>
 						</thead>
 					    <tbody>
@@ -42,6 +35,7 @@
 						    <tr>
 								<td><input type="checkbox" name="ids" value="${dataset.id}"></td>
 								<td>${dataset.id}</td>
+								<td>${dataset.userName}</td>
 								<td><fmt:formatDate value="${dataset.captureTimestamp}" 
 										type="both" dateStyle="medium"/></td>
 								<td>${dataset.sourceFilePathnameBase}</td>
@@ -50,11 +44,13 @@
 						</tbody>
 					</table>
 					<input type="hidden" name="facilityName" value="${facilityName}">
+					<input type="hidden" name="slice" value="${slice}">
 					<input type="hidden" name="returnTo" value="${returnTo}">
-					<button type="submit" name="claim">Claim Datasets</button>
+					<button type="submit" name="claim">Assign Datasets to</button>
+					<input type="text" name="userName">
 				</c:when>
 				<c:otherwise>
-					<div class="alert alert-success">There are no unclaimed datasets meeting your criteria</div>
+					<div class="alert alert-success">There are no datasets meeting your criteria</div>
 				</c:otherwise>
 			</c:choose>
 			<button type="button" onclick="window.location = '/paul'">Cancel</button>
