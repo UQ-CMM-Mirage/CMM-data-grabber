@@ -258,7 +258,7 @@ public class QueueManager {
                 DatasetMetadata dataset = query.getSingleResult();
                 if (reassign || dataset.getUserName() == null) {
                     // FIXME - should rewrite the ".admin" file ...
-                    dataset.setUserName(userName);
+                    dataset.setUserName(userName.isEmpty() ? null : userName);
                     dataset.setUpdateTimestamp(new Date());
                     nosChanged++;
                 }
