@@ -574,21 +574,6 @@ public class WebUIController implements ServletContextAware {
         return "claimDatasets";
     }
     
-    @RequestMapping(value="/assignDatasets", method=RequestMethod.GET)
-    public String showAssignDatasets(Model model, 
-            HttpServletRequest request, HttpServletResponse response,
-            @RequestParam(required=false) String slice,
-            @RequestParam String facilityName) 
-    throws IOException {
-        model.addAttribute("facilityName", facilityName);
-        model.addAttribute("returnTo", inferReturnTo(request));
-        Slice s = slice == null ? Slice.ALL : Slice.valueOf(slice);
-        model.addAttribute("slice", s);
-        model.addAttribute("datasets", 
-                services.getQueueManager().getSnapshot(s, facilityName));
-        return "assignDatasets";
-    }
-    
     @RequestMapping(value="/claimDatasets", 
             method=RequestMethod.POST, params={"claim"})
     public String claimDatasets(Model model,
@@ -619,25 +604,37 @@ public class WebUIController implements ServletContextAware {
         String userName = principal.getName();
         try {
             int nosChanged = services.getQueueManager().changeUser(ids, userName, false);
-            model.addAttribute("message",
-                    (nosChanged == 0 ? "No datasets " :
-                        nosChanged == 1 ? "1 dataset " :
-                            (nosChanged + " datasets ")) + " claimed");
+            model.addAttribute("message", 
+                    verbiage(nosChanged, "dataset", "datasets", "claimed"));
             return "ok";
         } catch (NumberFormatException ex) {
             LOG.debug("Rejected request with bad entry id(s)");
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return null;
         }
-        
     }
     
-    @RequestMapping(value="/assignDatasets", 
-            method=RequestMethod.POST, params={"claim"})
-    public String assignDatasets(Model model,
+    @RequestMapping(value="/manageDatasets", method=RequestMethod.GET)
+    public String showManageDatasets(Model model, 
+            HttpServletRequest request, HttpServletResponse response,
+            @RequestParam(required=false) String slice,
+            @RequestParam String facilityName) 
+    throws IOException {
+        model.addAttribute("facilityName", facilityName);
+        model.addAttribute("returnTo", inferReturnTo(request));
+        Slice s = slice == null ? Slice.ALL : Slice.valueOf(slice);
+        model.addAttribute("slice", s);
+        model.addAttribute("datasets", 
+                services.getQueueManager().getSnapshot(s, facilityName));
+        return "manageDatasets";
+    }
+    
+    @RequestMapping(value="/manageDatasets", method=RequestMethod.POST)
+    public String manageDatasets(Model model,
             HttpServletRequest request, HttpServletResponse response,
             @RequestParam(required=false) String[] ids,
             @RequestParam(required=false) String userName,
+            @RequestParam String action,
             @RequestParam String facilityName) 
     throws IOException {
         GenericPrincipal principal = (GenericPrincipal) request.getUserPrincipal();
@@ -646,33 +643,57 @@ public class WebUIController implements ServletContextAware {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             return null;
         }
+        if (!principal.hasRole("ROLE_ADMIN")) {
+            model.addAttribute("message", "Only an administrator can manage datasets");
+            return "failed";
+        }        
         model.addAttribute("returnTo", inferReturnTo(request));
         if (ids == null) {
             model.addAttribute("facilityName", facilityName);
             model.addAttribute("datasets", 
                     services.getQueueManager().getSnapshot(Slice.HELD, facilityName));
             model.addAttribute("message", "Check the checkboxes for the " +
-                    "Datasets you want to assign");
-            return "claimDatasets";
-        }
-        if (!principal.hasRole("ROLE_ADMIN")) {
-            model.addAttribute("message", "Only an administrator can assign " +
-                     "Datasets to someone else");
-            return "failed";
-        }
+                    "Datasets you want to manage");
+            return "manageDatasets";
+        } 
         try {
-            int nosChanged = services.getQueueManager().changeUser(ids, userName, true);
-            model.addAttribute("message",
-                    (nosChanged == 0 ? "No datasets " :
-                        nosChanged == 1 ? "1 dataset " :
-                            (nosChanged + " datasets ")) + " assigned");
-            return "ok";
+            int nosChanged;
+            switch (action) {
+            case "archive":
+                nosChanged = services.getQueueManager().delete(ids, false);
+                model.addAttribute("message", 
+                        verbiage(nosChanged, "dataset", "datasets", "archived"));
+                return "ok";
+            case "delete":
+                nosChanged = services.getQueueManager().delete(ids, true);
+                model.addAttribute("message",
+                        verbiage(nosChanged, "dataset", "datasets", "deleted"));
+                return "ok";
+            case "assign":
+                nosChanged = services.getQueueManager().changeUser(ids, userName, true);
+                model.addAttribute("message", 
+                        verbiage(nosChanged, "dataset", "datasets", "assigned"));
+                return "ok";
+            default:
+                LOG.debug("Rejected request with unrecognized action");
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return null;
+            }
         } catch (NumberFormatException ex) {
             LOG.debug("Rejected request with bad entry id(s)");
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return null;
         }
-        
+    }
+    
+    private String verbiage(int count, String singular, String plural, String verbed) {
+        if (count == 0) {
+            return "No " + plural + " " + verbed;
+        } else if (count == 1) {
+            return "1 " + singular + " " + verbed;
+        } else {
+            return count + " " + plural + " " + verbed;
+        }
     }
 
     @RequestMapping(value="/queue/{sliceName:held|ingestible}", 
@@ -690,11 +711,9 @@ public class WebUIController implements ServletContextAware {
         boolean discard = mode.equals("discard");
         QueueManager.Slice slice = QueueManager.Slice.valueOf(sliceName.toUpperCase());
         int count = services.getQueueManager().deleteAll(discard, slice);
-        String verb = discard ? "deleted" : "archived";
-        model.addAttribute("message",
-                (count == 0 ? "No queue entries " :
-                    count == 1 ? "1 queue entry " :
-                        (count + " queue entries ")) + verb);
+        model.addAttribute("message", 
+                verbiage(count, "queue entry", "queue entries", 
+                        discard ? "deleted" : "archived"));
         return "ok";
     }
     
@@ -717,10 +736,9 @@ public class WebUIController implements ServletContextAware {
         QueueManager.Slice slice = QueueManager.Slice.valueOf(sliceName.toUpperCase());
         int count = services.getQueueManager().expireAll(
                 mode.equals("discard"), slice, cutoff);
-        model.addAttribute("message",
-                count == 0 ? "No queue entries expired" :
-                    count == 1 ? "1 queue entry expired" :
-                        (count + " queue entries expired"));
+
+        model.addAttribute("message", 
+                verbiage(count, "queue entry", "queue entries", "expired"));
         return "ok";
     }
 
