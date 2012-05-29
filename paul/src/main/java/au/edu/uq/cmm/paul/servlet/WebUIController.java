@@ -390,6 +390,7 @@ public class WebUIController implements ServletContextAware {
             response.sendRedirect(request.getContextPath() + 
                     "/" + next +
                     "?facilityName=" + URLEncoder.encode(facilityName, "UTF-8") + 
+                    "&slice=" + slice +
                     "&returnTo=" + inferReturnTo(request));
             return null;
         }
@@ -564,7 +565,6 @@ public class WebUIController implements ServletContextAware {
     @RequestMapping(value="/claimDatasets", method=RequestMethod.GET)
     public String showClaimDatasets(Model model, 
             HttpServletRequest request, HttpServletResponse response,
-            @RequestParam(required=false) String slice,
             @RequestParam String facilityName) 
     throws IOException {
         model.addAttribute("facilityName", facilityName);
@@ -622,18 +622,24 @@ public class WebUIController implements ServletContextAware {
     throws IOException {
         model.addAttribute("facilityName", facilityName);
         model.addAttribute("returnTo", inferReturnTo(request));
-        Slice s = Slice.ALL;
-        try {
-            if (slice != null) {
-                s = Slice.valueOf(slice);
-            }
-        } catch (IllegalArgumentException ex) {
-            LOG.debug("unrecognized slice - ignoring");
-        }
+        Slice s = inferSlice(slice, Slice.ALL);
         model.addAttribute("slice", s);
         model.addAttribute("datasets", 
                 services.getQueueManager().getSnapshot(s, facilityName));
         return "manageDatasets";
+    }
+    
+    private Slice inferSlice(String sliceName, Slice dflt) {
+        if (sliceName == null) {
+            return dflt;
+        } else {
+            try {
+                return Slice.valueOf(sliceName.toUpperCase());
+            } catch (IllegalArgumentException ex) {
+                LOG.debug("unrecognized slice - ignoring");
+                return dflt;
+            }
+        }
     }
     
     @RequestMapping(value="/manageDatasets", method=RequestMethod.POST)
@@ -641,6 +647,7 @@ public class WebUIController implements ServletContextAware {
             HttpServletRequest request, HttpServletResponse response,
             @RequestParam(required=false) String[] ids,
             @RequestParam(required=false) String userName,
+            @RequestParam(required=false) String slice,
             @RequestParam String action,
             @RequestParam String facilityName) 
     throws IOException {
@@ -716,7 +723,7 @@ public class WebUIController implements ServletContextAware {
             return "queueDeleteConfirmation";
         }
         boolean discard = mode.equals("discard");
-        QueueManager.Slice slice = QueueManager.Slice.valueOf(sliceName.toUpperCase());
+        Slice slice = inferSlice(sliceName, null);
         int count = services.getQueueManager().deleteAll(discard, slice);
         model.addAttribute("message", 
                 verbiage(count, "queue entry", "queue entries", 
@@ -740,7 +747,7 @@ public class WebUIController implements ServletContextAware {
         if (cutoff == null || confirmed == null) {
             return "queueExpiryForm";
         }
-        QueueManager.Slice slice = QueueManager.Slice.valueOf(sliceName.toUpperCase());
+        QueueManager.Slice slice = inferSlice(sliceName, null);
         int count = services.getQueueManager().expireAll(
                 mode.equals("discard"), slice, cutoff);
 
