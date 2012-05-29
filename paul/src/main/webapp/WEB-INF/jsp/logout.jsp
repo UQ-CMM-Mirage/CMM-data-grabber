@@ -10,7 +10,8 @@
 <%@ include file="/WEB-INF/jsp/commonHeader.jspFrag" %>
 	<div class="container-fluid">
         <h1>Data Grabber Access Control</h1>
-        You are no longer logged in.
+        <div class="alert alert-success">You are no longer logged in.</div>
+        <button class="btn btn-small" type="button" onclick="window.location = '/paul'">OK</button>
 		<% session.invalidate(); %>
 	</div><!-- /container -->
 <%@ include file="/WEB-INF/jsp/commonFooter.jspFrag" %>
