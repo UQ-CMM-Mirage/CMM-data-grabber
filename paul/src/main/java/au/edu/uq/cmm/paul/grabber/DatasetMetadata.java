@@ -33,6 +33,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
@@ -122,6 +123,16 @@ public class DatasetMetadata {
     @Temporal(TemporalType.TIMESTAMP)
     public Date getSessionStartTimestamp() {
         return sessionStartTimestamp;
+    }
+    
+    @JsonIgnore
+    @Transient
+    public Date getIndicativeFileTimestamp() {
+        if (datafiles.isEmpty()) {
+            return null;
+        } else {
+            return datafiles.get(0).getFileWriteTimestamp();
+        }
     }
 
     public void setUserName(String userName) {

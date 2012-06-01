@@ -4,24 +4,26 @@
 <html lang="en">
 <head>
 <%@ include file="/WEB-INF/jsp/commonHead.jspFrag"%>
-<title>Data Grabber Queue Deletion</title>
+<title>Data Grabber Confirmation</title>
 </head>
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container-fluid">
-		<h1>Data Grabber Queue Deletion</h1>
-		<form class="form-inline btn-toolbar" method="POST" action="${returnTo}">
-			Archive files <input id="archive" name="mode" type="radio"
-				value="archive" checked="checked"
-				onclick="document.form.archive.checked = true; document.form.discard.checked = false;">
-			<br> Permanently delete files <input id="discard" name="mode"
-				type="radio" value="discard"
-				onclick="document.form.archive.checked = false; document.form.discard.checked = true;">
+		<h1>Data Grabber Dataset Management Confirmation</h1>
+		<form class="form-inline btn-toolbar" method="POST" action="manageDatasets">
+		    <div class="alert">
+				${discard ? 'Permanently Delete' : 'Archive'}
+				${slice == 'ALL' ? 'All' : slice == 'HELD' ? 'All Held' : 'All Ingestible' }
+				Datasets for ${facilityName}
+			</div>
 			<br>
-			<button class="btn-large" type="submit" name="deleteAll">Yes - do it now</button>
+			<button class="btn-large" type="submit" name="action" 
+				value="${discard ? 'deleteAll' : 'archiveAll'}">Yes - do it now</button>
 			<button class="btn-large" type="button" onclick="window.location = '${returnTo}'">
 				No - get me out of here</button>
 			<input type="hidden" name="confirmed">
+			<input type="hidden" name="slice" value="${slice}">
+			<input type="hidden" name="facilityName" value="${facilityName}">
 		</form>
 	</div>
 	<!-- /container -->

@@ -59,6 +59,7 @@
 			<url-pattern>/users</url-pattern>
 			<url-pattern>/users/*</url-pattern>
 			<url-pattern>/assignDatasets</url-pattern>
+			<url-pattern>/manageDatasets</url-pattern>
 		</web-resource-collection>
 		<auth-constraint>
 			<role-name>ROLE_ADMIN</role-name>

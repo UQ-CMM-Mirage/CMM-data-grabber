@@ -648,6 +648,7 @@ public class WebUIController implements ServletContextAware {
             @RequestParam(required=false) String[] ids,
             @RequestParam(required=false) String userName,
             @RequestParam(required=false) String slice,
+            @RequestParam(required=false) String confirmed,
             @RequestParam String action,
             @RequestParam String facilityName) 
     throws IOException {
@@ -662,8 +663,12 @@ public class WebUIController implements ServletContextAware {
             return "failed";
         }        
         model.addAttribute("returnTo", inferReturnTo(request));
+        if (action.equals("deleteAll")) {
+            return deleteAll(model, request, slice, facilityName, true, confirmed);
+        } else if (action.equals("archiveAll")) {
+            return deleteAll(model, request, slice, facilityName, false, confirmed);
+        }
         if (ids == null) {
-            model.addAttribute("facilityName", facilityName);
             model.addAttribute("datasets", 
                     services.getQueueManager().getSnapshot(Slice.HELD, facilityName));
             model.addAttribute("message", "Check the checkboxes for the " +
@@ -710,21 +715,20 @@ public class WebUIController implements ServletContextAware {
         }
     }
 
-    @RequestMapping(value="/queue/{sliceName:held|ingestible}", 
-            method=RequestMethod.POST, params={"deleteAll"})
-    public String deleteAll(Model model,
-            HttpServletRequest request, 
-            @PathVariable String sliceName,
-            @RequestParam(required=false) String mode, 
-            @RequestParam(required=false) String confirmed) {
-        model.addAttribute("returnTo", inferReturnTo(request, "/queue/" + sliceName));
-        		
+    private String deleteAll(Model model, HttpServletRequest request, 
+            String sliceName, String facilityName, boolean discard, String confirmed) 
+    throws UnsupportedEncodingException {
+        model.addAttribute("returnTo", 
+                    request.getContextPath() + 
+                    "/manageDatasets?facilityName=" + URLEncoder.encode(facilityName, "UTF-8"));
         if (confirmed == null) {
+            model.addAttribute("facilityName", facilityName);
+            model.addAttribute("slice", sliceName);
+            model.addAttribute("discard", discard);
             return "queueDeleteConfirmation";
         }
-        boolean discard = mode.equals("discard");
         Slice slice = inferSlice(sliceName, null);
-        int count = services.getQueueManager().deleteAll(discard, slice);
+        int count = services.getQueueManager().deleteAll(discard, facilityName, slice);
         model.addAttribute("message", 
                 verbiage(count, "queue entry", "queue entries", 
                         discard ? "deleted" : "archived"));
