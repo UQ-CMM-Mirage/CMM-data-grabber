@@ -5,7 +5,7 @@
 <html lang="en">
 <head>
 <%@ include file="/WEB-INF/jsp/commonHead.jspFrag" %>
-<title>Data Grabber Queue Entry</title>
+<title>Data Grabber Queued Dataset</title>
 <link href="/paul/css/ui-lightness/jquery-ui-1.8.18.custom.css"
 	rel="stylesheet" type="text/css">
 <script type="text/javascript" src="/paul/js/jquery-ui-1.8.18.custom.min.js"></script>
@@ -23,7 +23,7 @@
 <body>
     <%@ include file="/WEB-INF/jsp/commonHeader.jspFrag" %>
 	<div class="container-fluid">
-	<h1>Data Grabber Queue Entry # ${entry.id}</h1>
+	<h1>Data Grabber Queued Dataset # ${entry.id}</h1>
 	<div class=".ui-widget-content">
 	<ul>
 		<li>Facility : ${entry.facilityName}</li>
@@ -60,13 +60,7 @@
 		</li>
 		<li>Metadata filename: ${entry.metadataFilePathname}</li>
 	</ul>
-	<c:if test="${empty entry.userName}">
-			<form action="${entry.id}" method="POST">
-				User name: <input type="text" name="userName" id="users"> <br>
-				<button type="submit" name="claim">Claim as mine</button>
-				<button type="submit" name="assign">Assign to user</button>
-			</form>
-	</c:if>
+	<button class="btn btn-small" type="button" onclick="history.back()">OK</button>
 	</div>
 	</div><!-- /container -->
 <%@ include file="/WEB-INF/jsp/commonFooter.jspFrag" %>

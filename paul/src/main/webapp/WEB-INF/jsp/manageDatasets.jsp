@@ -34,7 +34,7 @@
 						<c:forEach var="dataset" items="${datasets}">
 						    <tr>
 								<td><input type="checkbox" name="ids" value="${dataset.id}">
-								${dataset.id}</td>
+								<a href="/paul/datasets/${dataset.id}">${dataset.id}</a></td>
 								<td>${dataset.userName}</td>
 								<td><fmt:formatDate value="${dataset.indicativeFileTimestamp}" 
 										type="both" dateStyle="medium"/></td>
@@ -54,7 +54,8 @@
 					<button type="submit" name="action" value="delete">Delete Selected Datasets</button>
 					<button type="submit" name="action" value="archive">Archive Selected Datasets</button>
 					<br>
-					<c:set var="qual" value="${slice == 'ALL' ? 'All' : slice == 'HELD' ? 'All Held' : 'All Ingestible' }"/>
+					<c:set var="qual" 
+					       value="${slice == 'ALL' ? 'All' : slice == 'HELD' ? 'All Held' : 'All Ingestible' }"/>
 					<button type="submit" name="action" value="deleteAll">
 						Delete ${qual} Datasets for ${facilityName}
 					</button>
