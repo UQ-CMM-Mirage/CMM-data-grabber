@@ -5,7 +5,7 @@
 <html lang="en">
 <head>
 <%@ include file="/WEB-INF/jsp/commonHead.jspFrag"%>
-<title>Claim Held Datasets</title>
+<title>Manage Queued Datasets</title>
 </head>
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
@@ -14,7 +14,7 @@
 		    ${slice == 'ALL' ? 'All' : slice == 'HELD' ? 'Held' : 'Ingestible' }
 		    Datasets for Instrument '${facilityName}'
 		</h1>
-		<form action="assignDatasets" method="post">
+		<form action="manageDatasets" method="post">
 			<c:if test="${!empty message}">
 				<div class="alert alert-error">${message}</div>
 			</c:if>
@@ -46,14 +46,16 @@
 					<input type="hidden" name="facilityName" value="${facilityName}">
 					<input type="hidden" name="slice" value="${slice}">
 					<input type="hidden" name="returnTo" value="${returnTo}">
-					<button type="submit" name="claim">Assign Datasets to</button>
+					<button type="submit" name="action" value="assign">Assign Datasets to</button>
 					<input type="text" name="userName">
+					<button type="submit" name="action" value="delete">Delete Datasets</button>
+					<button type="submit" name="action" value="archive">Archive Datasets</button>
 				</c:when>
 				<c:otherwise>
 					<div class="alert alert-success">There are no datasets meeting your criteria</div>
 				</c:otherwise>
 			</c:choose>
-			<button type="button" onclick="window.location = '/paul'">Cancel</button>
+			<button type="button" onclick="window.location = '${returnTo}'">Cancel</button>
 		</form>
 	</div>
 	<!-- /container -->
