@@ -626,6 +626,7 @@ public class WebUIController implements ServletContextAware {
         model.addAttribute("slice", s);
         model.addAttribute("datasets", 
                 services.getQueueManager().getSnapshot(s, facilityName));
+        model.addAttribute("userNames", services.getUserDetailsManager().getUserNames());
         return "manageDatasets";
     }
     
@@ -671,6 +672,7 @@ public class WebUIController implements ServletContextAware {
         if (ids == null) {
             model.addAttribute("datasets", 
                     services.getQueueManager().getSnapshot(Slice.HELD, facilityName));
+            model.addAttribute("userNames", services.getUserDetailsManager().getUserNames());
             model.addAttribute("message", "Check the checkboxes for the " +
                     "Datasets you want to manage");
             return "manageDatasets";
@@ -760,10 +762,9 @@ public class WebUIController implements ServletContextAware {
         return "ok";
     }
 
-    @RequestMapping(value="/queue/{sliceName:held|ingestible}/{entry:.+}", 
+    @RequestMapping(value="/datasets/{entry:.+}", 
             method=RequestMethod.GET)
     public String queueEntry(@PathVariable String entry, Model model, 
-            @PathVariable String sliceName,
             HttpServletRequest request, HttpServletResponse response) 
             throws IOException {
         long id;
@@ -781,58 +782,8 @@ public class WebUIController implements ServletContextAware {
             return null;
         }
         model.addAttribute("entry", metadata);
-        model.addAttribute("returnTo", inferReturnTo(request, "/queue/" + sliceName));
-        model.addAttribute("userNames", services.getUserDetailsManager().getUserNames());
-        return "queueEntry";
-    }
-    
-    @RequestMapping(value="/queue/{sliceName:held|ingestible}/{entry:.+}",
-            method=RequestMethod.POST, 
-            params={"delete"})
-    public String deleteQueueEntry(@PathVariable String entry, Model model, 
-            HttpServletRequest request, HttpServletResponse response,
-            @PathVariable String sliceName,
-            @RequestParam(required=false) String mode) 
-            throws IOException {
-        long id;
-        try {
-            id = Long.parseLong(entry);
-        } catch (NumberFormatException ex) {
-            LOG.debug("Rejected request with bad entry id");
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return null;
-        }
-        boolean discard = mode.equals("discard");
-        services.getQueueManager().delete(id, discard);
-        model.addAttribute("message",
-                "Queue entry " + (discard ? "deleted" : "archived"));
         model.addAttribute("returnTo", inferReturnTo(request));
-        return "ok";
-    }
-    
-    @RequestMapping(value="/queue/{sliceName:held|ingestible}/{entry:.+}", 
-            method=RequestMethod.POST, 
-            params={"assign"})
-    public String assignQueueEntry(@PathVariable String entry, Model model, 
-            @PathVariable String sliceName,
-            HttpServletRequest request, HttpServletResponse response, 
-            @RequestParam String userName) 
-            throws IOException {
-        if (userName.trim().isEmpty()) {
-            model.addAttribute("message", "Set the user name");
-            return "queueEntry";
-        }
-        try {
-            services.getQueueManager().changeUser(new String[]{entry}, userName, true);
-        } catch (NumberFormatException ex) {
-            LOG.debug("Rejected request with bad entry id");
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            return null;
-        }
-        
-        model.addAttribute("message", "Queue entry assigned to " + userName);
-        model.addAttribute("returnTo", inferReturnTo(request));
-        return "ok";
+        return "dataset";
     }
     
     @RequestMapping(value="/files/{fileName:.+}", method=RequestMethod.GET)
