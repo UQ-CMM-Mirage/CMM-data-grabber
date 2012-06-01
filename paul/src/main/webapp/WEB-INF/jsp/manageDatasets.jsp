@@ -23,19 +23,21 @@
 					<table class="table table-striped table-bordered table-condensed">
 						<thead>
 							<tr>
-								<td class="span1"></td>
-								<th class="span2">Dataset's queue id #</th>
+								<th class="span2">Dataset id #</th>
 								<th class="span2">Current owner</th>
+								<th class="span2">Data write timestamp</th>
 								<th class="span2">Data capture timestamp</th>
-								<th class="span5">Base filename</th>
+								<th class="span4">Base filename</th>
 							</tr>
 						</thead>
 					    <tbody>
 						<c:forEach var="dataset" items="${datasets}">
 						    <tr>
-								<td><input type="checkbox" name="ids" value="${dataset.id}"></td>
-								<td>${dataset.id}</td>
+								<td><input type="checkbox" name="ids" value="${dataset.id}">
+								${dataset.id}</td>
 								<td>${dataset.userName}</td>
+								<td><fmt:formatDate value="${dataset.indicativeFileTimestamp}" 
+										type="both" dateStyle="medium"/></td>
 								<td><fmt:formatDate value="${dataset.captureTimestamp}" 
 										type="both" dateStyle="medium"/></td>
 								<td>${dataset.sourceFilePathnameBase}</td>
