@@ -206,6 +206,30 @@ public class QueueManager {
             em.close();
         }
     }
+    
+    public int delete(String[] ids, boolean discard) {
+        int count = 0;
+        EntityManager em = createEntityManager();
+        try {
+            em.getTransaction().begin();
+            for (String idStr : ids) {
+                long id = Long.parseLong(idStr);
+                TypedQuery<DatasetMetadata> query =
+                        em.createQuery("from DatasetMetadata d where d.id = :id", 
+                                DatasetMetadata.class);
+                query.setParameter("id", id);
+                List<DatasetMetadata> datasets = query.getResultList();
+                for (DatasetMetadata dataset : datasets) {
+                    doDelete(discard, em, dataset);
+                    count++;
+                }
+            }
+            em.getTransaction().commit();
+        } finally {
+            em.close();
+        }
+        return count;
+    }
 
     private void doDelete(boolean discard, EntityManager entityManager,
             DatasetMetadata dataset) {
@@ -275,5 +299,4 @@ public class QueueManager {
     private EntityManager createEntityManager() {
         return services.getEntityManagerFactory().createEntityManager();
     }
-
 }

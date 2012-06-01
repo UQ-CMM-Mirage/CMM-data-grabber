@@ -87,6 +87,7 @@ public class DatasetMetadata {
         this.accountName = accountName;
         this.emailAddress = emailAddress;
         this.captureTimestamp = captureTimestamp;
+        this.updateTimestamp = captureTimestamp;
         this.sessionStartTimestamp = sessionStartTimestamp;
         this.sessionUuid = sessionUuid;
         this.recordUuid = UUID.randomUUID().toString();
