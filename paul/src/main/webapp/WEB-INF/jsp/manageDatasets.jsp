@@ -23,7 +23,7 @@
 					<table class="table table-striped table-bordered table-condensed">
 						<thead>
 							<tr>
-								<th class="span2">Dataset id #</th>
+								<th class="span2">Dataset id</th>
 								<th class="span2">Current owner</th>
 								<th class="span2">Data write timestamp</th>
 								<th class="span2">Data capture timestamp</th>
