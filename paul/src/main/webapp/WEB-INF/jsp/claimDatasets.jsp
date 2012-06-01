@@ -31,8 +31,8 @@
 					<table class="table table-striped table-bordered table-condensed">
 						<thead>
 							<tr>
-								<td></td>
-								<th>Dataset's queue id #</th>
+								<th>Dataset id</th>
+								<th>Data write timestamp</th>
 								<th>Data capture timestamp</th>
 								<th>Base filename</th>
 							</tr>
@@ -40,8 +40,9 @@
 					    <tbody>
 						<c:forEach var="dataset" items="${datasets}">
 						    <tr>
-								<td><input type="checkbox" name="ids" value="${dataset.id}"></td>
-								<td>${dataset.id}</td>
+								<td><input type="checkbox" name="ids" value="${dataset.id}">${dataset.id}</td>
+								<td><fmt:formatDate value="${dataset.indicativeFileTimestamp}" 
+										type="both" dateStyle="medium"/></td>
 								<td><fmt:formatDate value="${dataset.captureTimestamp}" 
 										type="both" dateStyle="medium"/></td>
 								<td>${dataset.sourceFilePathnameBase}</td>

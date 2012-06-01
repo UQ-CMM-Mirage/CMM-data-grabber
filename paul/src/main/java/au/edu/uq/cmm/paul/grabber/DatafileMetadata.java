@@ -58,8 +58,8 @@ public class DatafileMetadata {
     
     public DatafileMetadata(
             String sourceFilePathname, String facilityFilePathname,
-            String capturedFilePathname, Date captureTimestamp, 
-            Date fileWriteTimestamp, String mimeType, long fileSize) {
+            String capturedFilePathname, Date fileWriteTimestamp, 
+            Date captureTimestamp, String mimeType, long fileSize) {
         super();
         this.sourceFilePathname = sourceFilePathname;
         this.facilityFilePathname = facilityFilePathname;
