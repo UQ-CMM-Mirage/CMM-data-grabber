@@ -10,7 +10,7 @@
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container-fluid">
-		<h1>
+	    <h1>
 		    ${slice == 'ALL' ? 'All' : slice == 'HELD' ? 'Held' : 'Ingestible' }
 		    Datasets for Instrument '${facilityName}'
 		</h1>
@@ -48,16 +48,33 @@
 					<input type="hidden" name="facilityName" value="${facilityName}">
 					<input type="hidden" name="slice" value="${slice}">
 					<input type="hidden" name="returnTo" value="${returnTo}">
-					<button type="submit" name="action" value="assign">Assign Datasets to</button>
+					<button type="submit" name="action" value="assign">Assign Selected Datasets to</button>
 					<input type="text" name="userName">
-					<button type="submit" name="action" value="delete">Delete Datasets</button>
-					<button type="submit" name="action" value="archive">Archive Datasets</button>
+					<br>
+					<button type="submit" name="action" value="delete">Delete Selected Datasets</button>
+					<button type="submit" name="action" value="archive">Archive Selected Datasets</button>
+					<br>
+					<c:set var="qual" value="${slice == 'ALL' ? 'All' : slice == 'HELD' ? 'All Held' : 'All Ingestible' }"/>
+					<button type="submit" name="action" value="deleteAll">
+						Delete ${qual} Datasets for ${facilityName}
+					</button>
+					<br>
+					<button type="submit" name="action" value="archiveAll">
+						Archive ${qual} Datasets for ${facilityName}
+					</button>
+					<br>
+					<button type="submit" name="action" value="expire">
+						Run expiry for ${qual} Datasets for ${facilityName}
+					</button>
+					<br>
+					<button type="button" onclick="window.location = '${returnTo}'">Cancel</button>
 				</c:when>
 				<c:otherwise>
 					<div class="alert alert-success">There are no datasets meeting your criteria</div>
+					<br>
+					<button type="button" onclick="window.location = '${returnTo}'">OK</button>
 				</c:otherwise>
 			</c:choose>
-			<button type="button" onclick="window.location = '${returnTo}'">Cancel</button>
 		</form>
 	</div>
 	<!-- /container -->

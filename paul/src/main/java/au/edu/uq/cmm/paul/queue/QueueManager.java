@@ -161,7 +161,7 @@ public class QueueManager {
         }
     }
 
-    public int deleteAll(boolean discard, Slice slice) {
+    public int deleteAll(boolean discard, String facilityName, Slice slice) {
         EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
@@ -174,9 +174,19 @@ public class QueueManager {
                 whereClause = " where m.userName is not null";
                 break;
             }
-            List<DatasetMetadata> datasets = 
-                    em.createQuery("from DatasetMetadata m" + whereClause, 
-                    DatasetMetadata.class).getResultList();
+            if (facilityName != null && !facilityName.isEmpty()) {
+                if (whereClause.isEmpty()) {
+                    whereClause = " where ";
+                } else {
+                    whereClause += " and ";
+                }
+                whereClause += "m.facilityName = :facility";
+            }
+            TypedQuery<DatasetMetadata> query = em.createQuery(
+                    "from DatasetMetadata m" + whereClause, 
+                    DatasetMetadata.class);
+            query.setParameter("facility", facilityName);
+            List<DatasetMetadata> datasets = query.getResultList();
             for (DatasetMetadata dataset : datasets) {
                 doDelete(discard, em, dataset);
             }

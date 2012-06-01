@@ -22,7 +22,7 @@
 						Select the Instrument you need to use
 					</c:when>
 					<c:otherwise>
-						Facility Selection
+						Facility and Dataset Selection
 					</c:otherwise>
 				</c:choose>
 				<c:if test="${! empty message}">
