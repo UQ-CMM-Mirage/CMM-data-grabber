@@ -25,9 +25,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -81,7 +79,7 @@ public class FileGrabber extends CompositeServiceBase
     private final FacilityStatusManager statusManager;
     private final Facility facility;
     private File safeDirectory;
-    private ExecutorService executor;
+    private PausableThreadPoolExecutor executor;
     private final EntityManagerFactory entityManagerFactory;
     private final Paul services;
     private boolean hold;
@@ -131,7 +129,13 @@ public class FileGrabber extends CompositeServiceBase
             hold = true;
             heldEvents = new ArrayList<FileWatcherEvent>();
         }
-        executor = new ThreadPoolExecutor(0, 1, 999, TimeUnit.SECONDS, work);
+        executor = new PausableThreadPoolExecutor(0, 1, 999, TimeUnit.SECONDS, work);
+        // We do "catchup" event generation with the executor paused, so that the worker
+        // thread doesn't jump the gun and start processing work entries before all events
+        // have been accumulated.
+        // Note: datasets grabbed in catchup will contain all files whose names match,
+        // irrespective of the file timestamps.  This is the best we can do in the circumstances.
+        executor.pause();
         FacilityStatus status = services.getFacilityStatusManager().getStatus(facility);
         doCatchup(status.getLocalDirectory(), determineCatchupTime(facility));
         List<FileWatcherEvent> tmp;
@@ -143,6 +147,7 @@ public class FileGrabber extends CompositeServiceBase
         for (FileWatcherEvent event : tmp) {
             processEvent(event);
         }
+        executor.resume();
     }
     
     private long determineCatchupTime(Facility facility) {
@@ -172,7 +177,7 @@ public class FileGrabber extends CompositeServiceBase
             } else if (member.isFile() && 
                     (lastModified = member.lastModified()) > after) {
                 FileWatcherEvent event = new FileWatcherEvent(
-                        facility, member, true, lastModified);
+                        facility, member, true, lastModified, true);
                 processEvent(event);
             }
         }

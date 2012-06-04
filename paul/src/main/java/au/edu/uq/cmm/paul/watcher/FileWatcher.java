@@ -164,7 +164,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
         FacilityStatus status = services.getFacilityStatusManager().getStatus(facility);
         FileGrabber grabber = status.getFileGrabber();
         if (grabber != null) {
-            grabber.eventOccurred(new FileWatcherEvent(facility, file, create, now));
+            grabber.eventOccurred(new FileWatcherEvent(facility, file, create, now, false));
         }
     }
 
