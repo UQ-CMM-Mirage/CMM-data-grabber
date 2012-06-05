@@ -29,14 +29,17 @@ public class FileWatcherEvent extends EventObject {
     private final File file;
     private final boolean create;
     private final long timestamp;
+    private final boolean catchup;
     
-    public FileWatcherEvent(FacilityConfig facility, File file, boolean create, long timestamp) {
+    public FileWatcherEvent(FacilityConfig facility, File file, 
+            boolean create, long timestamp, boolean catchup) {
         super(facility);
         this.file = file;
         this.create = create;
         this.timestamp = timestamp;
+        this.catchup = catchup;
     }
-    
+
     public FacilityConfig getFacility() {
         return (FacilityConfig) getSource();
     }
@@ -51,5 +54,9 @@ public class FileWatcherEvent extends EventObject {
 
     public long getTimestamp() {
         return timestamp;
+    }
+
+    public boolean isCatchup() {
+        return catchup;
     }
 }

@@ -73,7 +73,9 @@ class WorkEntry implements Runnable {
     private final Map<File, GrabbedFile> files;
     private final Facility facility;
     private final Date timestamp;
+    private long latestFileTimestamp = 0L;
     private final boolean holdDatasetsWithNoUser;
+    private final boolean catchup;
     
     
     public WorkEntry(Paul services, FileWatcherEvent event, File baseFile) {
@@ -90,9 +92,10 @@ class WorkEntry implements Runnable {
                 services.getConfiguration().isHoldDatasetsWithNoUser();
         long timeout = services.getConfiguration().getGrabberTimeout();
         this.grabberTimeout = timeout == 0 ? DEFAULT_GRABBER_TIMEOUT : timeout;
+        this.catchup = event.isCatchup();
         addEvent(event);
     }
-
+    
     private String mapToInstrumentPath(Facility facility, File file) {
         String filePath = file.getAbsolutePath();
         FacilityStatus status = statusManager.getStatus(facility);
@@ -124,6 +127,7 @@ class WorkEntry implements Runnable {
             } else {
                 LOG.debug("File " + file + " already in map for grabbing");
             }
+            updateLatestFileTimestamp(file);
         } else {
             for (DatafileTemplate template : templates) {
                 Pattern pattern = template.getCompiledFilePattern(
@@ -137,6 +141,7 @@ class WorkEntry implements Runnable {
                     } else {
                         LOG.debug("File " + file + " already in map for grabbing");
                     }
+                    updateLatestFileTimestamp(file);
                     matched = true;
                     break;
                 }
@@ -145,6 +150,17 @@ class WorkEntry implements Runnable {
                 LOG.debug("File " + file + " didn't match any template - ignoring");
             }
         }
+    }
+
+    private void updateLatestFileTimestamp(File file) {
+        long timestamp = file.lastModified();
+        if (timestamp > latestFileTimestamp) {
+            latestFileTimestamp = timestamp;
+        }
+    }
+
+    public long getLatestFileTimestamp() {
+        return latestFileTimestamp;
     }
 
     @Override
@@ -202,14 +218,16 @@ class WorkEntry implements Runnable {
         long limit = grabberTimeout < 0 ? Long.MAX_VALUE :
             System.currentTimeMillis() + grabberTimeout;
         do {
-            int settling = facility.getFileSettlingTime();
-            if (settling <= 0) {
-                settling = FileGrabber.DEFAULT_FILE_SETTLING_TIME;
-            }
-            // Wait for the file modification events stop arriving ... plus
-            // the settling time.
-            while (events.poll(settling, TimeUnit.MILLISECONDS) != null) {
-                LOG.debug("poll");
+            if (!catchup) {
+                int settling = facility.getFileSettlingTime();
+                if (settling <= 0) {
+                    settling = FileGrabber.DEFAULT_FILE_SETTLING_TIME;
+                }
+                // Wait for the file modification events stop arriving ... plus
+                // the settling time.
+                while (events.poll(settling, TimeUnit.MILLISECONDS) != null) {
+                    LOG.debug("poll");
+                }
             }
             // Check that the dataset's non-optional files are all present,
             // and that they meet the minimum size requirements.
@@ -238,10 +256,11 @@ class WorkEntry implements Runnable {
                     break;
                 }
             } 
-        } while (incomplete && limit > System.currentTimeMillis());
+        } while (incomplete && !catchup && limit > System.currentTimeMillis());
         if (incomplete) {
             LOG.info("Dataset for baseFile " + baseFile + 
-                    " did not complete within timeout.  Dropping it.");
+                    (catchup ? " is incomplete" : " did not complete within timeout") +
+                    ".  Dropping it.");
             return false;
         }
         
