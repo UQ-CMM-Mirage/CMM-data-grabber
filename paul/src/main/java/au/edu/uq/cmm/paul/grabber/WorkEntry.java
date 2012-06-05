@@ -73,6 +73,7 @@ class WorkEntry implements Runnable {
     private final Map<File, GrabbedFile> files;
     private final Facility facility;
     private final Date timestamp;
+    private long latestFileTimestamp = 0L;
     private final boolean holdDatasetsWithNoUser;
     private final boolean catchup;
     
@@ -94,7 +95,7 @@ class WorkEntry implements Runnable {
         this.catchup = event.isCatchup();
         addEvent(event);
     }
-
+    
     private String mapToInstrumentPath(Facility facility, File file) {
         String filePath = file.getAbsolutePath();
         FacilityStatus status = statusManager.getStatus(facility);
@@ -126,6 +127,7 @@ class WorkEntry implements Runnable {
             } else {
                 LOG.debug("File " + file + " already in map for grabbing");
             }
+            updateLatestFileTimestamp(file);
         } else {
             for (DatafileTemplate template : templates) {
                 Pattern pattern = template.getCompiledFilePattern(
@@ -139,6 +141,7 @@ class WorkEntry implements Runnable {
                     } else {
                         LOG.debug("File " + file + " already in map for grabbing");
                     }
+                    updateLatestFileTimestamp(file);
                     matched = true;
                     break;
                 }
@@ -147,6 +150,17 @@ class WorkEntry implements Runnable {
                 LOG.debug("File " + file + " didn't match any template - ignoring");
             }
         }
+    }
+
+    private void updateLatestFileTimestamp(File file) {
+        long timestamp = file.lastModified();
+        if (timestamp > latestFileTimestamp) {
+            latestFileTimestamp = timestamp;
+        }
+    }
+
+    public long getLatestFileTimestamp() {
+        return latestFileTimestamp;
     }
 
     @Override
