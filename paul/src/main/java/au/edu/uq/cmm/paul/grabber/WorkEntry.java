@@ -163,6 +163,10 @@ class WorkEntry implements Runnable {
         return latestFileTimestamp;
     }
 
+    public File getBaseFile() {
+        return baseFile;
+    }
+
     @Override
     public void run() {
         FileGrabber.LOG.debug("Processing a workEntry");
