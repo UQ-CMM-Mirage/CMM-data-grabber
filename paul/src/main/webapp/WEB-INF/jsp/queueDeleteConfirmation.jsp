@@ -11,13 +11,14 @@
 	<div class="container-fluid">
 		<h1>Data Grabber Dataset Management Confirmation</h1>
 		<form class="form-inline btn-toolbar" method="POST" action="manageDatasets">
-		    <div class="alert">
+		    <div class="alert alert-info">
+		        Confirmation is required - do you <em>really</em> want to
 				${discard ? 'Permanently Delete' : 'Archive'}
 				${slice == 'ALL' ? 'All' : slice == 'HELD' ? 'All Held' : 'All Ingestible' }
-				Datasets for ${facilityName}
+				Datasets for ${facilityName}?
 			</div>
 			<br>
-			<button class="btn-large" type="submit" name="action" 
+			<button class="btn-large btn-danger" type="submit" name="action" 
 				value="${discard ? 'deleteAll' : 'archiveAll'}">Yes - do it now</button>
 			<button class="btn-large" type="button" onclick="window.location = '${returnTo}'">
 				No - get me out of here</button>
