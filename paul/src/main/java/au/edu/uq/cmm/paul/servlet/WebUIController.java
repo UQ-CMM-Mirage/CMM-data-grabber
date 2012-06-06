@@ -673,29 +673,30 @@ public class WebUIController implements ServletContextAware {
         } else if (action.equals("expire")) {
             return expire(model, request, slice, facilityName, confirmed);
         }
+        QueueManager qm = services.getQueueManager();
         if (ids == null) {
             model.addAttribute("datasets", 
-                    services.getQueueManager().getSnapshot(Slice.HELD, facilityName));
+                    qm.getSnapshot(inferSlice(slice, Slice.ALL), facilityName));
             model.addAttribute("userNames", services.getUserDetailsManager().getUserNames());
-            model.addAttribute("message", "Check the checkboxes for the " +
-                    "Datasets you want to manage");
+            model.addAttribute("message", 
+                    "Check the checkboxes for the Datasets you want to manage");
             return "manageDatasets";
         } 
         try {
             int nosChanged;
             switch (action) {
             case "archive":
-                nosChanged = services.getQueueManager().delete(ids, false);
+                nosChanged = qm.delete(ids, false);
                 model.addAttribute("message", 
                         verbiage(nosChanged, "dataset", "datasets", "archived"));
                 return "ok";
             case "delete":
-                nosChanged = services.getQueueManager().delete(ids, true);
+                nosChanged = qm.delete(ids, true);
                 model.addAttribute("message",
                         verbiage(nosChanged, "dataset", "datasets", "deleted"));
                 return "ok";
             case "assign":
-                nosChanged = services.getQueueManager().changeUser(ids, userName, true);
+                nosChanged = qm.changeUser(ids, userName, true);
                 model.addAttribute("message", 
                         verbiage(nosChanged, "dataset", "datasets", "assigned"));
                 return "ok";
@@ -743,9 +744,8 @@ public class WebUIController implements ServletContextAware {
             String sliceName, String facilityName, String confirmed) {
         String mode = request.getParameter("mode");
         String olderThan = request.getParameter("olderThan");
-        String period = request.getParameter("period");
-        String unit = request.getParameter("unit");
-        Date cutoff = determineCutoff(model, tidy(olderThan), tidy(period), tidy(unit));
+        String age = request.getParameter("age");
+        Date cutoff = determineCutoff(model, tidy(olderThan), tidy(age));
         if (cutoff == null || confirmed == null) {
             return "queueExpiryForm";
         }
@@ -904,24 +904,25 @@ public class WebUIController implements ServletContextAware {
         return services.getEntityManagerFactory().createEntityManager();
     }
     
-    private Date determineCutoff(Model model, String olderThan, 
-            String period, String unit) {
-        if (olderThan.isEmpty() && period.isEmpty()) {
+    private Date determineCutoff(Model model, String olderThan, String age) {
+        
+        if (olderThan.isEmpty() && age.isEmpty()) {
             model.addAttribute("message", 
-                    "Either an expiry date or period must be supplied");
+                    "Either an expiry date or an age must be supplied");
             return null;
         }
+        String[] parts = age.split("\\s", 2);
         DateTime cutoff;
         if (olderThan.isEmpty()) {
             int value;
             try {
-                value = Integer.parseInt(period);
+                value = Integer.parseInt(parts[0]);
             } catch (NumberFormatException ex) {
-                model.addAttribute("message", "Malformed period");
+                model.addAttribute("message", "Age quantity is not an integer");
                 return null;
             }
             BaseSingleFieldPeriod p;
-            switch (unit) {
+            switch (parts.length == 1 ? "" : parts[1]) {
             case "minute" : case "minutes" :
                 p = Minutes.minutes(value);
                 break;
@@ -941,7 +942,7 @@ public class WebUIController implements ServletContextAware {
                 p = Years.years(value);
                 break;
             default :
-                model.addAttribute("message", "Unrecognized unit");
+                model.addAttribute("message", "Unrecognized age time-unit");
                 return null;
             }
             cutoff = DateTime.now().minus(p);
@@ -961,7 +962,7 @@ public class WebUIController implements ServletContextAware {
             }
         }
         if (cutoff.isAfter(new DateTime())) {
-            model.addAttribute("message", "Expiry date is in the future");
+            model.addAttribute("message", "Supplied or computed expiry date is in the future!");
             return null;
         }
         model.addAttribute("computedDate", FORMATS[0].print(cutoff));
