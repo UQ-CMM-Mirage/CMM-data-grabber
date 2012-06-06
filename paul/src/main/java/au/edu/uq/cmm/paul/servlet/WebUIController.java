@@ -673,29 +673,30 @@ public class WebUIController implements ServletContextAware {
         } else if (action.equals("expire")) {
             return expire(model, request, slice, facilityName, confirmed);
         }
+        QueueManager qm = services.getQueueManager();
         if (ids == null) {
             model.addAttribute("datasets", 
-                    services.getQueueManager().getSnapshot(Slice.HELD, facilityName));
+                    qm.getSnapshot(inferSlice(slice, Slice.ALL), facilityName));
             model.addAttribute("userNames", services.getUserDetailsManager().getUserNames());
-            model.addAttribute("message", "Check the checkboxes for the " +
-                    "Datasets you want to manage");
+            model.addAttribute("message", 
+                    "Check the checkboxes for the Datasets you want to manage");
             return "manageDatasets";
         } 
         try {
             int nosChanged;
             switch (action) {
             case "archive":
-                nosChanged = services.getQueueManager().delete(ids, false);
+                nosChanged = qm.delete(ids, false);
                 model.addAttribute("message", 
                         verbiage(nosChanged, "dataset", "datasets", "archived"));
                 return "ok";
             case "delete":
-                nosChanged = services.getQueueManager().delete(ids, true);
+                nosChanged = qm.delete(ids, true);
                 model.addAttribute("message",
                         verbiage(nosChanged, "dataset", "datasets", "deleted"));
                 return "ok";
             case "assign":
-                nosChanged = services.getQueueManager().changeUser(ids, userName, true);
+                nosChanged = qm.changeUser(ids, userName, true);
                 model.addAttribute("message", 
                         verbiage(nosChanged, "dataset", "datasets", "assigned"));
                 return "ok";
