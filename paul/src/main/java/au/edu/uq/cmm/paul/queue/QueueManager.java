@@ -28,6 +28,7 @@ import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
+import javax.persistence.TemporalType;
 import javax.persistence.TypedQuery;
 
 import org.codehaus.jackson.JsonFactory;
@@ -132,7 +133,7 @@ public class QueueManager {
         }
     }
 
-    public int expireAll(boolean discard, Slice slice, Date olderThan) {
+    public int expireAll(boolean discard, String facilityName, Slice slice, Date olderThan) {
         EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
@@ -145,11 +146,15 @@ public class QueueManager {
                 andPart = " and m.userName is not null";
                 break;
             }
+            if (facilityName != null && !facilityName.isEmpty()) {
+                andPart += " and m.facilityName = :facility";
+            }
+            String queryString = "from DatasetMetadata m " +
+                    "where m.updateTimestamp < :cutoff" + andPart;
             TypedQuery<DatasetMetadata> query = 
-                    em.createQuery("from DatasetMetadata d " +
-                    		"where d.captureTimestamp < :cutoff" + andPart, 
-                    DatasetMetadata.class);
-            query.setParameter("cutoff", olderThan);
+                    em.createQuery(queryString, DatasetMetadata.class);
+            query.setParameter("cutoff", olderThan, TemporalType.TIMESTAMP);
+            query.setParameter("facility", facilityName);
             List<DatasetMetadata> datasets = query.getResultList();
             for (DatasetMetadata dataset : datasets) {
                 doDelete(discard, em, dataset);

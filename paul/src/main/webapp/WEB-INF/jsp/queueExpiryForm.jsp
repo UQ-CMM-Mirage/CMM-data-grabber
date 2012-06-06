@@ -13,7 +13,7 @@
 
 		${message}
 
-		<form name="form" method="POST" action="${returnTo}">
+		<form name="form" method="POST" action="manageDatasets">
 			<c:if test="${empty computedDate}">
         	Older than :
             <input name="olderThan" type="text"
@@ -35,13 +35,13 @@
 					onclick="document.form.archive.checked = false; document.form.discard.checked = true;">
 				<br>
 
-				<button type="submit" name="expire">Submit</button>
+				<button type="submit" name="action" value="expire">Submit</button>
 				<button type="button" onclick="window.location = '${returnTo}'">Cancel</button>
 			</c:if>
 			<c:if test="${!empty computedDate}">
         	  Confirmation - expire all files captured before ${computedDate}.
         	  <br>
-				<button type="submit" name="expire">Yes - do it now</button>
+				<button type="submit" name="action" value="expire">Yes - do it now</button>
 				<button type="button" onclick="window.location = '${returnTo}'">
 					No - get me out of here</button>
 				<input type="hidden" name="confirmed">
@@ -50,6 +50,8 @@
 				<input type="hidden" name="unit" value="${param.unit}">
 				<input type="hidden" name="mode" value="${param.mode}">
 			</c:if>
+		    <input type="hidden" name="slice" value="${slice}">
+		    <input type="hidden" name="facilityName" value="${facilityName}">
 		</form>
 	</div>
 	<!-- /container -->

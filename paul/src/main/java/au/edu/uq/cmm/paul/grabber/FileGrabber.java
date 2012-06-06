@@ -26,8 +26,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -76,12 +75,12 @@ public class FileGrabber extends CompositeServiceBase
     static final Logger LOG = LoggerFactory.getLogger(FileGrabber.class);
     static final int DEFAULT_FILE_SETTLING_TIME = 2000;  // 2 seconds
     
-    private final BlockingQueue<Runnable> work = new LinkedBlockingDeque<Runnable>();
+    private final PausableQueue<Runnable> work = new PausableQueue<Runnable>();
     private final HashMap<File, WorkEntry> workMap = new HashMap<File, WorkEntry>();
     private final FacilityStatusManager statusManager;
     private final Facility facility;
     private File safeDirectory;
-    private PausableThreadPoolExecutor executor;
+    private ThreadPoolExecutor executor;
     private final EntityManagerFactory entityManagerFactory;
     private final Paul services;
     
@@ -125,23 +124,29 @@ public class FileGrabber extends CompositeServiceBase
 
     @Override
     protected void doStartup() {
-        executor = new PausableThreadPoolExecutor(0, 1, 999, TimeUnit.SECONDS, work);
+        executor = new ThreadPoolExecutor(0, 1, 999, TimeUnit.SECONDS, work);
         // We do "catchup" event generation with the executor paused, so that the worker
         // thread doesn't jump the gun and start processing work entries before all events
         // have been accumulated.
         // Note: datasets grabbed in catchup will contain all files whose names match,
         // irrespective of the file timestamps.  This is the best we can do in the circumstances.
-        executor.pause();
+        work.pause();
         FacilityStatus status = services.getFacilityStatusManager().getStatus(facility);
-        doCatchup(status.getLocalDirectory(), determineCatchupTime(facility));
+
+        LOG.info("Commencing catchup treewalk for " + status.getLocalDirectory());
+        int count = doCatchup(status.getLocalDirectory(), determineCatchupTime(facility));
+        LOG.info("Catchup treewalk found " + count + "files");
         // This ensures that the "caught-up" datasets get ingested in roughly the order
         // that the original files were saved rather than a seemingly random order, for
         // a better Mirage user experience ...
         reorderWorkQueue();
-        executor.resume();
+        LOG.info("Resuming the worker thread");
+        work.resume();
     }
     
     private void reorderWorkQueue() {
+        LOG.info("Reordering the FileGrabber work queue (contains " + 
+                work.size() + " potential datasets)");
         List<Runnable> workList = new ArrayList<Runnable>(work.size());
         work.drainTo(workList);
         Collections.sort(workList, new Comparator<Runnable>() {
@@ -152,6 +157,11 @@ public class FileGrabber extends CompositeServiceBase
                 return Long.compare(w1.getLatestFileTimestamp(), w2.getLatestFileTimestamp());
             }
         });
+        for (Runnable r : workList) {
+            WorkEntry w = (WorkEntry) r;
+            LOG.debug("Entry for " + w.getBaseFile() + 
+                    " has latest file stamp " + w.getLatestFileTimestamp());
+        }
         work.addAll(workList);
     }
 
@@ -174,18 +184,21 @@ public class FileGrabber extends CompositeServiceBase
         return res;
     }
 
-    private void doCatchup(File directory, long after) {
+    private int doCatchup(File directory, long after) {
+        int count = 0;
         for (File member : directory.listFiles()) {
             long lastModified;
             if (member.isDirectory()) {
-                doCatchup(member, after);
+                count += doCatchup(member, after);
             } else if (member.isFile() && 
                     (lastModified = member.lastModified()) > after) {
                 FileWatcherEvent event = new FileWatcherEvent(
                         facility, member, true, lastModified, true);
                 processEvent(event);
+                count++;
             }
         }
+        return count;
     }
 
     @Override
