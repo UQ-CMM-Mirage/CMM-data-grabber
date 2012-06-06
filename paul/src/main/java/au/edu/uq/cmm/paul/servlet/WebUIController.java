@@ -662,12 +662,16 @@ public class WebUIController implements ServletContextAware {
         if (!principal.hasRole("ROLE_ADMIN")) {
             model.addAttribute("message", "Only an administrator can manage datasets");
             return "failed";
-        }        
+        }
+        model.addAttribute("facilityName", facilityName);
+        model.addAttribute("slice", slice);
         model.addAttribute("returnTo", inferReturnTo(request));
         if (action.equals("deleteAll")) {
             return deleteAll(model, request, slice, facilityName, true, confirmed);
         } else if (action.equals("archiveAll")) {
             return deleteAll(model, request, slice, facilityName, false, confirmed);
+        } else if (action.equals("expire")) {
+            return expire(model, request, slice, facilityName, confirmed);
         }
         if (ids == null) {
             model.addAttribute("datasets", 
@@ -724,8 +728,6 @@ public class WebUIController implements ServletContextAware {
                     request.getContextPath() + 
                     "/manageDatasets?facilityName=" + URLEncoder.encode(facilityName, "UTF-8"));
         if (confirmed == null) {
-            model.addAttribute("facilityName", facilityName);
-            model.addAttribute("slice", sliceName);
             model.addAttribute("discard", discard);
             return "queueDeleteConfirmation";
         }
@@ -737,25 +739,19 @@ public class WebUIController implements ServletContextAware {
         return "ok";
     }
     
-    @RequestMapping(value="/queue/{sliceName:held|ingestible}", 
-            method=RequestMethod.POST, 
-            params={"expire"})
-    public String expire(Model model,
-            HttpServletRequest request, 
-            @PathVariable String sliceName,
-            @RequestParam(required=false) String mode, 
-            @RequestParam(required=false) String confirmed,
-            @RequestParam(required=false) String olderThan,
-            @RequestParam(required=false) String period,
-            @RequestParam(required=false) String unit) {
+    private String expire(Model model, HttpServletRequest request, 
+            String sliceName, String facilityName, String confirmed) {
+        String mode = request.getParameter("mode");
+        String olderThan = request.getParameter("olderThan");
+        String period = request.getParameter("period");
+        String unit = request.getParameter("unit");
         Date cutoff = determineCutoff(model, tidy(olderThan), tidy(period), tidy(unit));
-        model.addAttribute("returnTo", inferReturnTo(request, "/queue/" + sliceName));
         if (cutoff == null || confirmed == null) {
             return "queueExpiryForm";
         }
         QueueManager.Slice slice = inferSlice(sliceName, null);
         int count = services.getQueueManager().expireAll(
-                mode.equals("discard"), slice, cutoff);
+                mode.equals("discard"), facilityName, slice, cutoff);
 
         model.addAttribute("message", 
                 verbiage(count, "queue entry", "queue entries", "expired"));
