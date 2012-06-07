@@ -202,26 +202,6 @@ public class QueueManager {
         }
     }
     
-    public boolean delete(long id, boolean discard) {
-        EntityManager em = createEntityManager();
-        try {
-            em.getTransaction().begin();
-            TypedQuery<DatasetMetadata> query =
-                    em.createQuery("from DatasetMetadata d where d.id = :id", 
-                    DatasetMetadata.class);
-            query.setParameter("id", id);
-            DatasetMetadata dataset = query.getSingleResult();
-            doDelete(discard, em, dataset);
-            em.getTransaction().commit();
-            return true;
-        } catch (NoResultException ex) {
-            LOG.info("Record not deleted", ex);
-            return false;
-        } finally {
-            em.close();
-        }
-    }
-    
     public int delete(String[] ids, boolean discard) {
         int count = 0;
         EntityManager em = createEntityManager();
@@ -284,7 +264,8 @@ public class QueueManager {
         }
     }
 
-    public int changeUser(String[] ids, String userName, boolean reassign) {
+    public int changeUser(String[] ids, String userName, boolean reassign) 
+            throws JsonGenerationException, IOException {
         EntityManager em = createEntityManager();
         int nosChanged = 0;
         try {
@@ -296,9 +277,9 @@ public class QueueManager {
                 query.setParameter("id", new Long(idstr));
                 DatasetMetadata dataset = query.getSingleResult();
                 if (reassign || dataset.getUserName() == null) {
-                    // FIXME - should rewrite the ".admin" file ...
                     dataset.setUserName(userName.isEmpty() ? null : userName);
                     dataset.setUpdateTimestamp(new Date());
+                    saveToFileSystem(new File(dataset.getMetadataFilePathname()), dataset);
                     nosChanged++;
                 }
             }
