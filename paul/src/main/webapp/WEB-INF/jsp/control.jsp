@@ -14,29 +14,49 @@
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container-fluid">
 		<h1>Data Grabber Control Panel</h1>
-		<form method="post" action="control">
-			ACLS Login Proxy: status - ${proxyState}
-			<button ${proxyStatus== 'OFF' ? '' : 'disabled="disabled"
-				'}
-        		    name="proxy" value="ON">Enable</button>
-			<button ${proxyStatus== 'ON' ? '' : 'disabled="disabled"
-				'}
-        		    name="proxy" value="OFF">Disable</button>
-			<br> File Watcher: status - ${watcherState}
-			<button ${watcherStatus== 'OFF' ? '' : 'disabled="disabled"
-				'}
-        		    name="watcher" value="ON">Start</button>
-			<button ${watcherStatus== 'ON' ? '' : 'disabled="disabled"
-				'}
-        		    name="watcher" value="OFF">Stop</button>
-			<br>
+		<div class="well form-inline">
+			<form method="post" action="control">
+				<label class="control-label">File Watching: status - ${watcherState}
+			    	<c:choose>
+			    		<c:when test="${watcherStatus == 'OFF'}">
+							<button class="btn btn-primary" name="watcher" value="ON">Start</button>
+							<button class="btn btn-primary disabled" 
+									disabled="disabled" name="watcher" value="OFF">Stop</button>
+						</c:when>
+			  	 	 	<c:when test="${watcherStatus == 'ON'}">
+							<button class="btn btn-primary disabled" 
+									disabled="disabled" name="watcher" value="ON">Start</button>
+							<button class="btn btn-primary" name="watcher" value="OFF">Stop</button>
+						</c:when>
+					</c:choose>
+        		</label>
+        	</form>
+        	<form method="post" action="manageDatasets">
+        		<input type="hidden"name="action" value="deleteAll">
+            	<button class="btn" name="slice" value="held">Delete All Held Datasets</button>
+            	<button class="btn" name="slice" value="ingestible">Delete Ingestible Datasets</button>
+            	<button class="btn" name="slice" value="all">Delete All Datasets</button>
+			</form>
+        	<form method="post" action="manageDatasets">
+        		<input type="hidden"name="action" value="archiveAll">
+            	<button class="btn" name="slice" value="held">Archive All Held Datasets</button>
+            	<button class="btn" name="slice" value="ingestible">Archive Ingestible Datasets</button>
+            	<button class="btn" name="slice" value="all">Delete All Datasets</button>
+			</form>
+			<form method="post" action="manageDatasets">
+        		<input type="hidden"name="action" value="expire">
+            	<button class="btn" name="slice" value="held">Expire All Held Datasets</button>
+            	<button class="btn" name="slice" value="ingestible">Expire Ingestible Datasets</button>
+            	<button class="btn" name="slice" value="all">Expire All Datasets</button>
+			</form>
 			<c:if test="${! empty restartRequired}">
             	A restart is required to enact configuration changes:
-            	<button name="restart">Restart now</button>
+            	<button name="restart">Restart now</button> <em>Not implemented yet</em>
 			</c:if>
-		</form>
+			<button class="btn btn-small" type="button" onclick="window.location = 'admin'">OK</button>
 		</div>
-		<!-- /container -->
-		<%@ include file="/WEB-INF/jsp/commonFooter.jspFrag"%>
+	</div>
+	<!-- /container -->
+	<%@ include file="/WEB-INF/jsp/commonFooter.jspFrag"%>
 </body>
 </html>
