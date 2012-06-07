@@ -651,7 +651,7 @@ public class WebUIController implements ServletContextAware {
             @RequestParam(required=false) String slice,
             @RequestParam(required=false) String confirmed,
             @RequestParam String action,
-            @RequestParam String facilityName) 
+            @RequestParam(required=false) String facilityName) 
     throws IOException {
         GenericPrincipal principal = (GenericPrincipal) request.getUserPrincipal();
         if (principal == null) {
@@ -723,11 +723,7 @@ public class WebUIController implements ServletContextAware {
     }
 
     private String deleteAll(Model model, HttpServletRequest request, 
-            String sliceName, String facilityName, boolean discard, String confirmed) 
-    throws UnsupportedEncodingException {
-        model.addAttribute("returnTo", 
-                    request.getContextPath() + 
-                    "/manageDatasets?facilityName=" + URLEncoder.encode(facilityName, "UTF-8"));
+            String sliceName, String facilityName, boolean discard, String confirmed) {
         if (confirmed == null) {
             model.addAttribute("discard", discard);
             return "queueDeleteConfirmation";
