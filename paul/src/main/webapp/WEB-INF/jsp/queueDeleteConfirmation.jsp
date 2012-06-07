@@ -15,7 +15,7 @@
 		        Confirmation is required - do you <em>really</em> want to
 				${discard ? 'Permanently Delete' : 'Archive'}
 				${slice == 'ALL' ? 'All' : slice == 'HELD' ? 'All Held' : 'All Ingestible' }
-				Datasets for ${facilityName}?
+				Datasets <c:if test="${! empty facilityName}">for ${facilityName}</c:if>?
 			</div>
 			<br>
 			<button class="btn-large btn-danger" type="submit" name="action" 
