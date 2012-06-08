@@ -233,7 +233,7 @@ public class FacilityStatusManager {
                 }
             }
             LOG.debug("Session for timestamp " + timestamp + " is " + session);
-            return list.get(0);
+            return session;
         } finally {
             em.close();
         }
