@@ -169,16 +169,22 @@ class WorkEntry implements Runnable {
 
     @Override
     public void run() {
-        FileGrabber.LOG.debug("Processing a workEntry");
+        LOG.debug("Processing workEntry for " + baseFile);
         try {
             grabFiles();
         } catch (InterruptedException ex) {
-            FileGrabber.LOG.debug("interrupted");
+            LOG.debug("interrupted");
+        } catch (RuntimeException ex) {
+            LOG.error("unexpected exception", ex);
+            throw ex;
+        } catch (Error ex) {
+            LOG.error("unexpected error", ex);
+            throw ex;
         }
         synchronized (fileGrabber) {
-            fileGrabber.remove(this.baseFile);
+            fileGrabber.remove(baseFile);
         }
-        FileGrabber.LOG.debug("Finished processing workEntry");
+        LOG.debug("Finished processing workEntry for " + baseFile);
     }
 
     private void grabFiles() throws InterruptedException {
