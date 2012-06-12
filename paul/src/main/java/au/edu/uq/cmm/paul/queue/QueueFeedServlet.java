@@ -33,21 +33,24 @@ public class QueueFeedServlet extends AbderaServlet {
     private static final long serialVersionUID = 1L;
 
     protected Provider createProvider() {
-        QueueFeedAdapter ca = new QueueFeedAdapter(createEntityManagerFactory());
+        // Grab the JPA EntityManagerFactory for the QueueAdapter from the services object.
+        WebApplicationContext ctx = 
+                WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+        EntityManagerFactory emf = ctx.getBean("entityManagerFactory", EntityManagerFactory.class);
+        
+        // Initialize the Abdera infrastructure ... 
+        QueueFeedAdapter ca = new QueueFeedAdapter(emf);
         ca.setHref("queue");
-
         SimpleWorkspaceInfo wi = new SimpleWorkspaceInfo();
         wi.setTitle("Ingestion Queue Workspace");
         wi.addCollection(ca);
         DefaultProvider provider = new DefaultProvider("/atom/");
         provider.addWorkspace(wi);
         provider.init(getAbdera(), null);
+
+        // This frobbit allows the atom feed can be turned on / off via the web UI.
+        FeedSwitch fs = ctx.getBean("feedSwitch", FeedSwitch.class);
+        ca.setFeedSwitch(fs);
         return provider;
-    }
-    
-    private EntityManagerFactory createEntityManagerFactory() {
-        WebApplicationContext ctx = 
-                WebApplicationContextUtils.getWebApplicationContext(getServletContext());
-        return ctx.getBean("entityManagerFactory", EntityManagerFactory.class);
     }
 }

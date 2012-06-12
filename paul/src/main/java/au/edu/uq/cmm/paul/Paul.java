@@ -22,7 +22,6 @@ package au.edu.uq.cmm.paul;
 import java.io.IOException;
 
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +33,10 @@ import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
 import au.edu.uq.cmm.aclslib.service.ServiceException;
 import au.edu.uq.cmm.eccles.UserDetailsManager;
 import au.edu.uq.cmm.paul.GrabberConfiguration.DataGrabberRestartPolicy;
+import au.edu.uq.cmm.paul.queue.AtomFeed;
 import au.edu.uq.cmm.paul.queue.QueueExpirer;
 import au.edu.uq.cmm.paul.queue.QueueManager;
+import au.edu.uq.cmm.paul.queue.FeedSwitch;
 import au.edu.uq.cmm.paul.servlet.ConfigurationManager;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
 import au.edu.uq.cmm.paul.watcher.FileWatcher;
@@ -46,28 +47,32 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
     // FIXME - need to do something to hook this class into the servlet lifecycle 
     // so that it gets told when the servlet is being shutdown.
     private static final Logger LOG = LoggerFactory.getLogger(Paul.class);
-    private FacilityStatusManager statusManager;
-    private UncPathnameMapper uncNameMapper;
-    private EntityManagerFactory entityManagerFactory;
-    private QueueManager queueManager;
-    private QueueExpirer queueExpirer;
-    private FileWatcher fileWatcher;
-    private UserDetailsManager userDetailsManager;
-    private ConfigurationManager configManager;
-    private PaulFacilityMapper facilityMapper;
-    private AclsHelper aclsHelper;
+    private final FacilityStatusManager statusManager;
+    private final UncPathnameMapper uncNameMapper;
+    private final EntityManagerFactory entityManagerFactory;
+    private final QueueManager queueManager;
+    private final QueueExpirer queueExpirer;
+    private final FileWatcher fileWatcher;
+    private final UserDetailsManager userDetailsManager;
+    private final ConfigurationManager configManager;
+    private final PaulFacilityMapper facilityMapper;
+    private final AclsHelper aclsHelper;
+    private final AtomFeed atomFeed;
+    
     
     public Paul(StaticPaulConfiguration staticConfig,
             StaticPaulFacilities staticFacilities,
-            EntityManagerFactory entityManagerFactory)
+            EntityManagerFactory entityManagerFactory,
+            FeedSwitch feedSwitch)
     throws IOException {
         this(staticConfig, staticFacilities,
-                entityManagerFactory, new SambaUncPathnameMapper());
+                entityManagerFactory, feedSwitch, new SambaUncPathnameMapper());
     }
     
     public Paul(StaticPaulConfiguration staticConfig,
             StaticPaulFacilities staticFacilities,
             EntityManagerFactory entityManagerFactory,
+            FeedSwitch feedSwitch,
             UncPathnameMapper uncNameMapper)
     throws IOException {
         this.entityManagerFactory = entityManagerFactory;
@@ -88,45 +93,7 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
         this.queueManager = new QueueManager(this);
         this.queueExpirer = new QueueExpirer(this);
         this.userDetailsManager = new UserDetailsManager(entityManagerFactory);
-    }
-
-    // FIXME - get rid if this?
-    public static void main(String[] args) {
-        String configFile = null;
-        String facilityFile = null;
-        if (args.length > 0) {
-            configFile = args[0];
-            if (args.length > 1) {
-                facilityFile = args[1];
-            }
-        }
-        try {
-            StaticPaulConfiguration staticConfig = null;
-            StaticPaulFacilities staticFacilities = null;
-            if (configFile != null) {
-                staticConfig = StaticPaulConfiguration.loadConfiguration(configFile);
-                if (staticConfig == null) {
-                    LOG.info("Can't read/load initial configuration file");
-                    System.exit(2);
-                }
-            }
-            if (facilityFile != null) {
-                staticFacilities = StaticPaulFacilities.loadFacilities(facilityFile);
-                if (staticFacilities == null) {
-                    LOG.info("Can't read/load initial facilities file");
-                    System.exit(2);
-                }
-            }
-            Paul grabber = new Paul(staticConfig, staticFacilities, 
-                    Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul"));
-            grabber.startup();
-            grabber.awaitShutdown();
-            LOG.info("Exitting normally");
-            System.exit(0);
-        } catch (Throwable ex) {
-            LOG.error("Unhandled exception", ex);
-            System.exit(1);
-        }
+        this.atomFeed = new AtomFeed(feedSwitch);
     }
     
     @Override
@@ -186,6 +153,10 @@ public class Paul extends CompositeServiceBase implements Lifecycle {
 
     public AclsHelper getAclsHelper() {
         return aclsHelper;
+    }
+
+    public AtomFeed getAtomFeed() {
+        return atomFeed;
     }
 
     @Override

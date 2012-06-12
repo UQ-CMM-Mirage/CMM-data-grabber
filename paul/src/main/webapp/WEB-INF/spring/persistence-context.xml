@@ -10,5 +10,8 @@
          factory-method="createEntityManagerFactory">
         <constructor-arg value="au.edu.uq.cmm.paul"/>
     </bean>
- 
+    
+    <bean id="feedSwitch" class="au.edu.uq.cmm.paul.queue.FeedSwitch">
+    	<property name="feedEnabled" value="true"/>		<!-- The initial setting ... -->
+    </bean>
 </beans>

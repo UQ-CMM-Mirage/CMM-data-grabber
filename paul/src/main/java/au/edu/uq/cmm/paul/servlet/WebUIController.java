@@ -71,6 +71,7 @@ import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
+import au.edu.uq.cmm.paul.queue.AtomFeed;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.queue.QueueManager.Slice;
 import au.edu.uq.cmm.paul.status.Facility;
@@ -119,6 +120,7 @@ public class WebUIController implements ServletContextAware {
     @RequestMapping(value="/control", method=RequestMethod.POST)
     public String controlAction(Model model, HttpServletRequest request) {
         processStatusChange(getFileWatcher(), request.getParameter("watcher"));
+        processStatusChange(getAtomFeed(), request.getParameter("atomFeed"));
         addStateAndStatus(model);
         return "control";
     }
@@ -144,6 +146,9 @@ public class WebUIController implements ServletContextAware {
         State ws = getFileWatcher().getState();
         model.addAttribute("watcherState", ws);
         model.addAttribute("watcherStatus", stateToStatus(ws));
+        State as = getAtomFeed().getState();
+        model.addAttribute("atomFeedState", as);
+        model.addAttribute("atomFeedStatus", stateToStatus(as));
         model.addAttribute("resetRequired", getLatestConfig() != getConfig());
     }
     
@@ -527,6 +532,11 @@ public class WebUIController implements ServletContextAware {
         return "noAccess";
     }
     
+    @RequestMapping(value="/unavailable", method=RequestMethod.GET)
+    public String unavailable(Model model) {
+        return "unavailable";
+    }
+    
     @RequestMapping(value="/config", method=RequestMethod.GET)
     public String config(Model model) {
         model.addAttribute("config", getLatestConfig());
@@ -878,6 +888,10 @@ public class WebUIController implements ServletContextAware {
     
     private FileWatcher getFileWatcher() {
         return services.getFileWatcher();
+    }
+    
+    private AtomFeed getAtomFeed() {
+        return services.getAtomFeed();
     }
     
     private PaulConfiguration getLatestConfig() {

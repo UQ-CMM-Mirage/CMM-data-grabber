@@ -16,6 +16,7 @@
 		<h1>Data Grabber Control Panel</h1>
 		<div class="well form-inline">
 			<form method="post" action="control">
+				<div class="control-group">
 				<label class="control-label">File Watching: status - ${watcherState}
 			    	<c:choose>
 			    		<c:when test="${watcherStatus == 'OFF'}">
@@ -30,6 +31,23 @@
 						</c:when>
 					</c:choose>
         		</label>
+        		</div>
+        		<div class="control-group">
+        		<label class="control-label">Atom feed: status - ${atomFeedState}
+			    	<c:choose>
+			    		<c:when test="${atomFeedStatus == 'OFF'}">
+							<button class="btn btn-primary" name="atomFeed" value="ON">Start</button>
+							<button class="btn btn-primary disabled" 
+									disabled="disabled" name="atomFeed" value="OFF">Stop</button>
+						</c:when>
+			  	 	 	<c:when test="${atomFeedStatus == 'ON'}">
+							<button class="btn btn-primary disabled" 
+									disabled="disabled" name="atomFeed" value="ON">Start</button>
+							<button class="btn btn-primary" name="atomFeed" value="OFF">Stop</button>
+						</c:when>
+					</c:choose>
+        		</label>
+        		</div>
         	</form>
         	<form method="post" action="manageDatasets">
         		<input type="hidden"name="action" value="deleteAll">

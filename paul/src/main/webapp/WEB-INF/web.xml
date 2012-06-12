@@ -109,6 +109,10 @@
 		<error-code>403</error-code>
 		<location>/noAccess</location>
 	</error-page>
+	<error-page>
+		<error-code>503</error-code>
+		<location>/unavailable</location>
+	</error-page>
 
 	<display-name>Paul the file grabber</display-name>
 </web-app>
