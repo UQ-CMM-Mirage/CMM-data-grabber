@@ -61,6 +61,7 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
     private EntityManagerFactory entityManagerFactory;
     private PaulConfiguration config;
     private boolean holdDatasetsWithNoUser;
+    private FeedSwitch feedSwitch;
     
     public QueueFeedAdapter(EntityManagerFactory entityManagerFactory) {
         this.entityManagerFactory = entityManagerFactory;
@@ -91,6 +92,9 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
     @Override
     public Iterable<DatasetMetadata> getEntries(RequestContext request)
             throws ResponseContextException {
+        if (!feedSwitch.isFeedEnabled()) {
+            throw new ResponseContextException(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+        }
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             TypedQuery<DatasetMetadata> query;
@@ -129,6 +133,9 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
     @Override
     public DatasetMetadata getEntry(String resourceName, RequestContext request)
             throws ResponseContextException {
+        if (!feedSwitch.isFeedEnabled()) {
+            throw new ResponseContextException(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+        }
         String[] parts = resourceName.split("-");
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
@@ -287,5 +294,9 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
                 }
             }
         }
+    }
+
+    public void setFeedSwitch(FeedSwitch feedSwitch) {
+        this.feedSwitch = feedSwitch;
     }
 }
