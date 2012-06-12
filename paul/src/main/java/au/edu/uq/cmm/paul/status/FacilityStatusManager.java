@@ -111,7 +111,6 @@ public class FacilityStatusManager {
     }
     
     private static final Logger LOG = LoggerFactory.getLogger(FileGrabber.class);
-    // FIXME - the facility statuses need to be persisted.
     private EntityManagerFactory emf;
     private AclsHelper aclsHelper;
     private Map<Long, FacilityStatus> facilityStatuses = 

@@ -57,6 +57,7 @@ public class QueueManager {
     
     private static final Logger LOG = LoggerFactory.getLogger(QueueManager.class);
     private Paul services;
+    private QueueFeedAdapter queueFeedAdapter;
 
     public QueueManager(Paul services) {
         this.services = services;
@@ -294,5 +295,9 @@ public class QueueManager {
     
     private EntityManager createEntityManager() {
         return services.getEntityManagerFactory().createEntityManager();
+    }
+
+    public void setQueueFeedAdapter(QueueFeedAdapter qfa) {
+        this.queueFeedAdapter = qfa;
     }
 }
