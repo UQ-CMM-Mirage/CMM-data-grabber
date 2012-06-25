@@ -31,17 +31,11 @@ import javax.persistence.NoResultException;
 import javax.persistence.TemporalType;
 import javax.persistence.TypedQuery;
 
-import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import au.edu.uq.cmm.paul.Paul;
-import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 
@@ -121,16 +115,8 @@ public class QueueManager {
     private void saveToFileSystem(File metadataFile, DatasetMetadata metadata)
             throws IOException, JsonGenerationException {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(metadataFile))) {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonFactory jf = new JsonFactory();
-            JsonGenerator jg = jf.createJsonGenerator(bw);
-            jg.useDefaultPrettyPrinter();
-            mapper.writeValue(jg, metadata);
+            metadata.serialize(bw);
             LOG.info("Saved admin metadata to " + metadataFile);
-        } catch (JsonParseException ex) {
-            throw new PaulException(ex);
-        } catch (JsonMappingException ex) {
-            throw new PaulException(ex);
         }
     }
 
