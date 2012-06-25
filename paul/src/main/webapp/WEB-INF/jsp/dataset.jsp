@@ -39,6 +39,7 @@
 										type="both" dateStyle="medium"/></li>
 		<li>Dataset uuid: ${entry.recordUuid}</li>
 		<li>Dataset base filename: ${entry.sourceFilePathnameBase} / ${entry.facilityFilePathnameBase}</li>
+		<li>Dataset hash: ${entry.datasetHash}</li>
 		<li>Datafiles:
 			<ul>
 				<c:forEach items="${entry.datafiles}" var="datafile">
@@ -53,6 +54,7 @@
 								<fmt:formatDate value="${datafile.captureTimestamp}" 
 										type="both" dateStyle="medium"/></li>
 							<li>Mime type: ${datafile.mimeType}</li>
+							<li>Datafile hash: ${datafile.datafileHash}</li>
 						</ul>
 					</li>
 				</c:forEach>

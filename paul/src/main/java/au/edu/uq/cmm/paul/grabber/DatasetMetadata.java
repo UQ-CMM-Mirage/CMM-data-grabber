@@ -19,6 +19,11 @@
 
 package au.edu.uq.cmm.paul.grabber;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -36,8 +41,15 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.annotate.JsonIgnore;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.hibernate.annotations.GenericGenerator;
+
+import au.edu.uq.cmm.paul.PaulException;
 
 
 /**
@@ -64,6 +76,7 @@ public class DatasetMetadata {
     private String sessionUuid;
     private String recordUuid;
     private String emailAddress;
+    private String datasetHash;
     private List<DatafileMetadata> datafiles;
     
     
@@ -76,7 +89,7 @@ public class DatasetMetadata {
             String metadataFilePathname, String userName, 
             String facilityName, Long facilityId,
             String accountName, String emailAddress, Date captureTimestamp,
-            String sessionUuid, Date sessionStartTimestamp,
+            String sessionUuid, Date sessionStartTimestamp, 
             List<DatafileMetadata> datafiles) {
         super();
         this.sourceFilePathnameBase = sourceFilePathnameBase;
@@ -232,4 +245,73 @@ public class DatasetMetadata {
     public void setUpdateTimestamp(Date updateTimestamp) {
         this.updateTimestamp = updateTimestamp;
     }
+
+    public String getDatasetHash() {
+        return datasetHash;
+    }
+
+    public void setDatasetHash(String hash) {
+        this.datasetHash = hash;
+    }
+    
+    public void checkHashes(boolean includeDatasetHash) throws IncorrectHashException {
+        for (DatafileMetadata datafile : datafiles) {
+            datafile.checkDatafileHash();
+        }
+        if (includeDatasetHash && datasetHash != null) {
+            String tmp = calculateDatasetHash();
+            if (!datasetHash.equals(tmp)) {
+                throw new IncorrectHashException("Dataset hash is incorrect", datasetHash, tmp);
+            }
+        }
+    }
+    
+    public void updateDatasetHash() {
+        datasetHash = calculateDatasetHash();
+    }
+
+    private synchronized String calculateDatasetHash() {
+        StringWriter sw = new StringWriter();
+        // Note that we exclude any previously compu
+        String savedHash = datasetHash;
+        try {
+            datasetHash = null;
+            serialize(sw);
+            byte[] data = sw.toString().getBytes("UTF-8");
+            MessageDigest md = MessageDigest.getInstance("SHA-512");
+            md.update(data);
+            byte[] hash = md.digest();
+            return bytesToHexString(hash);
+        } catch (IOException ex) {
+            throw new PaulException("Impossible exception", ex);
+        } catch (NoSuchAlgorithmException ex) {
+            throw new PaulException("Can't find the required secure hash algorithm", ex);
+        } finally {
+            datasetHash = savedHash;
+        }
+    }
+
+    static String bytesToHexString(byte[] bytes) {
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) {
+            sb.append("0123456789ABCDEF".charAt(0xF & (b >> 4)));
+            sb.append("0123456789ABCDEF".charAt(0xF & b));
+        }
+        return sb.toString();
+    }
+
+    public void serialize(Writer writer) throws IOException {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonFactory jf = new JsonFactory();
+            JsonGenerator jg = jf.createJsonGenerator(writer);
+            jg.useDefaultPrettyPrinter();
+            mapper.writeValue(jg, this);
+        } catch (JsonParseException ex) {
+            throw new PaulException(ex);
+        } catch (JsonMappingException ex) {
+            throw new PaulException(ex);
+        }
+    }
+    
 }
