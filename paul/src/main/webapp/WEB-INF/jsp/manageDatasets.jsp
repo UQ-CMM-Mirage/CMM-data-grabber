@@ -6,6 +6,19 @@
 <head>
 <%@ include file="/WEB-INF/jsp/commonHead.jspFrag"%>
 <title>Manage Queued Datasets</title>
+<script type="text/javascript">
+<!--
+function selectAll(checked) {
+	var nodes = document.body.getElementsByTagName('input');
+	for (var i = 0; i < nodes.length; i++) {
+		var node = nodes.item(i);
+		if (node.type == 'checkbox' && node.name == 'ids') {
+			node.checked = checked;
+		}
+	}
+}
+-->
+</script>
 </head>
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
@@ -45,6 +58,9 @@
 						</c:forEach>
 						</tbody>
 					</table>
+					<button type="button" onclick="selectAll(true)">Select all</button>
+					<button type="button" onclick="selectAll(false)">Deselect all</button>
+					<hr>
 					<input type="hidden" name="facilityName" value="${facilityName}">
 					<input type="hidden" name="slice" value="${slice}">
 					<input type="hidden" name="returnTo" value="${returnTo}">
