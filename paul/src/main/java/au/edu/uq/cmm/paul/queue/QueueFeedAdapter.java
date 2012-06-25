@@ -35,6 +35,7 @@ import org.apache.abdera.i18n.iri.IRI;
 import org.apache.abdera.model.Content;
 import org.apache.abdera.model.Entry;
 import org.apache.abdera.model.Feed;
+import org.apache.abdera.model.Link;
 import org.apache.abdera.model.Person;
 import org.apache.abdera.protocol.server.RequestContext;
 import org.apache.abdera.protocol.server.context.ResponseContextException;
@@ -209,15 +210,19 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
             throws ResponseContextException {
         String res = super.addEntryDetails(request, entry, feedIri, record);
         for (DatafileMetadata datafile : record.getDatafiles()) {
-            entry.addLink(config.getBaseFileUrl() + 
+            Link link = entry.addLink(config.getBaseFileUrl() + 
                     new File(datafile.getCapturedFilePathname()).getName(),
                     "enclosure", datafile.getMimeType(), 
                     new File(datafile.getSourceFilePathname()).getName(),
                     "en", datafile.getFileSize());
+            if (datafile.getDatafileHash() != null) {
+                link.setAttributeValue("hash", "sha-512:" + datafile.getDatafileHash());
+            }
         }
-        entry.addLink(config.getBaseFileUrl() + 
+        Link link = entry.addLink(config.getBaseFileUrl() + 
                 new File(record.getMetadataFilePathname()).getName(),
                 "enclosure");
+        link.setAttributeValue("hash", "sha-512:" + record.getDatasetHash());
         return res;
     }
 

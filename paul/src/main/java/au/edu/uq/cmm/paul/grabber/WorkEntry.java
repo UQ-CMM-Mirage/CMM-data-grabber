@@ -327,13 +327,15 @@ class WorkEntry implements Runnable {
                     mapToInstrumentPath(facility, g.getFile()),
                     g.getCopiedFile().getAbsolutePath(), 
                     g.getFileTimestamp(), g.getCopyTimestamp(), mimeType,
-                    g.getCopiedFile().length());
+                    g.getCopiedFile().length(), null);
+            d.updateDatafileHash();
             list.add(d);
         }
         DatasetMetadata metadata = new DatasetMetadata(baseFile.getAbsolutePath(), 
                 instrumentBasePath, metadataFile.getAbsolutePath(), 
                 userName, facility.getFacilityName(), facility.getId(), 
                 account, emailAddress, now, sessionUuid, loginTime, list);
+        metadata.updateDatasetHash();
         queueManager.addEntry(metadata, metadataFile);
     }
 
