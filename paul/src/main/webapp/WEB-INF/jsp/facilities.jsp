@@ -19,7 +19,7 @@
 				<tr>
 					<th class="span2">Facility</th>
 					<th class="span2">Description</th>
-					<th class="span2">Data Grabbing</th>
+					<th class="span2">Data Grabber Status</th>
 					<th class="span2">Grabber "High Water Mark" (HWM)</th>
 					<th class="span4"></th>
 				</tr>
