@@ -41,12 +41,14 @@ import org.slf4j.LoggerFactory;
 
 import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
 import au.edu.uq.cmm.aclslib.service.Service;
+import au.edu.uq.cmm.aclslib.service.ServiceException;
 import au.edu.uq.cmm.paul.DatafileTemplateConfig;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.status.Facility;
 import au.edu.uq.cmm.paul.status.FacilityStatus;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
+import au.edu.uq.cmm.paul.status.FacilityStatusManager.Status;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEventListener;
 
@@ -124,24 +126,32 @@ public class FileGrabber extends CompositeServiceBase
 
     @Override
     protected void doStartup() {
-        executor = new ThreadPoolExecutor(0, 1, 999, TimeUnit.SECONDS, work);
-        // We do "catchup" event generation with the executor paused, so that the worker
-        // thread doesn't jump the gun and start processing work entries before all events
-        // have been accumulated.
-        // Note: datasets grabbed in catchup will contain all files whose names match,
-        // irrespective of the file timestamps.  This is the best we can do in the circumstances.
-        work.pause();
         FacilityStatus status = services.getFacilityStatusManager().getStatus(facility);
-
-        LOG.info("Commencing catchup treewalk for " + status.getLocalDirectory());
-        int count = doCatchup(status.getLocalDirectory(), determineCatchupTime(facility));
-        LOG.info("Catchup treewalk found " + count + "files");
-        // This ensures that the "caught-up" datasets get ingested in roughly the order
-        // that the original files were saved rather than a seemingly random order, for
-        // a better Mirage user experience ...
-        reorderWorkQueue();
-        LOG.info("Resuming the worker thread");
-        work.resume();
+        Date catchupFrom = determineCatchupTime(facility);
+        Date hwm = status.getGrabberHWMTimestamp();
+        LOG.debug("Catchup from = " + catchupFrom + ", hwm = " + hwm);
+        if (hwm != null && (catchupFrom == null || hwm.getTime() < catchupFrom.getTime())) {
+            executor = new ThreadPoolExecutor(0, 1, 999, TimeUnit.SECONDS, work);
+            // We do "catchup" event generation with the executor paused, so that the worker
+            // thread doesn't jump the gun and start processing work entries before all events
+            // have been accumulated.
+            // Note: datasets grabbed in catchup will contain all files whose names match,
+            // irrespective of the file timestamps.  This is the best we can do in the circumstances.
+            work.pause();
+            LOG.info("Commencing catchup treewalk for " + status.getLocalDirectory());
+            int count = doCatchup(status.getLocalDirectory(), catchupFrom.getTime());
+            LOG.info("Catchup treewalk found " + count + " files");
+            // This ensures that the "caught-up" datasets get ingested in roughly the order
+            // that the original files were saved rather than a seemingly random order, for
+            // a better Mirage user experience ...
+            reorderWorkQueue();
+            LOG.info("Resuming the worker thread");
+            work.resume();
+        } else {
+            status.setStatus(Status.OFF);
+            status.setMessage("Grabber HWM needs attention");
+            throw new ServiceException(status.getMessage());
+        }
     }
     
     private void reorderWorkQueue() {
@@ -165,18 +175,18 @@ public class FileGrabber extends CompositeServiceBase
         work.addAll(workList);
     }
 
-    private long determineCatchupTime(Facility facility) {
+    private Date determineCatchupTime(Facility facility) {
         EntityManager em = entityManagerFactory.createEntityManager();
-        long res;
+        Date res;
         try {
             TypedQuery<Date> query = em.createQuery(
                     "SELECT MAX(d.captureTimestamp) FROM DatasetMetadata d " +
                     "GROUP BY d.facilityId HAVING d.facilityId = :id", 
                     Date.class);
             query.setParameter("id", facility.getId());
-            res = query.getSingleResult().getTime();
+            res = query.getSingleResult();
         } catch (NoResultException ex) {
-            res = 0L;
+            res = null;
         } finally {
             em.close();
         }

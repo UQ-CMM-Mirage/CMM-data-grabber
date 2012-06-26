@@ -20,7 +20,7 @@
 					<th class="span2">Facility</th>
 					<th class="span2">Description</th>
 					<th class="span2">Data Grabbing</th>
-					<th class="span2">HWM</th>
+					<th class="span2">Grabber "High Water Mark" (HWM)</th>
 					<th class="span4"></th>
 				</tr>
 			</thead>
@@ -57,6 +57,7 @@
 								<button class="btn" type="submit" name="sessionLog">Session Log</button>
 								<button class="btn" type="submit" name="copy">Copy</button>
 								<button class="btn" type="submit" name="delete">Delete</button>
+								<button class="btn" type="submit" name="hwm">Adjust HWM</button>
 							</form>
 						</td>
 					</tr>
