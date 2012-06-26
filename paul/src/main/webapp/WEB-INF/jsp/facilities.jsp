@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <%@ page session="false"%>
 <html lang="en">
 <head>
@@ -16,9 +17,10 @@
 					<th>Current Facilities</th>
 				</tr>
 				<tr>
-					<th class="span3">Facility</th>
-					<th class="span3">Description</th>
+					<th class="span2">Facility</th>
+					<th class="span2">Description</th>
 					<th class="span2">Data Grabbing</th>
+					<th class="span2">HWM</th>
 					<th class="span4"></th>
 				</tr>
 			</thead>
@@ -33,6 +35,10 @@
 							<c:if test="${! empty facility.status.message}">
 								<br>${facility.status.message}
 							</c:if>
+						</td>
+						<td>
+							<fmt:formatDate value="${facility.status.grabberHWMTimestamp}" 
+										type="both" dateStyle="medium"/>
 						</td>
 						<td class="form-inline,btn-toolbar">
 							<form action="facilities/${facility.facilityName}" method="post">
