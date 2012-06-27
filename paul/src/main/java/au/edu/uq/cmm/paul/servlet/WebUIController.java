@@ -37,6 +37,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.catalina.realm.GenericPrincipal;
+import org.apache.taglibs.standard.tag.common.core.CatchTag;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
 import org.joda.time.Hours;
@@ -70,6 +71,7 @@ import au.edu.uq.cmm.eccles.UserDetails;
 import au.edu.uq.cmm.eccles.UserDetailsManager;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulConfiguration;
+import au.edu.uq.cmm.paul.grabber.CatchupAnalyser;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 import au.edu.uq.cmm.paul.queue.AtomFeed;
@@ -324,6 +326,7 @@ public class WebUIController implements ServletContextAware {
         model.addAttribute("facilityName", facilityName);
         model.addAttribute("status", status);
         model.addAttribute("catchupTimestamp", catchupTimestamp);
+        model.addAttribute("analysis", new CatchupAnalyser(services, facility).analyse());
         return "catchupControl";
     }
     

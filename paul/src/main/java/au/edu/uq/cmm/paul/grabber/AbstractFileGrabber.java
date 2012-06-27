@@ -39,22 +39,8 @@ import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEventListener;
 
 /**
- * A FileGrabber service is registered as a listener for FileWatcher events
- * for a particular Facility.  The first event for a file generates WorkEntry 
- * object that is enqueued.  Subsequent events are added to the WorkEntry.
- * <p>
- * The FileGrabber's thread pulls WorkEntry objects from the queue and processed 
- * them as follows:
- * <ul>
- * <li>It waits until the file events stop arriving.</li>
- * <li>It optionally locks the file.</li>
- * <li>It captures the user / account from the ACLS status manager.</li>
- * <li>It copies the file to another directory.</li>
- * <li>It records the file's administrative metadata.</li>
- * <li>It releases the lock.</li>
- * </ul>
- * <p>
- * The functionality is mostly implemented in the {@link WorkEntry} class.
+ * This is the base class for the FileGrabber service, and the special grabber
+ * that we use when figuring out what could potentially be grabbed.
  * 
  * @author scrawley
  */
@@ -62,7 +48,6 @@ public abstract class AbstractFileGrabber implements FileWatcherEventListener {
     static final Logger LOG = LoggerFactory.getLogger(AbstractFileGrabber.class);
     static final int DEFAULT_FILE_SETTLING_TIME = 2000;  // 2 seconds
     
-    private final PausableQueue<Runnable> work = new PausableQueue<Runnable>();
     private final HashMap<File, WorkEntry> workMap = new HashMap<File, WorkEntry>();
     private final Facility facility;
     private final Paul services;
@@ -79,8 +64,8 @@ public abstract class AbstractFileGrabber implements FileWatcherEventListener {
 
     public final void reorderQueue(BlockingQueue<Runnable> queue) {
         LOG.info("Reordering a FileGrabber work queue (contains " + 
-                work.size() + " potential datasets)");
-        List<Runnable> workList = new ArrayList<Runnable>(work.size());
+                queue.size() + " potential datasets)");
+        List<Runnable> workList = new ArrayList<Runnable>(queue.size());
         queue.drainTo(workList);
         Collections.sort(workList, new Comparator<Runnable>() {
             @Override
