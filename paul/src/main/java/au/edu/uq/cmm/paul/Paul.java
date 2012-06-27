@@ -29,7 +29,7 @@ import org.springframework.context.Lifecycle;
 
 import au.edu.uq.cmm.aclslib.message.AclsClient;
 import au.edu.uq.cmm.aclslib.proxy.AclsHelper;
-import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
+import au.edu.uq.cmm.aclslib.service.ServiceBase;
 import au.edu.uq.cmm.aclslib.service.ServiceException;
 import au.edu.uq.cmm.eccles.UserDetailsManager;
 import au.edu.uq.cmm.paul.GrabberConfiguration.DataGrabberRestartPolicy;
@@ -43,7 +43,7 @@ import au.edu.uq.cmm.paul.watcher.FileWatcher;
 import au.edu.uq.cmm.paul.watcher.SambaUncPathnameMapper;
 import au.edu.uq.cmm.paul.watcher.UncPathnameMapper;
 
-public class Paul extends CompositeServiceBase implements Lifecycle {
+public class Paul extends ServiceBase implements Lifecycle {
     // FIXME - need to do something to hook this class into the servlet lifecycle 
     // so that it gets told when the servlet is being shutdown.
     private static final Logger LOG = LoggerFactory.getLogger(Paul.class);

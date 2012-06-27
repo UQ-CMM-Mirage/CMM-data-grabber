@@ -192,7 +192,6 @@ class WorkEntry implements Runnable {
             return;
         }
         // Prepare for grabbing
-        Date now = new Date();
         FacilityStatusManager fsm = fileGrabber.getStatusManager();
         FacilitySession session = fsm.getLoginDetails(
                 facility.getFacilityName(), timestamp.getTime());
@@ -215,7 +214,7 @@ class WorkEntry implements Runnable {
             }
         }
         try {
-            saveMetadata(now, session);
+            saveMetadata(timestamp, session);
             fsm.updateHWMTimestamp(facility, timestamp);
         } catch (JsonGenerationException ex) {
             LOG.error("Unexpected JSON Error", ex);
@@ -309,7 +308,7 @@ class WorkEntry implements Runnable {
         LOG.debug("Done grabbing");
     }
 
-    private DatasetMetadata saveMetadata(Date now,FacilitySession session)
+    private DatasetMetadata saveMetadata(Date now, FacilitySession session)
             throws IOException, JsonGenerationException {
         if (session == null && !holdDatasetsWithNoUser) {
             session = FacilitySession.makeDummySession(facility.getFacilityName(), now);

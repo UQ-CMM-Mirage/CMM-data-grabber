@@ -5,7 +5,7 @@
 <html lang="en">
 <head>
 <%@ include file="/WEB-INF/jsp/commonHead.jspFrag"%>
-<title>Data Grabber Facility Select</title>
+<title>Data Grabber Facilities</title>
 </head>
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>

@@ -33,15 +33,12 @@ import java.util.regex.Pattern;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.NoResultException;
-import javax.persistence.TypedQuery;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import au.edu.uq.cmm.aclslib.service.CompositeServiceBase;
-import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.aclslib.service.ServiceException;
+import au.edu.uq.cmm.aclslib.service.SimpleService;
 import au.edu.uq.cmm.paul.DatafileTemplateConfig;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
@@ -72,8 +69,7 @@ import au.edu.uq.cmm.paul.watcher.FileWatcherEventListener;
  * 
  * @author scrawley
  */
-public class FileGrabber extends CompositeServiceBase 
-        implements FileWatcherEventListener {
+public class FileGrabber implements SimpleService, FileWatcherEventListener {
     static final Logger LOG = LoggerFactory.getLogger(FileGrabber.class);
     static final int DEFAULT_FILE_SETTLING_TIME = 2000;  // 2 seconds
     
@@ -85,6 +81,7 @@ public class FileGrabber extends CompositeServiceBase
     private ThreadPoolExecutor executor;
     private final EntityManagerFactory entityManagerFactory;
     private final Paul services;
+    private volatile boolean shuttingDown;
     
     public FileGrabber(Paul services, Facility facility) {
         this.services = services;
@@ -115,7 +112,8 @@ public class FileGrabber extends CompositeServiceBase
     }
 
     @Override
-    protected void doShutdown() throws InterruptedException {
+    public void shutdown() throws InterruptedException {
+        shuttingDown = true;
         executor.shutdown();
         if (executor.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS)) {
             LOG.info("FileGrabber's executor shut down");
@@ -125,12 +123,13 @@ public class FileGrabber extends CompositeServiceBase
     }
 
     @Override
-    protected void doStartup() {
+    public void startup() {
+        shuttingDown = false;
         FacilityStatus status = services.getFacilityStatusManager().getStatus(facility);
-        Date catchupFrom = determineCatchupTime(facility);
+        Date catchupFrom = services.getQueueManager().getCatchupTimestamp(facility);
         Date hwm = status.getGrabberHWMTimestamp();
         LOG.debug("Catchup from = " + catchupFrom + ", hwm = " + hwm);
-        if (hwm != null && (catchupFrom == null || hwm.getTime() < catchupFrom.getTime())) {
+        if (hwm != null && (catchupFrom == null || hwm.getTime() == catchupFrom.getTime())) {
             executor = new ThreadPoolExecutor(0, 1, 999, TimeUnit.SECONDS, work);
             // We do "catchup" event generation with the executor paused, so that the worker
             // thread doesn't jump the gun and start processing work entries before all events
@@ -175,25 +174,6 @@ public class FileGrabber extends CompositeServiceBase
         work.addAll(workList);
     }
 
-    private Date determineCatchupTime(Facility facility) {
-        EntityManager em = entityManagerFactory.createEntityManager();
-        Date res;
-        try {
-            TypedQuery<Date> query = em.createQuery(
-                    "SELECT MAX(d.captureTimestamp) FROM DatasetMetadata d " +
-                    "GROUP BY d.facilityId HAVING d.facilityId = :id", 
-                    Date.class);
-            query.setParameter("id", facility.getId());
-            res = query.getSingleResult();
-        } catch (NoResultException ex) {
-            res = null;
-        } finally {
-            em.close();
-        }
-        LOG.info("determineCatchupTime(" + facility.getFacilityName() + ") -> " + res);
-        return res;
-    }
-
     private int doCatchup(File directory, long after) {
         int count = 0;
         for (File member : directory.listFiles()) {
@@ -234,7 +214,7 @@ public class FileGrabber extends CompositeServiceBase
            if (baseFile == null) {
                // If we are shutting down, we only deal with events for
                // files in datasets we've already started grabbing.
-               if (getState() != Service.State.STARTED) {
+               if (shuttingDown) {
                    return;
                }
            }

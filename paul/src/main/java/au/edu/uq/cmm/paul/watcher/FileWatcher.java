@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.service.MonitoredThreadServiceBase;
 import au.edu.uq.cmm.aclslib.service.Service;
+import au.edu.uq.cmm.aclslib.service.ServiceWrapper;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.grabber.FileGrabber;
@@ -226,8 +227,10 @@ public class FileWatcher extends MonitoredThreadServiceBase {
             try {
                 status.setLocalDirectory(local);
                 FileGrabber grabber = new FileGrabber(services, facility);
+                Service service = new ServiceWrapper(grabber);
                 status.setFileGrabber(grabber);
-                grabber.startStartup();
+                status.setFileGrabberService(service);
+                service.startStartup();
                 addKeys(facility, local, null);
                 status.setStatus(Status.ON);
                 status.setMessage("");
@@ -247,11 +250,11 @@ public class FileWatcher extends MonitoredThreadServiceBase {
         LOG.debug("StopFileWatching(" + facility.getFacilityName() + ")");
         try {
             FacilityStatus status = services.getFacilityStatusManager().getStatus(facility);
-            if (status.getFileGrabber() == null) {
+            if (status.getFileGrabberService() == null) {
                 LOG.debug("No file grabber found");
             } else {
-                status.getFileGrabber().shutdown();
-                status.setFileGrabber(null);
+                status.getFileGrabberService().shutdown();
+                status.setFileGrabberService(null);
             }
             for (WatcherEntry entry : watchMap.values()) {
                 if (entry.facility == facility && entry.parent == null) {

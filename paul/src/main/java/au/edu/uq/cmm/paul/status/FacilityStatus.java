@@ -28,6 +28,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.paul.grabber.FileGrabber;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager.Status;
 
@@ -40,6 +41,7 @@ public class FacilityStatus {
     private File localDirectory;
     private FileGrabber fileGrabber;
     private Date grabberHWMTimestamp;
+    private Service fileGrabberService;
     
     public FacilityStatus() {
         this(null);
@@ -95,6 +97,15 @@ public class FacilityStatus {
 
     public void setFileGrabber(FileGrabber fileGrabber) {
         this.fileGrabber = fileGrabber;
+    }
+
+    @Transient
+    public Service getFileGrabberService() {
+        return fileGrabberService;
+    }
+
+    public void setFileGrabberService(Service service) {
+        this.fileGrabberService = service;
     }
 
     @Transient
