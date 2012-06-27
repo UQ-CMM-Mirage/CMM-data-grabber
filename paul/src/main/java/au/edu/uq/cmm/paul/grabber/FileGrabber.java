@@ -20,16 +20,9 @@
 package au.edu.uq.cmm.paul.grabber;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -39,15 +32,13 @@ import org.slf4j.LoggerFactory;
 
 import au.edu.uq.cmm.aclslib.service.ServiceException;
 import au.edu.uq.cmm.aclslib.service.SimpleService;
-import au.edu.uq.cmm.paul.DatafileTemplateConfig;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
+import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.status.Facility;
 import au.edu.uq.cmm.paul.status.FacilityStatus;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager.Status;
-import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
-import au.edu.uq.cmm.paul.watcher.FileWatcherEventListener;
 
 /**
  * A FileGrabber service is registered as a listener for FileWatcher events
@@ -69,24 +60,21 @@ import au.edu.uq.cmm.paul.watcher.FileWatcherEventListener;
  * 
  * @author scrawley
  */
-public class FileGrabber implements SimpleService, FileWatcherEventListener {
+public class FileGrabber extends AbstractFileGrabber implements SimpleService {
     static final Logger LOG = LoggerFactory.getLogger(FileGrabber.class);
     static final int DEFAULT_FILE_SETTLING_TIME = 2000;  // 2 seconds
     
     private final PausableQueue<Runnable> work = new PausableQueue<Runnable>();
-    private final HashMap<File, WorkEntry> workMap = new HashMap<File, WorkEntry>();
     private final FacilityStatusManager statusManager;
-    private final Facility facility;
     private File safeDirectory;
     private ThreadPoolExecutor executor;
     private final EntityManagerFactory entityManagerFactory;
-    private final Paul services;
-    private volatile boolean shuttingDown;
+    private final QueueManager queueManager;
     
     public FileGrabber(Paul services, Facility facility) {
-        this.services = services;
-        this.facility = facility;
+        super(services, facility);
         statusManager = services.getFacilityStatusManager();
+        queueManager = services.getQueueManager();
         FacilityStatus status = statusManager.getStatus(facility);
         status.setFileGrabber(this);
         safeDirectory = new File(
@@ -106,14 +94,10 @@ public class FileGrabber implements SimpleService, FileWatcherEventListener {
     public FacilityStatusManager getStatusManager() {
         return statusManager;
     }
-
-    public synchronized void remove(File file) {
-        workMap.remove(file);
-    }
-
+    
     @Override
     public void shutdown() throws InterruptedException {
-        shuttingDown = true;
+        setShuttingDown(true);
         executor.shutdown();
         if (executor.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS)) {
             LOG.info("FileGrabber's executor shut down");
@@ -124,9 +108,9 @@ public class FileGrabber implements SimpleService, FileWatcherEventListener {
 
     @Override
     public void startup() {
-        shuttingDown = false;
-        FacilityStatus status = services.getFacilityStatusManager().getStatus(facility);
-        Date catchupFrom = services.getQueueManager().getCatchupTimestamp(facility);
+        setShuttingDown(false);
+        FacilityStatus status = statusManager.getStatus(getFacility());
+        Date catchupFrom = queueManager.getCatchupTimestamp(getFacility());
         Date hwm = status.getGrabberHWMTimestamp();
         LOG.debug("Catchup from = " + catchupFrom + ", hwm = " + hwm);
         if (hwm != null && (catchupFrom == null || hwm.getTime() == catchupFrom.getTime())) {
@@ -138,12 +122,12 @@ public class FileGrabber implements SimpleService, FileWatcherEventListener {
             // irrespective of the file timestamps.  This is the best we can do in the circumstances.
             work.pause();
             LOG.info("Commencing catchup treewalk for " + status.getLocalDirectory());
-            int count = doCatchup(status.getLocalDirectory(), catchupFrom.getTime());
+            int count = analyseTree(status.getLocalDirectory(), catchupFrom.getTime(), Long.MAX_VALUE);
             LOG.info("Catchup treewalk found " + count + " files");
             // This ensures that the "caught-up" datasets get ingested in roughly the order
             // that the original files were saved rather than a seemingly random order, for
             // a better Mirage user experience ...
-            reorderWorkQueue();
+            reorderQueue(work);
             LOG.info("Resuming the worker thread");
             work.resume();
         } else {
@@ -152,82 +136,10 @@ public class FileGrabber implements SimpleService, FileWatcherEventListener {
             throw new ServiceException(status.getMessage());
         }
     }
-    
-    private void reorderWorkQueue() {
-        LOG.info("Reordering the FileGrabber work queue (contains " + 
-                work.size() + " potential datasets)");
-        List<Runnable> workList = new ArrayList<Runnable>(work.size());
-        work.drainTo(workList);
-        Collections.sort(workList, new Comparator<Runnable>() {
-            @Override
-            public int compare(Runnable o1, Runnable o2) {
-                WorkEntry w1 = (WorkEntry) o1;
-                WorkEntry w2 = (WorkEntry) o2;
-                return Long.compare(w1.getLatestFileTimestamp(), w2.getLatestFileTimestamp());
-            }
-        });
-        for (Runnable r : workList) {
-            WorkEntry w = (WorkEntry) r;
-            LOG.debug("Entry for " + w.getBaseFile() + 
-                    " has latest file stamp " + w.getLatestFileTimestamp());
-        }
-        work.addAll(workList);
-    }
-
-    private int doCatchup(File directory, long after) {
-        int count = 0;
-        for (File member : directory.listFiles()) {
-            long lastModified;
-            if (member.isDirectory()) {
-                count += doCatchup(member, after);
-            } else if (member.isFile() && 
-                    (lastModified = member.lastModified()) > after) {
-                FileWatcherEvent event = new FileWatcherEvent(
-                        facility, member, true, lastModified, true);
-                processEvent(event);
-                count++;
-            }
-        }
-        return count;
-    }
 
     @Override
-    public void eventOccurred(FileWatcherEvent event) {
-        processEvent(event);
-    }
-
-    private void processEvent(FileWatcherEvent event) {
-        File file = event.getFile();
-        Facility facility = (Facility) event.getFacility();
-        LOG.debug("FileWatcherEvent received : " + 
-                facility.getFacilityName() + "," + file + "," + event.isCreate());
-        File baseFile = null;
-        for (DatafileTemplateConfig datafile : facility.getDatafileTemplates()) {
-            Pattern pattern = Pattern.compile(datafile.getFilePattern());
-            Matcher matcher = pattern.matcher(file.getAbsolutePath());
-            if (matcher.matches()) {
-                baseFile = new File(matcher.group(1));
-                break;
-            }
-        }
-        synchronized (this) {
-           if (baseFile == null) {
-               // If we are shutting down, we only deal with events for
-               // files in datasets we've already started grabbing.
-               if (shuttingDown) {
-                   return;
-               }
-           }
-           WorkEntry workEntry = workMap.get(baseFile);
-           if (workEntry == null) {
-               workEntry = new WorkEntry(services, event, baseFile);
-               workMap.put(baseFile, workEntry);
-               executor.execute(workEntry);
-               LOG.debug("Added a workEntry");
-           } else {
-               workEntry.addEvent(event);
-           }
-        }
+    protected void enqueueWorkEntry(WorkEntry entry) {
+        executor.execute(entry);
     }
 
     public EntityManager getEntityManager() {
