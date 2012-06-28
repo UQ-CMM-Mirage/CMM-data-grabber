@@ -318,16 +318,50 @@ public class WebUIController implements ServletContextAware {
     
     @RequestMapping(value="/facilities/{facilityName:.+}",
             params={"hwm"})
-    public String facilityHWM(@PathVariable String facilityName, Model model) 
+    public String facilityHWM(@PathVariable String facilityName, Model model,
+            @RequestParam(required=false) String hwmTimestamp) 
             throws ConfigurationException {
         Facility facility = lookupFacilityByName(facilityName);
         FacilityStatus status = getFacilityStatusManager().getStatus(facility);
         Date catchupTimestamp = getQueueManager().getCatchupTimestamp(facility);
         model.addAttribute("facilityName", facilityName);
         model.addAttribute("status", status);
+        Date hwm = status.getGrabberHWMTimestamp();
+        if (!tidy(hwmTimestamp).isEmpty()) {
+            DateTime tmp = parseTimestamp(hwmTimestamp);
+            if (tmp != null) {
+                hwm = tmp.toDate();
+            }
+        }
+        model.addAttribute("hwmTimestamp", hwm);
         model.addAttribute("catchupTimestamp", catchupTimestamp);
-        model.addAttribute("analysis", new CatchupAnalyser(services, facility).analyse());
+        model.addAttribute("analysis", 
+                new CatchupAnalyser(services, facility).analyse(hwm));
         return "catchupControl";
+    }
+    
+    @RequestMapping(value="/facilities/{facilityName:.+}", params={"setHWM"})
+    public String setFacilityHWM(@PathVariable String facilityName, Model model,
+            @RequestParam String hwmTimestamp) 
+            throws ConfigurationException {
+        Facility facility = lookupFacilityByName(facilityName);
+        Date oldHwm = getFacilityStatusManager().getStatus(facility).getGrabberHWMTimestamp();
+        Date hwm = null;
+        if (!tidy(hwmTimestamp).isEmpty()) {
+            DateTime tmp = parseTimestamp(hwmTimestamp);
+            if (tmp != null) {
+                hwm = tmp.toDate();
+            }
+        }
+        if (hwm != null) {
+            getFacilityStatusManager().updateHWMTimestamp(facility, hwm);
+            model.addAttribute("message", "Moved HWM for '" + facilityName + "' from " +
+                    oldHwm + " to " + hwm);
+            return "ok";
+        } else {
+            model.addAttribute("message", "Bad HWM value");
+            return "failed";
+        }
     }
     
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
@@ -991,15 +1025,7 @@ public class WebUIController implements ServletContextAware {
             }
             cutoff = DateTime.now().minus(p);
         } else {
-            cutoff = null;
-            for (DateTimeFormatter format : FORMATS) {
-                try {
-                    cutoff = format.parseDateTime(olderThan);
-                    break;
-                } catch (IllegalArgumentException ex) {
-                    continue;
-                }
-            }
+            cutoff = parseTimestamp(olderThan);
             if (cutoff == null) {
                 model.addAttribute("message", "Unrecognizable expiry date");
                 return null;
@@ -1011,5 +1037,16 @@ public class WebUIController implements ServletContextAware {
         }
         model.addAttribute("computedDate", FORMATS[0].print(cutoff));
         return cutoff.toDate();
+    }
+
+    private DateTime parseTimestamp(String stamp) {
+        for (DateTimeFormatter format : FORMATS) {
+            try {
+                return format.parseDateTime(stamp);
+            } catch (IllegalArgumentException ex) {
+                continue;
+            }
+        }
+        return null;
     }
 }

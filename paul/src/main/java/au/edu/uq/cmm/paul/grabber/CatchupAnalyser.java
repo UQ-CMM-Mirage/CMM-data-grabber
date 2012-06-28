@@ -20,6 +20,12 @@
 package au.edu.uq.cmm.paul.grabber;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -27,12 +33,16 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.TypedQuery;
 
+import org.apache.commons.collections.IteratorUtils;
+import org.apache.commons.collections.Predicate;
+import org.apache.commons.collections.PredicateUtils;
+
 import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.status.Facility;
-import au.edu.uq.cmm.paul.status.FacilityStatus;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
 import au.edu.uq.cmm.paul.watcher.UncPathnameMapper;
+
 
 /**
  * This variation on the DataGrabber gathers DatasetMetadata records all files
@@ -42,13 +52,73 @@ import au.edu.uq.cmm.paul.watcher.UncPathnameMapper;
  */
 public class CatchupAnalyser extends AbstractFileGrabber {
     
+    public static class Statistics {
+        private int totalInFolder;
+        private int multipleInFolder;
+        private int totalInDatabase;
+        private int multipleInDatabase;
+        private int totalMatching;
+
+        public final int getTotalInFolder() {
+            return totalInFolder;
+        }
+
+        public final int getMultipleInFolder() {
+            return multipleInFolder;
+        }
+
+        public final int getTotalInDatabase() {
+            return totalInDatabase;
+        }
+
+        public final int getMultipleInDatabase() {
+            return multipleInDatabase;
+        }
+
+        public final int getTotalMatching() {
+            return totalMatching;
+        }
+    }
+    
+    private static final Comparator<DatasetMetadata> ORDER_BY_BASE_PATH_AND_TIME =
+            new Comparator<DatasetMetadata>() {
+                @Override
+                public int compare(DatasetMetadata o1, DatasetMetadata o2) {
+                    int res = o1.getFacilityFilePathnameBase().compareTo(
+                            o2.getFacilityFilePathnameBase());
+                    if (res == 0) {
+                        res = Long.compare(
+                                o1.getIndicativeFileTimestamp().getTime(), 
+                                o2.getIndicativeFileTimestamp().getTime());
+                    }
+                    return res;
+                }
+    };
+            
+    private static final Comparator<DatasetMetadata> ORDER_BY_BASE_PATH_AND_TIME_WITH_NULLS =
+            new Comparator<DatasetMetadata>() {
+                @Override
+                public int compare(DatasetMetadata o1, DatasetMetadata o2) {
+                    if (o1 == o2) {
+                        return 0;
+                    } else if (o1 == null) {
+                        return -1;
+                    } else if (o2 == null) {
+                        return 1;
+                    } else {
+                        return ORDER_BY_BASE_PATH_AND_TIME.compare(o1, o2);
+                    }
+                }
+    };
+    
     private BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
-    private int totalDatasets;
     private FacilityStatusManager fsm;
     private EntityManagerFactory emf;
-    private int totalUngrabbed;
-    private int totalGrabbed;
     private UncPathnameMapper uncNameMapper;
+    private Statistics all;
+    private Statistics beforeHWM;
+    private Statistics afterHWM;
+    
     
     public CatchupAnalyser(Paul services, Facility facility) {
         super(services, facility);
@@ -57,52 +127,116 @@ public class CatchupAnalyser extends AbstractFileGrabber {
         emf = services.getEntityManagerFactory();
     }
     
-    public CatchupAnalyser analyse() {
+    public CatchupAnalyser analyse(Date hwmTimestamp) {
+        SortedSet<DatasetMetadata> inFolder = buildInFolderMetadata();
+        SortedSet<DatasetMetadata> inDatabase = buildInDatabaseMetadata();
+        all = gatherStats(inFolder, inDatabase, PredicateUtils.truePredicate());
+        if (hwmTimestamp == null) {
+            beforeHWM = null;
+            afterHWM = null;
+        } else {
+            final long hwm = hwmTimestamp.getTime();
+            beforeHWM = gatherStats(inFolder, inDatabase, new Predicate() {
+                public boolean evaluate(Object metadata) {
+                    return ((DatasetMetadata) metadata).getIndicativeFileTimestamp().getTime() <= hwm;
+                }
+            });
+            afterHWM = gatherStats(inFolder, inDatabase, new Predicate() {
+                public boolean evaluate(Object metadata) {
+                    return ((DatasetMetadata) metadata).getIndicativeFileTimestamp().getTime() > hwm;
+                }
+            });
+        }
+        return this;
+    }
+    
+    private Statistics gatherStats(
+            Collection<DatasetMetadata> inFolder,
+            Collection<DatasetMetadata> inDatabase,
+            Predicate predicate) {
+        Statistics stats = new Statistics();
+        @SuppressWarnings("unchecked")
+        Iterator<DatasetMetadata> fit = 
+                IteratorUtils.filteredIterator(inFolder.iterator(), predicate);
+        @SuppressWarnings("unchecked")
+        Iterator<DatasetMetadata> dit = 
+                IteratorUtils.filteredIterator(inDatabase.iterator(), predicate);
+        DatasetMetadata f = null;
+        DatasetMetadata fPrev = null;
+        DatasetMetadata d = null;
+        DatasetMetadata dPrev = null;
+        if (fit.hasNext()) {
+            f = fit.next();
+            stats.totalInFolder++;
+        }
+        if (dit.hasNext()) {
+            d = dit.next();
+            stats.totalInDatabase++;
+        }
+        while (fit.hasNext() || dit.hasNext()) {
+            boolean skipping = !(fit.hasNext() && dit.hasNext());
+            int test = ORDER_BY_BASE_PATH_AND_TIME_WITH_NULLS.compare(f, d);
+            if (test == 0) {
+                stats.totalMatching++;
+            }
+            if ((test <= 0 || skipping) && fit.hasNext()) {
+                fPrev = f;
+                f = fit.next();
+                stats.totalInFolder++;
+                if (fPrev != null && 
+                        fPrev.getFacilityFilePathnameBase().equals(f.getFacilityFilePathnameBase())) {
+                    stats.multipleInFolder++;
+                }
+            }
+            if ((test >= 0 || skipping) && dit.hasNext()) {
+                dPrev = d;
+                d = dit.next();
+                stats.totalInDatabase++;
+                if (dPrev != null && 
+                        dPrev.getFacilityFilePathnameBase().equals(d.getFacilityFilePathnameBase())) {
+                    stats.multipleInDatabase++;
+                }
+            }
+        }
+        return stats;
+    }
+
+
+    private SortedSet<DatasetMetadata> buildInDatabaseMetadata() {
+        TreeSet<DatasetMetadata> inDatabase =  new TreeSet<DatasetMetadata>(ORDER_BY_BASE_PATH_AND_TIME);
+        EntityManager em = emf.createEntityManager();
+        try {
+            TypedQuery<DatasetMetadata> query = em.createQuery(
+                    "from DatasetMetadata m where m.facilityName = :name", 
+                    DatasetMetadata.class);
+            query.setParameter("name", getFacility().getFacilityName());
+            inDatabase.addAll(query.getResultList());
+        } finally {
+            em.close();
+        }
+        return inDatabase;
+    }
+
+    private SortedSet<DatasetMetadata> buildInFolderMetadata() {
+        TreeSet<DatasetMetadata> inFolder = new TreeSet<DatasetMetadata>(ORDER_BY_BASE_PATH_AND_TIME);
         String folderName = getFacility().getFolderName();
         if (folderName == null) {
-            return null;
+            return inFolder;
         }
         File localDir = uncNameMapper.mapUncPathname(folderName);
         if (localDir == null) {
-            return null;
+            return inFolder;
         }
         fsm.getStatus(getFacility()).setLocalDirectory(localDir);
-        this.totalUngrabbed = 0;
-        this.totalGrabbed = 0;
-        this.totalDatasets = analyseTree(localDir, Long.MIN_VALUE, Long.MAX_VALUE);
+        analyseTree(localDir, Long.MIN_VALUE, Long.MAX_VALUE);
         for (Runnable runnable : queue) {
             WorkEntry entry = (WorkEntry) runnable;
             FacilitySession session = fsm.getLoginDetails(
                     getFacility().getFacilityName(), entry.getTimestamp().getTime());
             entry.pretendToGrabFiles();
-            DatasetMetadata metadata = entry.assembleMetadata(null, session, new File(""));
-            int nosHits = 0;
-            EntityManager em = emf.createEntityManager();
-            try {
-                TypedQuery<DatasetMetadata> query = em.createQuery(
-                        "from DatasetMetadata m where m.facilityFilePathnameBase = :pathname", 
-                        DatasetMetadata.class);
-                query.setParameter("pathname", metadata.getFacilityFilePathnameBase());
-                for (DatasetMetadata m : query.getResultList()) {
-                    if (metadata.getIndicativeFileTimestamp() == m.getIndicativeFileTimestamp()) {
-                        nosHits++;
-                    }
-                }
-            } finally {
-                em.close();
-            }
-            if (nosHits > 1) {
-                LOG.warn("We have multiple DatasetMetadata records for " +
-                        metadata.getFacilityFilePathnameBase() + " at " + 
-                        metadata.getIndicativeFileTimestamp());
-            }
-            if (nosHits == 0) {
-                this.totalUngrabbed++;
-            } else {
-                this.totalGrabbed++;
-            }
+            inFolder.add(entry.assembleMetadata(null, session, new File("")));
         }
-        return this;
+        return inFolder;
     }
 
     @Override
@@ -110,16 +244,15 @@ public class CatchupAnalyser extends AbstractFileGrabber {
         queue.add(entry);
     }
 
-    public final int getTotalDatasets() {
-        return totalDatasets;
+    public final Statistics getAll() {
+        return all;
     }
 
-    public final int getTotalUngrabbed() {
-        return totalUngrabbed;
+    public final Statistics getBeforeHWM() {
+        return beforeHWM;
     }
 
-    public final int getTotalGrabbed() {
-        return totalGrabbed;
+    public final Statistics getAfterHWM() {
+        return afterHWM;
     }
-
 }
