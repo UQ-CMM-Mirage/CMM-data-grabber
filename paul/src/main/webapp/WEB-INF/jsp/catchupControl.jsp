@@ -61,32 +61,66 @@
 		</table>
 		<hr>
 		<h2>Diagnosis</h2>
-		<p>
+		<ul>
 			<c:choose>
-				<c:when test="${status.status == 'ON'}">
-					The Data Grabber is currently running for this Facility.  No catchup action required.
-				</c:when>
-				<c:when test="${status.status == 'DISABLED'}">
-					This Facility is disabled.
-				</c:when>
+			<c:when test="${status.status == 'ON'}">
+				<li>
+					The Data Grabber is currently running for this Facility.
+				</li>
+			</c:when>
+			<c:when test="${status.status == 'OFF'}">
+				<li>
+					The Data Grabber is currently not running for this Facility.
+				</li>
+			</c:when>
+			<c:when test="${status.status == 'DISABLED'}">
+				<li>
+					This Facility is currently disabled.
+				</li>
+			</c:when>
+			</c:choose>
+			<c:choose>
 				<c:when test="${empty status.grabberHWMTimestamp}">
+				<li>
 					It appears that the Data Grabber has never been activated for this facility.
+				</li>
 				</c:when>
 				<c:when test="${empty catchupTimestamp}">
-					It appears that all previously grabbed Datasets have either expired or been deleted.
+				<li>
+					Any previously grabbed Datasets have either expired or been deleted.
+					</li>
 				</c:when>
 				<c:when test="${catchupTimestamp.time == status.grabberHWMTimestamp.time}">
-					The catchup time and HWM are in agreement.  All is well.
+				<li>
+					The last queued Dataset and HWM are in agreement.
+					</li>
 				</c:when>
 				<c:when test="${catchupTimestamp.time < status.grabberHWMTimestamp.time}">
-					The catchup time is before the HWM.  It appears that some of the most recently
-					grabbed Datasets have been manually deleted.
+				<li>
+					The last queued Dataset is before the HWM.  Maybe some recently
+					grabbed Datasets were deleted from the queues.
+					</li>
 				</c:when>
 				<c:when test="${catchupTimestamp.time > status.grabberHWMTimestamp.time}">
-					The catchup time is after the HWM.  It is unclear how this could have happened.
+				<li>
+					The last queued Dataset is after the HWM.
+					</li>
 				</c:when>
 			</c:choose>
-		</p>
+			<c:choose>
+				<c:when test="${analysis.all.totalInFolder == analysis.all.totalMatching}">
+					<li>
+						All Datasets in the S: folder are queued.
+					</li>
+				</c:when>
+				<c:otherwise>
+					<li>
+						There are ${analysis.all.totalInFolder - analysis.all.totalMatching} 
+						Datasets in the S: folder that are not in the queues.
+					</li>
+				</c:otherwise>
+			</c:choose>
+			</ul>
 		<h2>Actions</h2>
 		<form method="post">
 		    <c:set var="isohwm"><fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss" value="${hwmTimestamp}"/></c:set>
