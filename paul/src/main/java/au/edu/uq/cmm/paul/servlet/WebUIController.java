@@ -336,7 +336,7 @@ public class WebUIController implements ServletContextAware {
         model.addAttribute("hwmTimestamp", hwm);
         model.addAttribute("catchupTimestamp", catchupTimestamp);
         model.addAttribute("analysis", 
-                new CatchupAnalyser(services, facility).analyse(hwm));
+                new CatchupAnalyser(services, facility).analyse(hwm, catchupTimestamp));
         return "catchupControl";
     }
     

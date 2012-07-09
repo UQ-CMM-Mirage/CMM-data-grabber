@@ -57,6 +57,26 @@
 						<td>${analysis.afterHWM.totalMatching}</td>
 					</tr>
 				</c:if>
+				<c:if test="${!empty analysis.beforeQEnd}">
+					<tr>
+						<td>before HWM</td>
+						<td>${analysis.beforeQEnd.totalInFolder}</td>
+						<td>${analysis.beforeQEnd.multipleInFolder}</td>
+						<td>${analysis.beforeQEnd.totalInDatabase}</td>
+						<td>${analysis.beforeQEnd.multipleInDatabase}</td>
+						<td>${analysis.beforeQEnd.totalMatching}</td>
+					</tr>
+				</c:if>
+				<c:if test="${!empty analysis.afterQEnd}">
+					<tr>
+						<td>after HWM</td>
+						<td>${analysis.afterQEnd.totalInFolder}</td>
+						<td>${analysis.afterQEnd.multipleInFolder}</td>
+						<td>${analysis.afterQEnd.totalInDatabase}</td>
+						<td>${analysis.afterQEnd.multipleInDatabase}</td>
+						<td>${analysis.afterQEnd.totalMatching}</td>
+					</tr>
+				</c:if>
 			</tbody>
 		</table>
 		<hr>

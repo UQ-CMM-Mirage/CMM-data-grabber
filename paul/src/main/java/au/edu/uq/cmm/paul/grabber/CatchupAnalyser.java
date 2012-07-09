@@ -118,6 +118,10 @@ public class CatchupAnalyser extends AbstractFileGrabber {
     private Statistics all;
     private Statistics beforeHWM;
     private Statistics afterHWM;
+
+    private Object beforeQEnd;
+
+    private Object afterQEnd;
     
     
     public CatchupAnalyser(Paul services, Facility facility) {
@@ -127,7 +131,7 @@ public class CatchupAnalyser extends AbstractFileGrabber {
         emf = services.getEntityManagerFactory();
     }
     
-    public CatchupAnalyser analyse(Date hwmTimestamp) {
+    public CatchupAnalyser analyse(Date hwmTimestamp, Date queueEndTimestamp) {
         SortedSet<DatasetMetadata> inFolder = buildInFolderMetadata();
         SortedSet<DatasetMetadata> inDatabase = buildInDatabaseMetadata();
         all = gatherStats(inFolder, inDatabase, PredicateUtils.truePredicate());
@@ -144,6 +148,22 @@ public class CatchupAnalyser extends AbstractFileGrabber {
             afterHWM = gatherStats(inFolder, inDatabase, new Predicate() {
                 public boolean evaluate(Object metadata) {
                     return ((DatasetMetadata) metadata).getIndicativeFileTimestamp().getTime() > hwm;
+                }
+            });
+        }
+        if (queueEndTimestamp == null) {
+            beforeQEnd = null;
+            afterQEnd = null;
+        } else {
+            final long qEnd = queueEndTimestamp.getTime();
+            beforeQEnd = gatherStats(inFolder, inDatabase, new Predicate() {
+                public boolean evaluate(Object metadata) {
+                    return ((DatasetMetadata) metadata).getIndicativeFileTimestamp().getTime() <= qEnd;
+                }
+            });
+            afterQEnd = gatherStats(inFolder, inDatabase, new Predicate() {
+                public boolean evaluate(Object metadata) {
+                    return ((DatasetMetadata) metadata).getIndicativeFileTimestamp().getTime() > qEnd;
                 }
             });
         }
@@ -254,5 +274,13 @@ public class CatchupAnalyser extends AbstractFileGrabber {
 
     public final Statistics getAfterHWM() {
         return afterHWM;
+    }
+
+    public final Object getBeforeQEnd() {
+        return beforeQEnd;
+    }
+
+    public final Object getAfterQEnd() {
+        return afterQEnd;
     }
 }
