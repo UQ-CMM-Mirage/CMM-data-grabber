@@ -37,7 +37,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.catalina.realm.GenericPrincipal;
-import org.apache.taglibs.standard.tag.common.core.CatchTag;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
 import org.joda.time.Hours;
@@ -422,7 +421,7 @@ public class WebUIController implements ServletContextAware {
             @RequestParam String next,
             @RequestParam(required=false) String slice) {
         model.addAttribute("next", next);
-        model.addAttribute("slice", slice);
+        model.addAttribute("slice", inferSlice(slice));
         model.addAttribute("returnTo", inferReturnTo(request));
         model.addAttribute("facilities", getFacilities());
         return "facilitySelect";
@@ -437,7 +436,7 @@ public class WebUIController implements ServletContextAware {
             @RequestParam(required=false) String facilityName) 
     throws UnsupportedEncodingException, IOException {
         if (facilityName == null) {
-            model.addAttribute("slice", slice);
+            model.addAttribute("slice", inferSlice(slice));
             model.addAttribute("returnTo", inferReturnTo(request));
             model.addAttribute("facilities", getFacilities());
             model.addAttribute("message", "Select a facility from the pulldown");
@@ -684,7 +683,7 @@ public class WebUIController implements ServletContextAware {
     throws IOException {
         model.addAttribute("facilityName", facilityName);
         model.addAttribute("returnTo", inferReturnTo(request));
-        Slice s = inferSlice(slice, Slice.ALL);
+        Slice s = inferSlice(slice);
         model.addAttribute("slice", s);
         model.addAttribute("datasets", 
                 getQueueManager().getSnapshot(s, facilityName));
@@ -692,15 +691,15 @@ public class WebUIController implements ServletContextAware {
         return "manageDatasets";
     }
     
-    private Slice inferSlice(String sliceName, Slice dflt) {
+    private Slice inferSlice(String sliceName) {
         if (sliceName == null) {
-            return dflt;
+            return Slice.ALL;
         } else {
             try {
                 return Slice.valueOf(sliceName.toUpperCase());
             } catch (IllegalArgumentException ex) {
-                LOG.debug("unrecognized slice - ignoring");
-                return dflt;
+                LOG.debug("unrecognized slice - ignoring it");
+                return Slice.ALL;
             }
         }
     }
@@ -725,20 +724,20 @@ public class WebUIController implements ServletContextAware {
             model.addAttribute("message", "Only an administrator can manage datasets");
             return "failed";
         }
+        Slice s = inferSlice(slice);
         model.addAttribute("facilityName", facilityName);
-        model.addAttribute("slice", slice);
+        model.addAttribute("slice", s);
         model.addAttribute("returnTo", inferReturnTo(request));
         if (action.equals("deleteAll")) {
-            return deleteAll(model, request, slice, facilityName, true, confirmed);
+            return deleteAll(model, request, s, facilityName, true, confirmed);
         } else if (action.equals("archiveAll")) {
-            return deleteAll(model, request, slice, facilityName, false, confirmed);
+            return deleteAll(model, request, s, facilityName, false, confirmed);
         } else if (action.equals("expire")) {
-            return expire(model, request, slice, facilityName, confirmed);
+            return expire(model, request, s, facilityName, confirmed);
         }
         QueueManager qm = getQueueManager();
         if (ids == null) {
-            model.addAttribute("datasets", 
-                    qm.getSnapshot(inferSlice(slice, Slice.ALL), facilityName));
+            model.addAttribute("datasets", qm.getSnapshot(s, facilityName));
             model.addAttribute("userNames", getUserDetailsManager().getUserNames());
             model.addAttribute("message", 
                     "Check the checkboxes for the Datasets you want to manage");
@@ -785,12 +784,11 @@ public class WebUIController implements ServletContextAware {
     }
 
     private String deleteAll(Model model, HttpServletRequest request, 
-            String sliceName, String facilityName, boolean discard, String confirmed) {
+            Slice slice, String facilityName, boolean discard, String confirmed) {
         if (confirmed == null) {
             model.addAttribute("discard", discard);
             return "queueDeleteConfirmation";
         }
-        Slice slice = inferSlice(sliceName, null);
         int count = getQueueManager().deleteAll(discard, facilityName, slice);
         model.addAttribute("message", 
                 verbiage(count, "queue entry", "queue entries", 
@@ -799,7 +797,7 @@ public class WebUIController implements ServletContextAware {
     }
     
     private String expire(Model model, HttpServletRequest request, 
-            String sliceName, String facilityName, String confirmed) {
+            Slice slice, String facilityName, String confirmed) {
         String mode = request.getParameter("mode");
         String olderThan = request.getParameter("olderThan");
         String age = request.getParameter("age");
@@ -807,7 +805,6 @@ public class WebUIController implements ServletContextAware {
         if (cutoff == null || confirmed == null) {
             return "queueExpiryForm";
         }
-        QueueManager.Slice slice = inferSlice(sliceName, null);
         int count = getQueueManager().expireAll(
                 mode.equals("discard"), facilityName, slice, cutoff);
 
