@@ -59,7 +59,7 @@
 				</c:if>
 				<c:if test="${!empty analysis.beforeQEnd}">
 					<tr>
-						<td>before HWM</td>
+						<td>before current Queue End</td>
 						<td>${analysis.beforeQEnd.totalInFolder}</td>
 						<td>${analysis.beforeQEnd.multipleInFolder}</td>
 						<td>${analysis.beforeQEnd.totalInDatabase}</td>
@@ -69,7 +69,7 @@
 				</c:if>
 				<c:if test="${!empty analysis.afterQEnd}">
 					<tr>
-						<td>after HWM</td>
+						<td>after current Queue End</td>
 						<td>${analysis.afterQEnd.totalInFolder}</td>
 						<td>${analysis.afterQEnd.multipleInFolder}</td>
 						<td>${analysis.afterQEnd.totalInDatabase}</td>
