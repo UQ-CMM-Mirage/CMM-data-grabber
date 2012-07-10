@@ -47,7 +47,7 @@ import au.edu.uq.cmm.paul.status.Facility;
  */
 public class QueueManager {
     public static enum Slice {
-        HELD, INGESTIBLE, ALL
+        HELD, INGESTIBLE, ALL;
     }
     
     private static final Logger LOG = LoggerFactory.getLogger(QueueManager.class);
@@ -161,7 +161,9 @@ public class QueueManager {
             TypedQuery<DatasetMetadata> query = 
                     em.createQuery(queryString, DatasetMetadata.class);
             query.setParameter("cutoff", olderThan, TemporalType.TIMESTAMP);
-            query.setParameter("facility", facilityName);
+            if (facilityName != null && !facilityName.isEmpty()) {
+                query.setParameter("facility", facilityName);
+            }
             List<DatasetMetadata> datasets = query.getResultList();
             for (DatasetMetadata dataset : datasets) {
                 doDelete(discard, em, dataset);
