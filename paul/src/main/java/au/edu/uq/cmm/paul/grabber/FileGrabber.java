@@ -139,7 +139,11 @@ public class FileGrabber extends AbstractFileGrabber implements SimpleService {
 
     @Override
     protected void enqueueWorkEntry(WorkEntry entry) {
-        executor.execute(entry);
+        if (executor == null) {
+            LOG.info("Dropping work entry as there is currently no executor.");
+        } else {
+            executor.execute(entry);
+        }
     }
 
     public EntityManager getEntityManager() {
