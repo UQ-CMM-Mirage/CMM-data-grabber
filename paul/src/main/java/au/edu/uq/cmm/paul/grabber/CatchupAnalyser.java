@@ -167,9 +167,38 @@ public class CatchupAnalyser extends AbstractFileGrabber {
                 }
             });
         }
+        integrityCheck(inDatabase);
         return this;
     }
     
+    private void integrityCheck(SortedSet<DatasetMetadata> inDatabase) {
+        int problems = 0;
+        for (DatasetMetadata dataset : inDatabase) {
+            File adminFile = new File(dataset.getMetadataFilePathname());
+            if (!adminFile.exists()) {
+                LOG.info("Metadata file missing for dataset #" + dataset.getId() + ": " + adminFile);
+                problems++;
+            } else if (adminFile.length() == 0) {
+                LOG.info("Metadata file empty for dataset #" + dataset.getId() + ": " + adminFile);
+                problems++;
+            }
+            for (DatafileMetadata datafile : dataset.getDatafiles()) {
+                File file = new File(datafile.getCapturedFilePathname());
+                if (!file.exists()) {
+                    LOG.info("Data file missing for dataset #" + dataset.getId() + ": " + file);
+                    problems++;
+                } else if (file.length() != datafile.getFileSize()) {
+                    LOG.info("Data file size mismatch for dataset #" + dataset.getId() + ": " + file + 
+                            ": db says " + datafile.getFileSize() + 
+                            " bytes but actual file size is " + file.length());
+                    problems++;
+                }
+            }
+        }
+        LOG.info("Queue integrity check for '" + getFacility().getFacilityName() + 
+                 "' found " + problems + " problems (listed above)");
+    }
+
     private Statistics gatherStats(
             Collection<DatasetMetadata> inFolder,
             Collection<DatasetMetadata> inDatabase,
