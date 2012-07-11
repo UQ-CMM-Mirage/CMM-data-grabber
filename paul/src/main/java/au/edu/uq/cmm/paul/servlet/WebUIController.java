@@ -67,14 +67,17 @@ import au.edu.uq.cmm.aclslib.service.Service.State;
 import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.eccles.UnknownUserException;
 import au.edu.uq.cmm.eccles.UserDetails;
+import au.edu.uq.cmm.eccles.UserDetailsManager;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulConfiguration;
+import au.edu.uq.cmm.paul.grabber.CatchupAnalyser;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 import au.edu.uq.cmm.paul.queue.AtomFeed;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.queue.QueueManager.Slice;
 import au.edu.uq.cmm.paul.status.Facility;
+import au.edu.uq.cmm.paul.status.FacilityStatus;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
 import au.edu.uq.cmm.paul.watcher.FileWatcher;
 
@@ -167,7 +170,7 @@ public class WebUIController implements ServletContextAware {
     
     @RequestMapping(value="/sessions", method=RequestMethod.GET)
     public String status(Model model) {
-        model.addAttribute("sessions", services.getFacilityStatusManager().getLatestSessions());
+        model.addAttribute("sessions", getFacilityStatusManager().getLatestSessions());
         return "sessions";
     }
     
@@ -177,7 +180,7 @@ public class WebUIController implements ServletContextAware {
             @RequestParam String sessionUuid, 
             HttpServletResponse response, HttpServletRequest request) 
     throws IOException, AclsAuthenticationException {
-        services.getFacilityStatusManager().logoutSession(sessionUuid);
+        getFacilityStatusManager().logoutSession(sessionUuid);
         response.sendRedirect(response.encodeRedirectURL(
                 request.getContextPath() + "/sessions"));
         return null;
@@ -187,7 +190,7 @@ public class WebUIController implements ServletContextAware {
     public String facilities(Model model) {
         Collection<FacilityConfig> facilities = getFacilities();
         for (FacilityConfig fc : facilities) {
-            services.getFacilityStatusManager().attachStatus((Facility) fc);
+            getFacilityStatusManager().attachStatus((Facility) fc);
         }
         model.addAttribute("facilities", facilities);
         return "facilities";
@@ -225,7 +228,7 @@ public class WebUIController implements ServletContextAware {
     public String createFacilityConfig(
             Model model, HttpServletRequest request) 
             throws ConfigurationException {
-        ValidationResult<Facility> res = services.getConfigManager().
+        ValidationResult<Facility> res = getConfigManager().
                 createFacility(request.getParameterMap());
         model.addAttribute("returnTo", inferReturnTo(request, "/facilities"));
         if (!res.isValid()) {
@@ -265,7 +268,7 @@ public class WebUIController implements ServletContextAware {
             @PathVariable String facilityName, Model model,
             HttpServletRequest request) 
             throws ConfigurationException {
-        ValidationResult<Facility> res = services.getConfigManager().
+        ValidationResult<Facility> res = getConfigManager().
                 updateFacility(facilityName, request.getParameterMap());
         model.addAttribute("returnTo", inferReturnTo(request, "/facilities"));
         if (!res.isValid()) {
@@ -297,7 +300,7 @@ public class WebUIController implements ServletContextAware {
             return "failed";
         }
         getFileWatcher().stopFileWatching(facility);
-        services.getConfigManager().deleteFacility(facilityName);
+        getConfigManager().deleteFacility(facilityName);
         model.addAttribute("message", "Facility configuration deleted");
         return "ok";
     }
@@ -307,9 +310,57 @@ public class WebUIController implements ServletContextAware {
     public String facilitySessions(@PathVariable String facilityName, Model model) 
             throws ConfigurationException {
         model.addAttribute("sessions", 
-                services.getFacilityStatusManager().sessionsForFacility(facilityName));
+                getFacilityStatusManager().sessionsForFacility(facilityName));
         model.addAttribute("facilityName", facilityName);
         return "facilitySessions";
+    }
+    
+    @RequestMapping(value="/facilities/{facilityName:.+}",
+            params={"hwm"})
+    public String facilityHWM(@PathVariable String facilityName, Model model,
+            @RequestParam(required=false) String hwmTimestamp) 
+            throws ConfigurationException {
+        Facility facility = lookupFacilityByName(facilityName);
+        FacilityStatus status = getFacilityStatusManager().getStatus(facility);
+        Date catchupTimestamp = getQueueManager().getCatchupTimestamp(facility);
+        model.addAttribute("facilityName", facilityName);
+        model.addAttribute("status", status);
+        Date hwm = status.getGrabberHWMTimestamp();
+        if (!tidy(hwmTimestamp).isEmpty()) {
+            DateTime tmp = parseTimestamp(hwmTimestamp);
+            if (tmp != null) {
+                hwm = tmp.toDate();
+            }
+        }
+        model.addAttribute("hwmTimestamp", hwm);
+        model.addAttribute("catchupTimestamp", catchupTimestamp);
+        model.addAttribute("analysis", 
+                new CatchupAnalyser(services, facility).analyse(hwm, catchupTimestamp));
+        return "catchupControl";
+    }
+    
+    @RequestMapping(value="/facilities/{facilityName:.+}", params={"setHWM"})
+    public String setFacilityHWM(@PathVariable String facilityName, Model model,
+            @RequestParam String hwmTimestamp) 
+            throws ConfigurationException {
+        Facility facility = lookupFacilityByName(facilityName);
+        Date oldHwm = getFacilityStatusManager().getStatus(facility).getGrabberHWMTimestamp();
+        Date hwm = null;
+        if (!tidy(hwmTimestamp).isEmpty()) {
+            DateTime tmp = parseTimestamp(hwmTimestamp);
+            if (tmp != null) {
+                hwm = tmp.toDate();
+            }
+        }
+        if (hwm != null) {
+            getFacilityStatusManager().updateHWMTimestamp(facility, hwm);
+            model.addAttribute("message", "Moved HWM for '" + facilityName + "' from " +
+                    oldHwm + " to " + hwm);
+            return "ok";
+        } else {
+            model.addAttribute("message", "Bad HWM value");
+            return "failed";
+        }
     }
     
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
@@ -370,7 +421,7 @@ public class WebUIController implements ServletContextAware {
             @RequestParam String next,
             @RequestParam(required=false) String slice) {
         model.addAttribute("next", next);
-        model.addAttribute("slice", slice);
+        model.addAttribute("slice", inferSlice(slice));
         model.addAttribute("returnTo", inferReturnTo(request));
         model.addAttribute("facilities", getFacilities());
         return "facilitySelect";
@@ -385,7 +436,7 @@ public class WebUIController implements ServletContextAware {
             @RequestParam(required=false) String facilityName) 
     throws UnsupportedEncodingException, IOException {
         if (facilityName == null) {
-            model.addAttribute("slice", slice);
+            model.addAttribute("slice", inferSlice(slice));
             model.addAttribute("returnTo", inferReturnTo(request));
             model.addAttribute("facilities", getFacilities());
             model.addAttribute("message", "Select a facility from the pulldown");
@@ -411,7 +462,7 @@ public class WebUIController implements ServletContextAware {
             return "failed";
         }
         String userName = principal.getName();
-        FacilityStatusManager fsm = services.getFacilityStatusManager();
+        FacilityStatusManager fsm = getFacilityStatusManager();
         FacilitySession session = fsm.getLoginDetails(facilityName, System.currentTimeMillis());
         if (session == null || !session.getUserName().equals(userName)) {
             model.addAttribute("message", "You are not logged in on '" + facilityName + "'");
@@ -436,7 +487,7 @@ public class WebUIController implements ServletContextAware {
             @RequestParam(required=false) String account,
             Model model, HttpServletResponse response, HttpServletRequest request) 
                     throws IOException {
-        FacilityStatusManager fsm = services.getFacilityStatusManager();
+        FacilityStatusManager fsm = getFacilityStatusManager();
         facilityName = tidy(facilityName);
         model.addAttribute("facilityName", facilityName);
         model.addAttribute("facilities", getFacilities());
@@ -550,7 +601,7 @@ public class WebUIController implements ServletContextAware {
         if (confirmed == null) {
             return "resetConfirmation";
         } else {
-            services.getConfigManager().resetConfiguration();
+            getConfigManager().resetConfiguration();
             model.addAttribute("message", 
                     "Configuration reset succeeded.  " +
                     "Please restart the webapp to use the updated configs");
@@ -561,14 +612,14 @@ public class WebUIController implements ServletContextAware {
     @RequestMapping(value="/queue/held", method=RequestMethod.GET)
     public String held(Model model) {
         model.addAttribute("queue", 
-                services.getQueueManager().getSnapshot(Slice.HELD));
+                getQueueManager().getSnapshot(Slice.HELD));
         return "held";
     }
     
     @RequestMapping(value="/queue/ingestible", method=RequestMethod.GET)
     public String queue(Model model) {
         model.addAttribute("queue", 
-                services.getQueueManager().getSnapshot(Slice.INGESTIBLE));
+                getQueueManager().getSnapshot(Slice.INGESTIBLE));
         return "queue";
     }
     
@@ -580,7 +631,7 @@ public class WebUIController implements ServletContextAware {
         model.addAttribute("facilityName", facilityName);
         model.addAttribute("returnTo", inferReturnTo(request));
         model.addAttribute("datasets", 
-                services.getQueueManager().getSnapshot(Slice.HELD, facilityName));
+                getQueueManager().getSnapshot(Slice.HELD, facilityName));
         return "claimDatasets";
     }
     
@@ -601,7 +652,7 @@ public class WebUIController implements ServletContextAware {
         if (ids == null) {
             model.addAttribute("facilityName", facilityName);
             model.addAttribute("datasets", 
-                    services.getQueueManager().getSnapshot(Slice.HELD, facilityName));
+                    getQueueManager().getSnapshot(Slice.HELD, facilityName));
             model.addAttribute("message", "Check the checkboxes for the " +
                     "Datasets you want to claim");
             return "claimDatasets";
@@ -613,7 +664,7 @@ public class WebUIController implements ServletContextAware {
             }
         String userName = principal.getName();
         try {
-            int nosChanged = services.getQueueManager().changeUser(ids, userName, false);
+            int nosChanged = getQueueManager().changeUser(ids, userName, false);
             model.addAttribute("message", 
                     verbiage(nosChanged, "dataset", "datasets", "claimed"));
             return "ok";
@@ -632,23 +683,23 @@ public class WebUIController implements ServletContextAware {
     throws IOException {
         model.addAttribute("facilityName", facilityName);
         model.addAttribute("returnTo", inferReturnTo(request));
-        Slice s = inferSlice(slice, Slice.ALL);
+        Slice s = inferSlice(slice);
         model.addAttribute("slice", s);
         model.addAttribute("datasets", 
-                services.getQueueManager().getSnapshot(s, facilityName));
-        model.addAttribute("userNames", services.getUserDetailsManager().getUserNames());
+                getQueueManager().getSnapshot(s, facilityName));
+        model.addAttribute("userNames", getUserDetailsManager().getUserNames());
         return "manageDatasets";
     }
     
-    private Slice inferSlice(String sliceName, Slice dflt) {
+    private Slice inferSlice(String sliceName) {
         if (sliceName == null) {
-            return dflt;
+            return Slice.ALL;
         } else {
             try {
                 return Slice.valueOf(sliceName.toUpperCase());
             } catch (IllegalArgumentException ex) {
-                LOG.debug("unrecognized slice - ignoring");
-                return dflt;
+                LOG.debug("unrecognized slice - ignoring it");
+                return Slice.ALL;
             }
         }
     }
@@ -673,21 +724,21 @@ public class WebUIController implements ServletContextAware {
             model.addAttribute("message", "Only an administrator can manage datasets");
             return "failed";
         }
+        Slice s = inferSlice(slice);
         model.addAttribute("facilityName", facilityName);
-        model.addAttribute("slice", slice);
+        model.addAttribute("slice", s);
         model.addAttribute("returnTo", inferReturnTo(request));
         if (action.equals("deleteAll")) {
-            return deleteAll(model, request, slice, facilityName, true, confirmed);
+            return deleteAll(model, request, s, facilityName, true, confirmed);
         } else if (action.equals("archiveAll")) {
-            return deleteAll(model, request, slice, facilityName, false, confirmed);
+            return deleteAll(model, request, s, facilityName, false, confirmed);
         } else if (action.equals("expire")) {
-            return expire(model, request, slice, facilityName, confirmed);
+            return expire(model, request, s, facilityName, confirmed);
         }
-        QueueManager qm = services.getQueueManager();
+        QueueManager qm = getQueueManager();
         if (ids == null) {
-            model.addAttribute("datasets", 
-                    qm.getSnapshot(inferSlice(slice, Slice.ALL), facilityName));
-            model.addAttribute("userNames", services.getUserDetailsManager().getUserNames());
+            model.addAttribute("datasets", qm.getSnapshot(s, facilityName));
+            model.addAttribute("userNames", getUserDetailsManager().getUserNames());
             model.addAttribute("message", 
                     "Check the checkboxes for the Datasets you want to manage");
             return "manageDatasets";
@@ -733,13 +784,12 @@ public class WebUIController implements ServletContextAware {
     }
 
     private String deleteAll(Model model, HttpServletRequest request, 
-            String sliceName, String facilityName, boolean discard, String confirmed) {
+            Slice slice, String facilityName, boolean discard, String confirmed) {
         if (confirmed == null) {
             model.addAttribute("discard", discard);
             return "queueDeleteConfirmation";
         }
-        Slice slice = inferSlice(sliceName, null);
-        int count = services.getQueueManager().deleteAll(discard, facilityName, slice);
+        int count = getQueueManager().deleteAll(discard, facilityName, slice);
         model.addAttribute("message", 
                 verbiage(count, "queue entry", "queue entries", 
                         discard ? "deleted" : "archived"));
@@ -747,7 +797,7 @@ public class WebUIController implements ServletContextAware {
     }
     
     private String expire(Model model, HttpServletRequest request, 
-            String sliceName, String facilityName, String confirmed) {
+            Slice slice, String facilityName, String confirmed) {
         String mode = request.getParameter("mode");
         String olderThan = request.getParameter("olderThan");
         String age = request.getParameter("age");
@@ -755,8 +805,7 @@ public class WebUIController implements ServletContextAware {
         if (cutoff == null || confirmed == null) {
             return "queueExpiryForm";
         }
-        QueueManager.Slice slice = inferSlice(sliceName, null);
-        int count = services.getQueueManager().expireAll(
+        int count = getQueueManager().expireAll(
                 mode.equals("discard"), facilityName, slice, cutoff);
 
         model.addAttribute("message", 
@@ -815,7 +864,7 @@ public class WebUIController implements ServletContextAware {
     
     @RequestMapping(value="/users", method=RequestMethod.GET)
     public String users(Model model) {
-        model.addAttribute("userNames", services.getUserDetailsManager().getUserNames());
+        model.addAttribute("userNames", getUserDetailsManager().getUserNames());
         return "users";
     }
 
@@ -824,7 +873,7 @@ public class WebUIController implements ServletContextAware {
             HttpServletResponse response) 
             throws IOException {
         try {
-            UserDetails userDetails = services.getUserDetailsManager().lookupUser(userName, true);
+            UserDetails userDetails = getUserDetailsManager().lookupUser(userName, true);
             model.addAttribute("user", userDetails);
         } catch (UnknownUserException e) {
             LOG.debug("Rejected request for security reasons");
@@ -890,16 +939,32 @@ public class WebUIController implements ServletContextAware {
         return services.getFileWatcher();
     }
     
+    private FacilityStatusManager getFacilityStatusManager() {
+        return services.getFacilityStatusManager();
+    }
+    
+    private QueueManager getQueueManager() {
+        return services.getQueueManager();
+    }
+    
+    private UserDetailsManager getUserDetailsManager() {
+        return services.getUserDetailsManager();
+    }
+    
     private AtomFeed getAtomFeed() {
         return services.getAtomFeed();
     }
     
+    private ConfigurationManager getConfigManager() {
+        return services.getConfigManager();
+    }
+    
     private PaulConfiguration getLatestConfig() {
-        return services.getConfigManager().getLatestConfig();
+        return getConfigManager().getLatestConfig();
     }
     
     private PaulConfiguration getConfig() {
-        return services.getConfigManager().getActiveConfig();
+        return getConfigManager().getActiveConfig();
     }
     
     private Facility lookupFacilityByName(String facilityName) {
@@ -957,15 +1022,7 @@ public class WebUIController implements ServletContextAware {
             }
             cutoff = DateTime.now().minus(p);
         } else {
-            cutoff = null;
-            for (DateTimeFormatter format : FORMATS) {
-                try {
-                    cutoff = format.parseDateTime(olderThan);
-                    break;
-                } catch (IllegalArgumentException ex) {
-                    continue;
-                }
-            }
+            cutoff = parseTimestamp(olderThan);
             if (cutoff == null) {
                 model.addAttribute("message", "Unrecognizable expiry date");
                 return null;
@@ -977,5 +1034,16 @@ public class WebUIController implements ServletContextAware {
         }
         model.addAttribute("computedDate", FORMATS[0].print(cutoff));
         return cutoff.toDate();
+    }
+
+    private DateTime parseTimestamp(String stamp) {
+        for (DateTimeFormatter format : FORMATS) {
+            try {
+                return format.parseDateTime(stamp);
+            } catch (IllegalArgumentException ex) {
+                continue;
+            }
+        }
+        return null;
     }
 }

@@ -19,7 +19,6 @@
 
 package au.edu.uq.cmm.paul.status;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -53,63 +52,6 @@ public class FacilityStatusManager {
         ON, DISABLED, OFF
     }
 
-    public static class FacilityStatus {
-        private final Long facilityId;
-        private Status status;
-        private String message;
-        private File localDirectory;
-        private FileGrabber fileGrabber;
-        
-        public FacilityStatus(Long facilityId, Status status, String message) {
-            super();
-            this.facilityId = facilityId;
-            this.status = status;
-            this.message = message;
-        }
-
-        public Status getStatus() {
-            return status;
-        }
-
-        public void setStatus(Status status) {
-            this.status = status;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-
-        public void setMessage(String message) {
-            this.message = message;
-        }
-
-        public Long getFacilityId() {
-            return facilityId;
-        }
-
-        public FileGrabber getFileGrabber() {
-            return this.fileGrabber;
-        }
-
-        public void setFileGrabber(FileGrabber fileGrabber) {
-            this.fileGrabber = fileGrabber;
-        }
-
-        public File getLocalDirectory() {
-            return localDirectory;
-        }
-        
-        public void setLocalDirectory(File localDirectory) {
-            this.localDirectory = localDirectory;
-        }
-        
-        @Override
-        public String toString() {
-            return "FacilityStatus [facilityId=" + facilityId + ", status="
-                    + status + ", message=" + message + "]";
-        }
-    }
-    
     private static final Logger LOG = LoggerFactory.getLogger(FileGrabber.class);
     private EntityManagerFactory emf;
     private AclsHelper aclsHelper;
@@ -151,9 +93,25 @@ public class FacilityStatusManager {
     public FacilityStatus getStatus(Facility facility) {
         FacilityStatus status = facilityStatuses.get(facility.getId());
         if (status == null) {
-            status = new FacilityStatus(facility.getId(), 
-                    facility.isDisabled() ? Status.DISABLED : Status.OFF, "");
-            facilityStatuses.put(facility.getId(), status);
+            EntityManager em = emf.createEntityManager();
+            try {
+                em.getTransaction().begin();
+                TypedQuery<FacilityStatus> query = em.createQuery(
+                        "from FacilityStatus s where s.facilityId = :id", 
+                        FacilityStatus.class);
+                query.setParameter("id", facility.getId());
+                if (query.getResultList().isEmpty()) {
+                    status = new FacilityStatus(facility.getId());
+                    em.persist(status);
+                    em.getTransaction().commit();
+                } else {
+                    status = query.getResultList().get(0);
+                    em.getTransaction().rollback();
+                }
+                facilityStatuses.put(facility.getId(), status);
+            } finally {
+                em.close();
+            }
         }
         return status;
     }
@@ -166,6 +124,24 @@ public class FacilityStatusManager {
             status.setStatus(Status.OFF);
         }
         facility.setStatus(status);
+    }
+
+    public void updateHWMTimestamp(Facility facility, Date timestamp) {
+        FacilityStatus status = getStatus(facility);
+        Date hwm = status.getGrabberHWMTimestamp();
+        if (hwm == null || hwm.getTime() < timestamp.getTime()) {
+            status.setGrabberHWMTimestamp(timestamp);
+            EntityManager em = emf.createEntityManager();
+            try {
+                em.getTransaction().begin();
+                FacilityStatus pstatus = em.getReference(
+                        FacilityStatus.class, status.getFacilityId());
+                pstatus.setGrabberHWMTimestamp(timestamp);
+                em.getTransaction().commit();
+            } finally {
+                em.close();
+            }
+        }
     }
 
     public List<FacilitySession> getLatestSessions() {

@@ -41,7 +41,6 @@ import org.hibernate.annotations.GenericGenerator;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.paul.DatafileTemplateConfig;
 import au.edu.uq.cmm.paul.GrabberFacilityConfig;
-import au.edu.uq.cmm.paul.status.FacilityStatusManager.FacilityStatus;
 
 /**
  * The Paul implementation of FacilityConfig persists the configuration data

@@ -35,6 +35,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -221,6 +222,7 @@ public class DatasetMetadata {
     }
 
     @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER)
+    @OrderBy(value="fileWriteTimestamp ASC")
     @JoinColumn(name="datafile_id")
     public List<DatafileMetadata> getDatafiles() {
         return datafiles;
