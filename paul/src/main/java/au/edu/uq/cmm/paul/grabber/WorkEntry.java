@@ -47,8 +47,8 @@ import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.status.DatafileTemplate;
 import au.edu.uq.cmm.paul.status.Facility;
+import au.edu.uq.cmm.paul.status.FacilityStatus;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
-import au.edu.uq.cmm.paul.status.FacilityStatusManager.FacilityStatus;
 import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
 
 /**
@@ -163,6 +163,10 @@ class WorkEntry implements Runnable {
         return latestFileTimestamp;
     }
 
+    protected final Date getTimestamp() {
+        return timestamp;
+    }
+
     public File getBaseFile() {
         return baseFile;
     }
@@ -192,9 +196,9 @@ class WorkEntry implements Runnable {
             return;
         }
         // Prepare for grabbing
-        Date now = new Date();
-        FacilitySession session = fileGrabber.getStatusManager().
-                getLoginDetails(facility.getFacilityName(), timestamp.getTime());
+        FacilityStatusManager fsm = fileGrabber.getStatusManager();
+        FacilitySession session = fsm.getLoginDetails(
+                facility.getFacilityName(), timestamp.getTime());
         // Optionally lock the files, then grab them.
         // FIXME - note that we may not see all of the files ... see above.
         for (GrabbedFile file : files.values()) {
@@ -214,11 +218,27 @@ class WorkEntry implements Runnable {
             }
         }
         try {
-            saveMetadata(now, session);
+            saveMetadata(timestamp, session);
+            fsm.updateHWMTimestamp(facility, timestamp);
         } catch (JsonGenerationException ex) {
             LOG.error("Unexpected JSON Error", ex);
         } catch (IOException ex) {
             LOG.error("Unexpected IO Error", ex);
+        }
+    }
+
+    /**
+     * This method is used by the CatchupAnalyser to decorate the
+     * entry with sufficient information that we can generate a
+     * passable metadata record for it.
+     */
+    public void pretendToGrabFiles() {
+        for (GrabbedFile file : files.values()) {
+            Date now = new Date();
+            Date fileTimestamp = new Date(file.getFile().lastModified());
+            file.setCopiedFile(file.getFile());
+            file.setFileTimestamp(fileTimestamp);
+            file.setCopyTimestamp(now);
         }
     }
 
@@ -307,8 +327,20 @@ class WorkEntry implements Runnable {
         LOG.debug("Done grabbing");
     }
 
-    private void saveMetadata(Date now,FacilitySession session)
+    private DatasetMetadata saveMetadata(Date now, FacilitySession session)
             throws IOException, JsonGenerationException {
+        File metadataFile = generateUniqueFile(".admin");
+        DatasetMetadata metadata = assembleMetadata(now, session, metadataFile);
+        for (DatafileMetadata d : metadata.getDatafiles()) {
+            d.updateDatafileHash();
+        }
+        metadata.updateDatasetHash();
+        queueManager.addEntry(metadata, metadataFile);
+        return metadata;
+    }
+
+    public DatasetMetadata assembleMetadata(
+            Date now, FacilitySession session, File metadataFile) {
         if (session == null && !holdDatasetsWithNoUser) {
             session = FacilitySession.makeDummySession(facility.getFacilityName(), now);
         }
@@ -317,7 +349,6 @@ class WorkEntry implements Runnable {
         String sessionUuid = session == null ? null : session.getSessionUuid();
         String emailAddress = session == null ? null : session.getEmailAddress();
         Date loginTime = session == null ? null : session.getLoginTime();
-        File metadataFile = generateUniqueFile(".admin");
         List<DatafileMetadata> list = new ArrayList<DatafileMetadata>(files.size());
         for (GrabbedFile g : files.values()) {
             String mimeType = (g.getTemplate() == null) ? 
@@ -328,15 +359,14 @@ class WorkEntry implements Runnable {
                     g.getCopiedFile().getAbsolutePath(), 
                     g.getFileTimestamp(), g.getCopyTimestamp(), mimeType,
                     g.getCopiedFile().length(), null);
-            d.updateDatafileHash();
             list.add(d);
         }
-        DatasetMetadata metadata = new DatasetMetadata(baseFile.getAbsolutePath(), 
+        DatasetMetadata metadata = new DatasetMetadata(
+                baseFile.getAbsolutePath(), 
                 instrumentBasePath, metadataFile.getAbsolutePath(), 
                 userName, facility.getFacilityName(), facility.getId(), 
                 account, emailAddress, now, sessionUuid, loginTime, list);
-        metadata.updateDatasetHash();
-        queueManager.addEntry(metadata, metadataFile);
+        return metadata;
     }
 
     private File copyFile(FileInputStream is, File source, String suffix) 

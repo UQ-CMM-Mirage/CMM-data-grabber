@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <%@ page session="false"%>
 <html lang="en">
 <head>
 <%@ include file="/WEB-INF/jsp/commonHead.jspFrag"%>
-<title>Data Grabber Facility Select</title>
+<title>Data Grabber Facilities</title>
 </head>
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
@@ -16,9 +17,10 @@
 					<th>Current Facilities</th>
 				</tr>
 				<tr>
-					<th class="span3">Facility</th>
-					<th class="span3">Description</th>
-					<th class="span2">Data Grabbing</th>
+					<th class="span2">Facility</th>
+					<th class="span2">Description</th>
+					<th class="span2">Data Grabber Status</th>
+					<th class="span2">Grabber "High Water Mark" (HWM)</th>
 					<th class="span4"></th>
 				</tr>
 			</thead>
@@ -33,6 +35,10 @@
 							<c:if test="${! empty facility.status.message}">
 								<br>${facility.status.message}
 							</c:if>
+						</td>
+						<td>
+							<fmt:formatDate value="${facility.status.grabberHWMTimestamp}" 
+										type="both" dateStyle="medium"/>
 						</td>
 						<td class="form-inline,btn-toolbar">
 							<form action="facilities/${facility.facilityName}" method="post">
@@ -51,6 +57,7 @@
 								<button class="btn" type="submit" name="sessionLog">Session Log</button>
 								<button class="btn" type="submit" name="copy">Copy</button>
 								<button class="btn" type="submit" name="delete">Delete</button>
+								<button class="btn" type="submit" name="hwm">Adjust HWM</button>
 							</form>
 						</td>
 					</tr>

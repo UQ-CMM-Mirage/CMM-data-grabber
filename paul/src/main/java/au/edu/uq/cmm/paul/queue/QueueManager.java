@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
+import au.edu.uq.cmm.paul.status.Facility;
 
 /**
  * This class is responsible for low-level management of the ingestion queue.
@@ -46,7 +47,7 @@ import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
  */
 public class QueueManager {
     public static enum Slice {
-        HELD, INGESTIBLE, ALL
+        HELD, INGESTIBLE, ALL;
     }
     
     private static final Logger LOG = LoggerFactory.getLogger(QueueManager.class);
@@ -95,6 +96,25 @@ public class QueueManager {
         return getSnapshot(slice, null);
     }
 
+    public Date getCatchupTimestamp(Facility facility) {
+        EntityManager em = createEntityManager();
+        Date res;
+        try {
+            TypedQuery<Date> query = em.createQuery(
+                    "SELECT MAX(d.captureTimestamp) FROM DatasetMetadata d " +
+                            "GROUP BY d.facilityId HAVING d.facilityId = :id", 
+                            Date.class);
+            query.setParameter("id", facility.getId());
+            res = query.getSingleResult();
+        } catch (NoResultException ex) {
+            res = null;
+        } finally {
+            em.close();
+        }
+        LOG.info("determineCatchupTime(" + facility.getFacilityName() + ") -> " + res);
+        return res;
+    }
+
     public void addEntry(DatasetMetadata metadata, File metadataFile) 
             throws JsonGenerationException, IOException {
         saveToFileSystem(metadataFile, metadata);
@@ -141,7 +161,9 @@ public class QueueManager {
             TypedQuery<DatasetMetadata> query = 
                     em.createQuery(queryString, DatasetMetadata.class);
             query.setParameter("cutoff", olderThan, TemporalType.TIMESTAMP);
-            query.setParameter("facility", facilityName);
+            if (facilityName != null && !facilityName.isEmpty()) {
+                query.setParameter("facility", facilityName);
+            }
             List<DatasetMetadata> datasets = query.getResultList();
             for (DatasetMetadata dataset : datasets) {
                 doDelete(discard, em, dataset);

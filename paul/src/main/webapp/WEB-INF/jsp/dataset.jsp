@@ -54,6 +54,7 @@
 								<fmt:formatDate value="${datafile.captureTimestamp}" 
 										type="both" dateStyle="medium"/></li>
 							<li>Mime type: ${datafile.mimeType}</li>
+							<li>File size: ${datafile.fileSize}</li>
 							<li>Datafile hash: ${datafile.datafileHash}</li>
 						</ul>
 					</li>

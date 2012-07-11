@@ -10,11 +10,9 @@
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container-fluid">
 		<h1>Data Grabber Queue Expiry</h1>
-
 		<c:if test="${! empty message}">
 			<div class="alert">${message}</div>
 		</c:if>
-
 		<c:set var="qual"
 			value="${slice == 'ALL' ? 'All' : slice == 'HELD' ? 'All Held' : 'All Ingestible' }" />
 		<c:set var="qualf"
