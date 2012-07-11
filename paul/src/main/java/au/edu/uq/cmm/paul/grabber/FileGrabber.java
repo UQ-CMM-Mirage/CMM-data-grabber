@@ -113,7 +113,7 @@ public class FileGrabber extends AbstractFileGrabber implements SimpleService {
         Date catchupFrom = queueManager.getCatchupTimestamp(getFacility());
         Date hwm = status.getGrabberHWMTimestamp();
         LOG.debug("Catchup from = " + catchupFrom + ", hwm = " + hwm);
-        if (hwm != null && (catchupFrom == null || hwm.getTime() == catchupFrom.getTime())) {
+        if (hwm != null && (catchupFrom == null || hwm.getTime() <= catchupFrom.getTime())) {
             executor = new ThreadPoolExecutor(0, 1, 999, TimeUnit.SECONDS, work);
             // We do "catchup" event generation with the executor paused, so that the worker
             // thread doesn't jump the gun and start processing work entries before all events
@@ -121,8 +121,10 @@ public class FileGrabber extends AbstractFileGrabber implements SimpleService {
             // Note: datasets grabbed in catchup will contain all files whose names match,
             // irrespective of the file timestamps.  This is the best we can do in the circumstances.
             work.pause();
+            long start = Math.max(hwm.getTime(), 
+                    catchupFrom == null ? Long.MIN_VALUE : catchupFrom.getTime());
             LOG.info("Commencing catchup treewalk for " + status.getLocalDirectory());
-            int count = analyseTree(status.getLocalDirectory(), catchupFrom.getTime(), Long.MAX_VALUE);
+            int count = analyseTree(status.getLocalDirectory(), start, Long.MAX_VALUE);
             LOG.info("Catchup treewalk found " + count + " files");
             // This ensures that the "caught-up" datasets get ingested in roughly the order
             // that the original files were saved rather than a seemingly random order, for
