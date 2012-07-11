@@ -189,9 +189,18 @@ public class CatchupAnalyser extends AbstractFileGrabber {
                     problems++;
                 } else if (file.length() != datafile.getFileSize()) {
                     LOG.info("Data file size mismatch for dataset #" + dataset.getId() + ": " + file + 
-                            ": db says " + datafile.getFileSize() + 
-                            " bytes but actual file size is " + file.length());
+                            ": admin metadata says " + datafile.getFileSize() + 
+                            " but actual captured file size is " + file.length());
                     problems++;
+                }
+                File source = new File(datafile.getSourceFilePathname());
+                if (source.exists()) {
+                    if (source.length() != file.length()) {
+                        LOG.info("Data file size mismatch for dataset #" + dataset.getId() + ": " + file + 
+                                ": original file size is " + source.length() + 
+                                " but actual captured syfile size is " + file.length());
+                        problems++;
+                    }
                 }
             }
         }
