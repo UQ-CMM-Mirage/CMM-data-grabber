@@ -83,51 +83,86 @@ public class Analyser extends AbstractFileGrabber {
         }
     }
     
+    public enum ProblemType {
+        METADATA_MISSING, METADATA_SIZE,
+        FILE_MISSING, FILE_SIZE, FILE_SIZE_2;
+    }
+    
+    public static class Problem {
+        private final DatasetMetadata dataset;
+        private final DatafileMetadata datafile;
+        private final String details;
+        private final ProblemType type;
+        
+        public Problem(DatasetMetadata dataset, DatafileMetadata datafile, 
+                ProblemType type, String details) {
+            super();
+            this.dataset = dataset;
+            this.datafile = datafile;
+            this.details = details;
+            this.type = type;
+        }
+        
+        public final DatasetMetadata getDataset() {
+            return dataset;
+        }
+        
+        public final DatafileMetadata getDatafile() {
+            return datafile;
+        }
+        
+        public final String getDetails() {
+            return details;
+        }
+
+        public final ProblemType getType() {
+            return type;
+        }
+    }
+    
     public static class Problems {
+        private final List<Problem> problems;
 
-        private final int fileSize2;
-        private final int fileSize;
-        private final int fileMissing;
-        private final int metadataSize;
-        private final int metadataMissing;
-        private final List<String> messages;
-
-        public Problems(int metadataMissing, int metadataSize, int fileMissing,
-                int fileSize, int fileSize2, List<String> messages) {
-            this.metadataMissing = metadataMissing;
-            this.metadataSize = metadataSize;
-            this.fileMissing = fileMissing;
-            this.fileSize = fileSize;
-            this.fileSize2 = fileSize2;
-            this.messages = messages;
+        public Problems(List<Problem> problem) {
+            this.problems = problem;
         }
 
         public int getNosProblems() {
-            return metadataMissing + metadataSize + fileMissing + fileSize + fileSize2;
+            return problems.size();
         }
 
         public final int getFileSize2() {
-            return fileSize2;
+            return count(ProblemType.FILE_SIZE_2);
         }
 
         public final int getFileSize() {
-            return fileSize;
+            return count(ProblemType.FILE_SIZE);
         }
 
         public final int getFileMissing() {
-            return fileMissing;
+            return count(ProblemType.FILE_MISSING);
         }
 
         public final int getMetadataSize() {
-            return metadataSize;
+            return count(ProblemType.METADATA_SIZE);
         }
 
         public final int getMetadataMissing() {
-            return metadataMissing;
+            return count(ProblemType.METADATA_MISSING);
         }
 
-        public final List<String> getMessages() {
-            return messages;
+        private int count(ProblemType type) {
+            int count = 0;
+            for (Problem problem : problems) {
+                if (problem.getType() == type) {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        public final List<Problem> getProblems() {
+            return problems;
         }
     }
     
@@ -222,54 +257,47 @@ public class Analyser extends AbstractFileGrabber {
     }
     
     private Problems integrityCheck(SortedSet<DatasetMetadata> inDatabase) {
-        int metadataMissing = 0;
-        int metadataSize = 0;
-        int fileMissing = 0;
-        int fileSize = 0;
-        int fileSize2 = 0;
-        List<String> messages = new ArrayList<String>();
+        List<Problem> problems = new ArrayList<Problem>();
         for (DatasetMetadata dataset : inDatabase) {
             File adminFile = new File(dataset.getMetadataFilePathname());
             if (!adminFile.exists()) {
-                logProblem(dataset, messages, "Metadata file missing: " + adminFile);
-                metadataMissing++;
+                logProblem(dataset, null, ProblemType.METADATA_MISSING, problems, 
+                        "Metadata file missing: " + adminFile);
             } else if (adminFile.length() == 0) {
-                logProblem(dataset, messages, "Metadata file empty: " + adminFile);
-                metadataSize++;
+                logProblem(dataset, null, ProblemType.METADATA_SIZE, problems, 
+                        "Metadata file empty: " + adminFile);
             }
             for (DatafileMetadata datafile : dataset.getDatafiles()) {
                 File file = new File(datafile.getCapturedFilePathname());
                 if (!file.exists()) {
-                    logProblem(dataset, messages, "Data file missing: " + file);
-                    fileMissing++;
+                    logProblem(dataset, datafile, ProblemType.FILE_MISSING, problems, 
+                            "Data file missing: " + file);
                 } else if (file.length() != datafile.getFileSize()) {
-                    logProblem(dataset, messages, "Data file size mismatch: " + file + 
+                    logProblem(dataset, datafile, ProblemType.FILE_SIZE, problems,
+                            "Data file size mismatch: " + file + 
                             ": admin metadata says " + datafile.getFileSize() + 
                             " but actual captured file size is " + file.length());
-                    fileSize++;
                 }
                 File source = new File(datafile.getSourceFilePathname());
                 if (source.exists()) {
                     if (source.length() != file.length()) {
-                        logProblem(dataset, messages, "Data file size mismatch: " + file + 
+                        logProblem(dataset, datafile, ProblemType.FILE_SIZE_2, problems, 
+                                "Data file size mismatch: " + file + 
                                 ": original file size is " + source.length() + 
                                 " but actual captured file size is " + file.length());
-                        fileSize2++;
                     }
                 }
             }
         }
-        Problems problems = new Problems(metadataMissing, metadataSize, 
-                fileMissing, fileSize, fileSize2, messages);
         LOG.info("Queue integrity check for '" + getFacility().getFacilityName() + 
-                 "' found " + problems.getNosProblems() + " problems (listed above)");
-        return problems;
+                 "' found " + problems.size() + " problems (listed above)");
+        return new Problems(problems);
     }
     
-    private void logProblem(DatasetMetadata dataset, List<String> list, String details) {
-        String message = "Problem in dataset #" + dataset.getId() + ": " + details;
-        LOG.info(message);
-        list.add(message);
+    private void logProblem(DatasetMetadata dataset, DatafileMetadata datafile, ProblemType type,
+            List<Problem> list, String details) {
+        LOG.info("Problem in dataset #" + dataset.getId() + ": " + details);
+        list.add(new Problem(dataset, datafile, type, details));
     }
 
     private Statistics gatherStats(
@@ -322,7 +350,6 @@ public class Analyser extends AbstractFileGrabber {
         }
         return stats;
     }
-
 
     private SortedSet<DatasetMetadata> buildInDatabaseMetadata() {
         TreeSet<DatasetMetadata> inDatabase =  new TreeSet<DatasetMetadata>(ORDER_BY_BASE_PATH_AND_TIME);

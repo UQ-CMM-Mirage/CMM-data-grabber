@@ -115,15 +115,17 @@
 		<table class="table table-striped table-condensed">
 			<thead>
 				<tr>
-					<th>Details</th>
+					<th class="span1">Dataset Id</th>
+					<th class="span1">Problem Type</th>
+					<th class="span5">Details</th>
 				</tr>
 			</thead>
 			<tbody>
-				<c:forEach items="${analysis.problems.messages}" var="message">
+				<c:forEach items="${analysis.problems.problems}" var="problem">
 					<tr>
-						<td>
-							${message}
-						</td>
+						<td><a href="/paul/datasets/${problem.dataset.id}">${problem.dataset.id}</a></td>
+						<td>${problem.type}</td>
+						<td>${problem.details}</td>
 					</tr>
 				</c:forEach>
 			</tbody>
