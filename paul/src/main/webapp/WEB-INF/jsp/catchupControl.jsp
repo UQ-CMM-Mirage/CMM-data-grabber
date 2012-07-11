@@ -79,7 +79,57 @@
 				</c:if>
 			</tbody>
 		</table>
+		<c:if test="${analysis.problems.nosProblems > 0}">
 		<hr>
+		<h2>Problems</h2>
+		<table class="table table-striped table-condensed">
+			<thead>
+				<tr>
+					<th class="span4">Problem type</th>
+					<th class="span2">Count</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>Metadata file missing</td>
+					<td>${analysis.problems.metadataMissing}
+				</tr>
+				<tr>
+					<td>Metadata file size wrong</td>
+					<td>${analysis.problems.metadataSize}
+				</tr>
+				<tr>
+					<td>Grabbed Datafile missing</td>
+					<td>${analysis.problems.fileMissing}
+				</tr>
+				<tr>
+					<td>Grabbed Datafile size doesn't match recorded size</td>
+					<td>${analysis.problems.fileSize}
+				</tr>
+				<tr>
+					<td>Grabbed Datafile size doesn't match current file size in S:</td>
+					<td>${analysis.problems.fileSize2}
+				</tr>
+			</tbody>
+		</table>
+		<table class="table table-striped table-condensed">
+			<thead>
+				<tr>
+					<th>Details</th>
+				</tr>
+			</thead>
+			<tbody>
+				<c:forEach items="${analysis.problems.messages}" var="message">
+					<tr>
+						<td>
+							${message}
+						</td>
+					</tr>
+				</c:forEach>
+			</tbody>
+		</table>
+		</c:if>
+	    <hr>
 		<h2>Diagnosis</h2>
 		<ul>
 			<c:choose>

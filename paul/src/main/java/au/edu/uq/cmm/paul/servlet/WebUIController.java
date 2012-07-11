@@ -70,7 +70,7 @@ import au.edu.uq.cmm.eccles.UserDetails;
 import au.edu.uq.cmm.eccles.UserDetailsManager;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulConfiguration;
-import au.edu.uq.cmm.paul.grabber.CatchupAnalyser;
+import au.edu.uq.cmm.paul.grabber.Analyser;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 import au.edu.uq.cmm.paul.queue.AtomFeed;
@@ -335,7 +335,7 @@ public class WebUIController implements ServletContextAware {
         model.addAttribute("hwmTimestamp", hwm);
         model.addAttribute("catchupTimestamp", catchupTimestamp);
         model.addAttribute("analysis", 
-                new CatchupAnalyser(services, facility).analyse(hwm, catchupTimestamp));
+                new Analyser(services, facility).analyse(hwm, catchupTimestamp));
         return "catchupControl";
     }
     
