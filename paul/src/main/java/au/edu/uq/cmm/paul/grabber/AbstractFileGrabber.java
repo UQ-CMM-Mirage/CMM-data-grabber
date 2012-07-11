@@ -120,23 +120,25 @@ public abstract class AbstractFileGrabber implements FileWatcherEventListener {
                 break;
             }
         }
-        synchronized (this) {
-           if (baseFile == null) {
-               // If we are shutting down, we only deal with events for
-               // files in datasets we've already started grabbing.
-               if (shuttingDown) {
-                   return;
-               }
-           }
-           WorkEntry workEntry = workMap.get(baseFile);
-           if (workEntry == null) {
-               workEntry = new WorkEntry(services, event, baseFile);
-               workMap.put(baseFile, workEntry);
-               enqueueWorkEntry(workEntry);
-               LOG.debug("Added a workEntry");
-           } else {
-               workEntry.addEvent(event);
-           }
+        if (baseFile != null) {
+            synchronized (this) {
+                // If we are shutting down, we only deal with events for
+                // files in datasets we've already started grabbing.
+                if (!shuttingDown) {
+                    WorkEntry workEntry = workMap.get(baseFile);
+                    if (workEntry == null) {
+                        workEntry = new WorkEntry(services, event, baseFile);
+                        workMap.put(baseFile, workEntry);
+                        enqueueWorkEntry(workEntry);
+                        LOG.debug("Added a workEntry");
+                    } else {
+                        workEntry.addEvent(event);
+                    }
+                }
+            }
+        } else {
+            LOG.debug("FileWatcherEvent doesn't match any template : " + 
+                facility.getFacilityName() + "," + file + "," + event.isCreate());
         }
     }
     
