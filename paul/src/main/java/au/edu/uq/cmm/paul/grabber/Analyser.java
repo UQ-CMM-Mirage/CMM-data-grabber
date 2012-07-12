@@ -56,11 +56,37 @@ import au.edu.uq.cmm.paul.watcher.UncPathnameMapper;
 public class Analyser extends AbstractFileGrabber {
     
     public static class Statistics {
-        private int totalInFolder;
-        private int multipleInFolder;
-        private int totalInDatabase;
-        private int multipleInDatabase;
-        private int totalMatching;
+        private final int totalInFolder;
+        private final int multipleInFolder;
+        private final int totalInDatabase;
+        private final int multipleInDatabase;
+        private final int totalMatching;
+        private final BeanSetWrapper<DatasetMetadata> missingFromDatabase;
+        private final BeanSetWrapper<DatasetMetadata> missingFromFolder;
+        private final BeanSetWrapper<DatasetMetadata> missingFromDatabaseTimeOrdered;
+        private final BeanSetWrapper<DatasetMetadata> missingFromFolderTimeOrdered;
+
+        public Statistics(int totalInFolder, int multipleInFolder,
+                int totalInDatabase, int multipleInDatabase, int totalMatching,
+                SortedSet<DatasetMetadata> missingFromDatabase,
+                SortedSet<DatasetMetadata> missingFromFolder,
+                SortedSet<DatasetMetadata> missingFromDatabaseTimeOrdered,
+                SortedSet<DatasetMetadata> missingFromFolderTimeOrdered) {
+            super();
+            this.totalInFolder = totalInFolder;
+            this.multipleInFolder = multipleInFolder;
+            this.totalInDatabase = totalInDatabase;
+            this.multipleInDatabase = multipleInDatabase;
+            this.totalMatching = totalMatching;
+            this.missingFromDatabase =
+                    new BeanSetWrapper<DatasetMetadata>(missingFromDatabase);
+            this.missingFromFolder = 
+                    new BeanSetWrapper<DatasetMetadata>(missingFromFolder);
+            this.missingFromDatabaseTimeOrdered = 
+                    new BeanSetWrapper<DatasetMetadata>(missingFromDatabaseTimeOrdered);
+            this.missingFromFolderTimeOrdered =
+                    new BeanSetWrapper<DatasetMetadata>(missingFromFolderTimeOrdered);
+        }
 
         public final int getTotalInFolder() {
             return totalInFolder;
@@ -80,6 +106,30 @@ public class Analyser extends AbstractFileGrabber {
 
         public final int getTotalMatching() {
             return totalMatching;
+        }
+        
+        public final int getTotalMissingFromDatabase() {
+            return missingFromDatabase.size();
+        }
+        
+        public final int getTotalMissingFromFolder() {
+            return missingFromFolder.size();
+        }
+
+        public final BeanSetWrapper<DatasetMetadata> getMissingFromDatabase() {
+            return missingFromDatabase;
+        }
+
+        public final BeanSetWrapper<DatasetMetadata> getMissingFromFolder() {
+            return missingFromFolder;
+        }
+
+        public final BeanSetWrapper<DatasetMetadata> getMissingFromDatabaseTimeOrdered() {
+            return missingFromDatabaseTimeOrdered;
+        }
+
+        public final BeanSetWrapper<DatasetMetadata> getMissingFromFolderTimeOrdered() {
+            return missingFromFolderTimeOrdered;
         }
     }
     
@@ -165,6 +215,29 @@ public class Analyser extends AbstractFileGrabber {
             return problems;
         }
     }
+    
+    private static final Comparator<DatasetMetadata> ORDER_BY_ID =
+            new Comparator<DatasetMetadata>() {
+                @Override
+                public int compare(DatasetMetadata o1, DatasetMetadata o2) {
+                    return o1.getId().compareTo(o2.getId());
+                }
+    };
+    
+    private static final Comparator<DatasetMetadata> ORDER_BY_TIME_AND_BASE_PATH =
+            new Comparator<DatasetMetadata>() {
+                @Override
+                public int compare(DatasetMetadata o1, DatasetMetadata o2) {
+                    int res = Long.compare(
+                            o1.getIndicativeFileTimestamp().getTime(), 
+                            o2.getIndicativeFileTimestamp().getTime());
+                    if (res == 0) {
+                        res = o1.getFacilityFilePathnameBase().compareTo(
+                                o2.getFacilityFilePathnameBase());
+                    }
+                    return res;
+                }
+    };
     
     private static final Comparator<DatasetMetadata> ORDER_BY_BASE_PATH_AND_TIME =
             new Comparator<DatasetMetadata>() {
@@ -253,6 +326,7 @@ public class Analyser extends AbstractFileGrabber {
             });
         }
         problems = integrityCheck(inDatabase);
+        
         return this;
     }
     
@@ -304,7 +378,10 @@ public class Analyser extends AbstractFileGrabber {
             Collection<DatasetMetadata> inFolder,
             Collection<DatasetMetadata> inDatabase,
             Predicate predicate) {
-        Statistics stats = new Statistics();
+        TreeSet<DatasetMetadata> matchedInDatabase = 
+                new TreeSet<DatasetMetadata>(ORDER_BY_BASE_PATH_AND_TIME);
+        TreeSet<DatasetMetadata> matchedInFolder = 
+                new TreeSet<DatasetMetadata>(ORDER_BY_ID);
         @SuppressWarnings("unchecked")
         Iterator<DatasetMetadata> fit = 
                 IteratorUtils.filteredIterator(inFolder.iterator(), predicate);
@@ -315,39 +392,68 @@ public class Analyser extends AbstractFileGrabber {
         DatasetMetadata fPrev = null;
         DatasetMetadata d = null;
         DatasetMetadata dPrev = null;
+        int totalInFolder = 0;
+        int totalInDatabase = 0;
+        int totalMatching = 0;
+        int multipleInFolder = 0;
+        int multipleInDatabase = 0;
         if (fit.hasNext()) {
             f = fit.next();
-            stats.totalInFolder++;
+            totalInFolder++;
         }
         if (dit.hasNext()) {
             d = dit.next();
-            stats.totalInDatabase++;
+            totalInDatabase++;
         }
         while (fit.hasNext() || dit.hasNext()) {
             boolean skipping = !(fit.hasNext() && dit.hasNext());
             int test = ORDER_BY_BASE_PATH_AND_TIME_WITH_NULLS.compare(f, d);
             if (test == 0) {
-                stats.totalMatching++;
+                totalMatching++;
+                matchedInDatabase.add(f);
+                matchedInFolder.add(d);
             }
             if ((test <= 0 || skipping) && fit.hasNext()) {
                 fPrev = f;
                 f = fit.next();
-                stats.totalInFolder++;
+                totalInFolder++;
                 if (fPrev != null && 
                         fPrev.getFacilityFilePathnameBase().equals(f.getFacilityFilePathnameBase())) {
-                    stats.multipleInFolder++;
+                    // We shouldn't see any of these ...
+                    multipleInFolder++;
                 }
             }
             if ((test >= 0 || skipping) && dit.hasNext()) {
                 dPrev = d;
                 d = dit.next();
-                stats.totalInDatabase++;
+                totalInDatabase++;
                 if (dPrev != null && 
                         dPrev.getFacilityFilePathnameBase().equals(d.getFacilityFilePathnameBase())) {
-                    stats.multipleInDatabase++;
+                    multipleInDatabase++;
                 }
             }
         }
+        TreeSet<DatasetMetadata> missingFromDatabase = 
+                new TreeSet<DatasetMetadata>(ORDER_BY_BASE_PATH_AND_TIME);
+        TreeSet<DatasetMetadata> missingFromFolder = 
+                new TreeSet<DatasetMetadata>(ORDER_BY_ID);
+        missingFromDatabase.addAll(inFolder);
+        missingFromDatabase.removeAll(matchedInDatabase);
+        missingFromFolder.addAll(inDatabase);
+        missingFromFolder.removeAll(matchedInFolder);
+        
+        TreeSet<DatasetMetadata> missingFromDatabaseTimeOrdered = 
+                new TreeSet<DatasetMetadata>(ORDER_BY_TIME_AND_BASE_PATH);
+        missingFromDatabaseTimeOrdered.addAll(missingFromDatabase);
+        
+        TreeSet<DatasetMetadata> missingFromFolderTimeOrdered = 
+                new TreeSet<DatasetMetadata>(ORDER_BY_TIME_AND_BASE_PATH);
+        missingFromFolderTimeOrdered.addAll(missingFromFolder);
+
+        Statistics stats = new Statistics(totalInFolder, multipleInFolder, 
+                totalInDatabase, multipleInDatabase, totalMatching, 
+                missingFromDatabase, missingFromFolder, 
+                missingFromDatabaseTimeOrdered, missingFromFolderTimeOrdered);
         return stats;
     }
 

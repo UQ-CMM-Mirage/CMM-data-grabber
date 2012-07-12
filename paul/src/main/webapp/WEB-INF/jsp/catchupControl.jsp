@@ -25,7 +25,9 @@
 					<th class="span2">Duplicate Datasets on S:</th>
 					<th class="span2">All Datasets in queues</th>
 					<th class="span2">Duplicate Datasets in queues</th>
-					<th class="span2">Datasets on S: with Datasets in queues</th>
+					<th class="span2">Datasets in both places</th>
+					<th class="span2">Datasets missing from S:</th>
+					<th class="span2">Datasets missing from Queues</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -36,6 +38,8 @@
 					<td>${analysis.all.totalInDatabase}</td>
 					<td>${analysis.all.multipleInDatabase}</td>
 					<td>${analysis.all.totalMatching}</td>
+					<td>${analysis.all.missingFromFolder.size}</td>
+					<td>${analysis.all.missingFromDatabase.size}</td>
 				</tr>
 				<c:if test="${!empty analysis.beforeHWM}">
 					<tr>
@@ -45,6 +49,8 @@
 						<td>${analysis.beforeHWM.totalInDatabase}</td>
 						<td>${analysis.beforeHWM.multipleInDatabase}</td>
 						<td>${analysis.beforeHWM.totalMatching}</td>
+						<td>${analysis.beforeHWM.missingFromFolder.size}</td>
+						<td>${analysis.beforeHWM.missingFromDatabase.size}</td>
 					</tr>
 				</c:if>
 				<c:if test="${!empty analysis.afterHWM}">
@@ -55,6 +61,8 @@
 						<td>${analysis.afterHWM.totalInDatabase}</td>
 						<td>${analysis.afterHWM.multipleInDatabase}</td>
 						<td>${analysis.afterHWM.totalMatching}</td>
+						<td>${analysis.afterHWM.missingFromFolder.size}</td>
+						<td>${analysis.afterHWM.missingFromDatabase.size}</td>
 					</tr>
 				</c:if>
 				<c:if test="${!empty analysis.beforeQEnd}">
@@ -65,6 +73,8 @@
 						<td>${analysis.beforeQEnd.totalInDatabase}</td>
 						<td>${analysis.beforeQEnd.multipleInDatabase}</td>
 						<td>${analysis.beforeQEnd.totalMatching}</td>
+						<td>${analysis.beforeQEnd.missingFromFolder.size}</td>
+						<td>${analysis.beforeQEnd.missingFromDatabase.size}</td>
 					</tr>
 				</c:if>
 				<c:if test="${!empty analysis.afterQEnd}">
@@ -75,6 +85,8 @@
 						<td>${analysis.afterQEnd.totalInDatabase}</td>
 						<td>${analysis.afterQEnd.multipleInDatabase}</td>
 						<td>${analysis.afterQEnd.totalMatching}</td>
+						<td>${analysis.afterQEnd.missingFromFolder.size}</td>
+						<td>${analysis.afterQEnd.missingFromDatabase.size}</td>
 					</tr>
 				</c:if>
 			</tbody>
@@ -130,6 +142,9 @@
 				</c:forEach>
 			</tbody>
 		</table>
+		</c:if>
+		<c:if test="${analysis.all.missingFromFolder.size + analysis.all.missingFromDatabase.size > 0}">
+			Some are missing
 		</c:if>
 	    <hr>
 		<h2>Diagnosis</h2>
