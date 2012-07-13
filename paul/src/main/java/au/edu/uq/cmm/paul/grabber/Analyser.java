@@ -433,13 +433,10 @@ public class Analyser extends AbstractFileGrabber {
                 }
             }
         }
-        TreeSet<DatasetMetadata> missingFromDatabase = 
-                new TreeSet<DatasetMetadata>(ORDER_BY_BASE_PATH_AND_TIME);
-        TreeSet<DatasetMetadata> missingFromFolder = 
-                new TreeSet<DatasetMetadata>(ORDER_BY_ID);
-        missingFromDatabase.addAll(inFolder);
-        missingFromDatabase.removeAll(matchedInDatabase);
-        missingFromFolder.addAll(inDatabase);
+        TreeSet<DatasetMetadata> missingFromDatabase = buildRemainderSet(
+                ORDER_BY_BASE_PATH_AND_TIME, predicate, inFolder, matchedInDatabase);
+        TreeSet<DatasetMetadata> missingFromFolder = buildRemainderSet(
+                ORDER_BY_ID, predicate, inDatabase, matchedInFolder);
         missingFromFolder.removeAll(matchedInFolder);
         
         TreeSet<DatasetMetadata> missingFromDatabaseTimeOrdered = 
@@ -455,6 +452,23 @@ public class Analyser extends AbstractFileGrabber {
                 missingFromDatabase, missingFromFolder, 
                 missingFromDatabaseTimeOrdered, missingFromFolderTimeOrdered);
         return stats;
+    }
+    
+    private TreeSet<DatasetMetadata> buildRemainderSet(
+            Comparator<DatasetMetadata> comparator, Predicate predicate,
+            Collection<DatasetMetadata> include, Collection<DatasetMetadata> exclude) {
+        TreeSet<DatasetMetadata> res = new TreeSet<DatasetMetadata>(comparator);
+        for (@SuppressWarnings("unchecked") Iterator<DatasetMetadata> it = 
+                IteratorUtils.filteredIterator(include.iterator(), predicate);
+                it.hasNext(); ) {
+            res.add(it.next());
+        }
+        for (@SuppressWarnings("unchecked") Iterator<DatasetMetadata> it = 
+                IteratorUtils.filteredIterator(exclude.iterator(), predicate);
+                it.hasNext(); ) {
+            res.remove(it.next());
+        }
+        return res;
     }
 
     private SortedSet<DatasetMetadata> buildInDatabaseMetadata() {

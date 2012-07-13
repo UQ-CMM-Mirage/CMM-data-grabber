@@ -20,7 +20,7 @@
 		<h2>Statistics</h2>
 		<table class="table table-striped table-condensed">
 			<thead>
-				<tr><th class="span2">Time range</th>
+				<tr><th class="span2">Timespan</th>
 					<th class="span2">All Datasets on S:</th>
 					<th class="span2">Duplicate Datasets on S:</th>
 					<th class="span2">All Datasets in queues</th>
@@ -144,7 +144,147 @@
 		</table>
 		</c:if>
 		<c:if test="${analysis.all.missingFromFolder.size + analysis.all.missingFromDatabase.size > 0}">
-			Some are missing
+			<table class="table table-striped table-condensed">
+				<thead>
+					<tr>
+					    <th>Timespan</th>
+						<th colspan="2">Datasets missing from Queues</th>
+						<th colspan="2">Datasets missing from S:</th>
+					</tr>
+					<tr>
+						<th class="span1">&nbsp;</th>
+						<th class="span1">First</th>
+						<th class="span1">Last</th>
+						<th class="span1">First</th>
+						<th class="span1">Last</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>all</td>
+						<c:choose>
+							<c:when test="${empty analysis.all.missingFromDatabase}">
+								<td>-</td>
+								<td>-</td>
+							</c:when>
+							<c:otherwise>
+								<td>${analysis.all.missingFromDatabase.first.sourceFilePathnameBase}</td>
+								<td>${analysis.all.missingFromDatabase.last.sourceFilePathnameBase}</td>
+							</c:otherwise>
+						</c:choose>
+						<c:choose>
+							<c:when test="${empty analysis.all.missingFromFolder}">
+								<td>-</td>
+								<td>-</td>
+							</c:when>
+							<c:otherwise>
+								<td>${analysis.all.missingFromFolder.first.id}</td>
+								<td>${analysis.all.missingFromFolder.last.id}</td>
+							</c:otherwise>
+						</c:choose>
+					</tr>
+					<c:if test="${! empty analysis.beforeHWM}">
+						<tr>
+							<td>Before HWM</td>
+							<c:choose>
+								<c:when test="${empty analysis.beforeHWM.missingFromDatabase}">
+									<td>-</td>
+									<td>-</td>
+								</c:when>
+								<c:otherwise>
+									<td>${analysis.beforeHWM.missingFromDatabase.first.sourceFilePathnameBase}</td>
+									<td>${analysis.beforeHWM.missingFromDatabase.last.sourceFilePathnameBase}</td>
+								</c:otherwise>
+							</c:choose>
+							<c:choose>
+								<c:when test="${empty analysis.beforeHWM.missingFromFolder}">
+									<td>-</td>
+									<td>-</td>
+								</c:when>
+								<c:otherwise>
+									<td>${analysis.beforeHWM.missingFromFolder.first.id}</td>
+									<td>${analysis.beforeHWM.missingFromFolder.last.id}</td>
+								</c:otherwise>
+							</c:choose>
+						</tr>
+					</c:if>
+					<c:if test="${! empty analysis.afterHWM}">
+						<tr>
+							<td>After HWM</td>
+							<c:choose>
+								<c:when test="${empty analysis.afterHWM.missingFromDatabase}">
+									<td>-</td>
+									<td>-</td>
+								</c:when>
+								<c:otherwise>
+									<td>${analysis.afterHWM.missingFromDatabase.first.sourceFilePathnameBase}</td>
+									<td>${analysis.afterHWM.missingFromDatabase.last.sourceFilePathnameBase}</td>
+								</c:otherwise>
+							</c:choose>
+							<c:choose>
+								<c:when test="${empty analysis.afterHWM.missingFromFolder}">
+									<td>-</td>
+									<td>-</td>
+								</c:when>
+								<c:otherwise>
+									<td>${analysis.afterHWM.missingFromFolder.first.id}</td>
+									<td>${analysis.afterHWM.missingFromFolder.last.id}</td>
+								</c:otherwise>
+							</c:choose>
+						</tr>
+					</c:if>
+					<c:if test="${! empty analysis.beforeQEnd}">
+						<tr>
+							<td>Before current Queue End</td>
+							<c:choose>
+								<c:when test="${empty analysis.beforeQEnd.missingFromDatabase}">
+									<td>-</td>
+									<td>-</td>
+								</c:when>
+								<c:otherwise>
+									<td>${analysis.beforeQEnd.missingFromDatabase.first.sourceFilePathnameBase}</td>
+									<td>${analysis.beforeQEnd.missingFromDatabase.last.sourceFilePathnameBase}</td>
+								</c:otherwise>
+							</c:choose>
+							<c:choose>
+								<c:when test="${empty analysis.beforeQEnd.missingFromFolder}">
+									<td>-</td>
+									<td>-</td>
+								</c:when>
+								<c:otherwise>
+									<td>${analysis.beforeQEnd.missingFromFolder.first.id}</td>
+									<td>${analysis.beforeQEnd.missingFromFolder.last.id}</td>
+								</c:otherwise>
+							</c:choose>
+						</tr>
+					</c:if>
+					<c:if test="${! empty analysis.afterQEnd}">
+						<tr>
+							<td>After current Queue End</td>
+							<c:choose>
+								<c:when test="${empty analysis.afterQEnd.missingFromDatabase}">
+									<td>-</td>
+									<td>-</td>
+								</c:when>
+								<c:otherwise>
+									<td>${analysis.afterQEnd.missingFromDatabase.first.sourceFilePathnameBase}</td>
+									<td>${analysis.afterQEnd.missingFromDatabase.last.sourceFilePathnameBase}</td>
+								</c:otherwise>
+							</c:choose>
+							<c:choose>
+								<c:when test="${empty analysis.afterQEnd.missingFromFolder}">
+									<td>-</td>
+									<td>-</td>
+								</c:when>
+								<c:otherwise>
+									<td>${analysis.afterQEnd.missingFromFolder.first.id}</td>
+									<td>${analysis.afterQEnd.missingFromFolder.last.id}</td>
+								</c:otherwise>
+							</c:choose>
+						</tr>
+					</c:if>
+				</tbody>
+			</table>
 		</c:if>
 	    <hr>
 		<h2>Diagnosis</h2>
