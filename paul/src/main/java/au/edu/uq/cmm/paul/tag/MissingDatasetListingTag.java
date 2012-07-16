@@ -20,11 +20,14 @@ package au.edu.uq.cmm.paul.tag;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.SimpleTagSupport;
 
+
 import au.edu.uq.cmm.paul.grabber.Analyser;
+import au.edu.uq.cmm.paul.grabber.Analyser.Statistics;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 
 public class MissingDatasetListingTag extends SimpleTagSupport {
@@ -42,32 +45,33 @@ public class MissingDatasetListingTag extends SimpleTagSupport {
 
     @Override
     public void doTag() throws JspException, IOException {
-        Analyser analysis = (Analyser) getJspContext()
-                .findAttribute("analysis");
-        Collection<DatasetMetadata> all = fromQueue ? analysis.getAll()
-                .getMissingFromDatabaseTimeOrdered() : analysis.getAll()
-                .getMissingFromFolderTimeOrdered();
-        Collection<DatasetMetadata> beforeQEnd = fromQueue ? analysis
-                .getBeforeQEnd().getMissingFromDatabase() : analysis
-                .getBeforeQEnd().getMissingFromFolder();
-        Collection<DatasetMetadata> afterQEnd = fromQueue ? analysis
-                .getAfterQEnd().getMissingFromDatabase() : analysis
-                .getAfterQEnd().getMissingFromFolder();
-        Collection<DatasetMetadata> beforeHWM = fromQueue ? analysis
-                .getBeforeHWM().getMissingFromDatabase() : analysis
-                .getBeforeHWM().getMissingFromFolder();
-        Collection<DatasetMetadata> afterHWM = fromQueue ? analysis
-                .getAfterHWM().getMissingFromDatabase() : analysis
-                .getAfterHWM().getMissingFromFolder();
+        Analyser analysis = (Analyser) getJspContext().findAttribute("analysis");
+        Collection<DatasetMetadata> all = fromQueue ? 
+                analysis.getAll().getMissingFromDatabaseTimeOrdered() : 
+                analysis.getAll().getMissingFromFolderTimeOrdered();
+        Collection<DatasetMetadata> beforeQEnd = chooseTimespanSet(analysis.getBeforeQEnd());
+        Collection<DatasetMetadata> afterQEnd = chooseTimespanSet(analysis.getAfterQEnd());
+        Collection<DatasetMetadata> beforeHWM = chooseTimespanSet(analysis.getBeforeHWM());
+        Collection<DatasetMetadata> afterHWM = chooseTimespanSet(analysis.getAfterHWM());
         for (DatasetMetadata missing : all) {
             StringBuilder sb = new StringBuilder();
-            addTimespan(sb, "before HWM", beforeHWM.contains(missing));
-            addTimespan(sb, "after HWM", afterHWM.contains(missing));
-            addTimespan(sb, "before Queue End", beforeQEnd.contains(missing));
-            addTimespan(sb, "before Queue End", afterQEnd.contains(missing));
+            addTimespan(sb, "&#x2264; HWM", beforeHWM.contains(missing));
+            addTimespan(sb, "&gt; HWM", afterHWM.contains(missing));
+            addTimespan(sb, "&#x2264; QEnd", beforeQEnd.contains(missing));
+            addTimespan(sb, "&gt; QEnd", afterQEnd.contains(missing));
             getJspContext().setAttribute("timespans", sb.toString());
             getJspContext().setAttribute("missing", missing);
             getJspBody().invoke(null);
+        }
+    }
+    
+    private Collection<DatasetMetadata> chooseTimespanSet(Statistics stats) {
+        if (stats == null) {
+            return Collections.emptySet();
+        } else if (fromQueue) {
+            return stats.getMissingFromDatabase();
+        } else {
+            return stats.getMissingFromFolder();
         }
     }
 
