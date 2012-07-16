@@ -178,8 +178,10 @@
 								<td>-</td>
 							</c:when>
 							<c:otherwise>
-								<td>${analysis.all.missingFromFolder.first.id}</td>
-								<td>${analysis.all.missingFromFolder.last.id}</td>
+								<td><a href="/paul/datasets/${analysis.all.missingFromFolder.first.id}">
+									${analysis.all.missingFromFolder.first.id}</a></td>
+								<td><a href="/paul/datasets/${analysis.all.missingFromFolder.last.id}">
+									${analysis.all.missingFromFolder.last.id}</a></td>
 							</c:otherwise>
 						</c:choose>
 					</tr>
@@ -202,8 +204,10 @@
 									<td>-</td>
 								</c:when>
 								<c:otherwise>
-									<td>${analysis.beforeHWM.missingFromFolder.first.id}</td>
-									<td>${analysis.beforeHWM.missingFromFolder.last.id}</td>
+									<td><a href="/paul/datasets/${analysis.beforeHWM.missingFromFolder.first.id}">
+										${analysis.beforeHWM.missingFromFolder.first.id}</a></td>
+									<td><a href="/paul/datasets/${analysis.beforeHWM.missingFromFolder.last.id}">
+										${analysis.beforeHWM.missingFromFolder.last.id}</a></td>
 								</c:otherwise>
 							</c:choose>
 						</tr>
@@ -227,8 +231,10 @@
 									<td>-</td>
 								</c:when>
 								<c:otherwise>
-									<td>${analysis.afterHWM.missingFromFolder.first.id}</td>
-									<td>${analysis.afterHWM.missingFromFolder.last.id}</td>
+									<td><a href="/paul/datasets/${analysis.afterHWM.missingFromFolder.first.id}">
+										${analysis.afterHWM.missingFromFolder.first.id}</a></td>
+									<td><a href="/paul/datasets/${analysis.afterHWM.missingFromFolder.last.id}">
+										${analysis.afterHWM.missingFromFolder.last.id}</a></td>
 								</c:otherwise>
 							</c:choose>
 						</tr>
@@ -252,8 +258,10 @@
 									<td>-</td>
 								</c:when>
 								<c:otherwise>
-									<td>${analysis.beforeQEnd.missingFromFolder.first.id}</td>
-									<td>${analysis.beforeQEnd.missingFromFolder.last.id}</td>
+									<td><a href="/paul/datasets/${analysis.beforeQEnd.missingFromFolder.first.id}">
+										${analysis.beforeQEnd.missingFromFolder.first.id}</a></td>
+									<td><a href="/paul/datasets/${analysis.beforeQEnd.missingFromFolder.last.id}">
+										${analysis.beforeQEnd.missingFromFolder.last.id}</a></td>
 								</c:otherwise>
 							</c:choose>
 						</tr>
@@ -277,8 +285,10 @@
 									<td>-</td>
 								</c:when>
 								<c:otherwise>
-									<td>${analysis.afterQEnd.missingFromFolder.first.id}</td>
-									<td>${analysis.afterQEnd.missingFromFolder.last.id}</td>
+									<td><a href="/paul/datasets/${analysis.afterQEnd.missingFromFolder.first.id}">
+										${analysis.afterQEnd.missingFromFolder.first.id}</a></td>
+									<td><a href="/paul/datasets/${analysis.afterQEnd.missingFromFolder.last.id}">
+										${analysis.afterQEnd.missingFromFolder.last.id}</a></td>
 								</c:otherwise>
 							</c:choose>
 						</tr>

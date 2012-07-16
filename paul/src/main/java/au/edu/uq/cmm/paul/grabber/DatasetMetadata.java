@@ -316,4 +316,13 @@ public class DatasetMetadata {
         }
     }
     
+    public String toString() {
+        StringWriter sw = new StringWriter();
+        try {
+            serialize(sw);
+        } catch (IOException ex) {
+            throw new AssertionError("Impossible exception", ex);
+        }
+        return sw.toString();
+    }
 }

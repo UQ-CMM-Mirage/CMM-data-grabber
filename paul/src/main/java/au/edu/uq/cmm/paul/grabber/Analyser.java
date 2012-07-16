@@ -378,10 +378,12 @@ public class Analyser extends AbstractFileGrabber {
             Collection<DatasetMetadata> inFolder,
             Collection<DatasetMetadata> inDatabase,
             Predicate predicate) {
+        // datasets in the database that match a dataset in the folder (via filtered views)
         TreeSet<DatasetMetadata> matchedInDatabase = 
-                new TreeSet<DatasetMetadata>(ORDER_BY_BASE_PATH_AND_TIME);
-        TreeSet<DatasetMetadata> matchedInFolder = 
                 new TreeSet<DatasetMetadata>(ORDER_BY_ID);
+        // datasets in the folder that match a dataset in the database (via filtered views)
+        TreeSet<DatasetMetadata> matchedInFolder = 
+                new TreeSet<DatasetMetadata>(ORDER_BY_BASE_PATH_AND_TIME);
         @SuppressWarnings("unchecked")
         Iterator<DatasetMetadata> fit = 
                 IteratorUtils.filteredIterator(inFolder.iterator(), predicate);
@@ -399,45 +401,57 @@ public class Analyser extends AbstractFileGrabber {
         int multipleInDatabase = 0;
         if (fit.hasNext()) {
             f = fit.next();
+            LOG.error("f <- " + f);
             totalInFolder++;
         }
         if (dit.hasNext()) {
             d = dit.next();
+            LOG.error("d <- " + d);
             totalInDatabase++;
         }
-        while (fit.hasNext() || dit.hasNext()) {
-            boolean skipping = !(fit.hasNext() && dit.hasNext());
-            int test = ORDER_BY_BASE_PATH_AND_TIME_WITH_NULLS.compare(f, d);
+        while (f != null || d != null) {
+            final boolean skipping = f == null || d == null;
+            final int test = ORDER_BY_BASE_PATH_AND_TIME_WITH_NULLS.compare(f, d);
+            LOG.error("f=" + f + ", d=" + d + ", test=" + test);
             if (test == 0) {
                 totalMatching++;
-                matchedInDatabase.add(f);
-                matchedInFolder.add(d);
+                matchedInDatabase.add(d);
+                matchedInFolder.add(f);
             }
-            if ((test <= 0 || skipping) && fit.hasNext()) {
-                fPrev = f;
-                f = fit.next();
-                totalInFolder++;
-                if (fPrev != null && 
-                        fPrev.getFacilityFilePathnameBase().equals(f.getFacilityFilePathnameBase())) {
-                    // We shouldn't see any of these ...
-                    multipleInFolder++;
+            if (test <= 0 || skipping) {
+                if (fit.hasNext()) {
+                    fPrev = f;
+                    f = fit.next();
+                    LOG.error("f <- " + f);
+                    totalInFolder++;
+                    if (fPrev != null && 
+                            fPrev.getFacilityFilePathnameBase().equals(f.getFacilityFilePathnameBase())) {
+                        // We shouldn't see any of these ...
+                        multipleInFolder++;
+                    }
+                } else {
+                    f = null;
                 }
             }
-            if ((test >= 0 || skipping) && dit.hasNext()) {
-                dPrev = d;
-                d = dit.next();
-                totalInDatabase++;
-                if (dPrev != null && 
-                        dPrev.getFacilityFilePathnameBase().equals(d.getFacilityFilePathnameBase())) {
-                    multipleInDatabase++;
+            if (test >= 0 || skipping) {
+                if (dit.hasNext()) {
+                    dPrev = d;
+                    d = dit.next();
+                    LOG.error("d <- " + d);
+                    totalInDatabase++;
+                    if (dPrev != null && 
+                            dPrev.getFacilityFilePathnameBase().equals(d.getFacilityFilePathnameBase())) {
+                        multipleInDatabase++;
+                    }
+                } else {
+                    d = null;
                 }
-            }
+            } 
         }
         TreeSet<DatasetMetadata> missingFromDatabase = buildRemainderSet(
-                ORDER_BY_BASE_PATH_AND_TIME, predicate, inFolder, matchedInDatabase);
+                ORDER_BY_BASE_PATH_AND_TIME, predicate, inFolder, matchedInFolder);
         TreeSet<DatasetMetadata> missingFromFolder = buildRemainderSet(
-                ORDER_BY_ID, predicate, inDatabase, matchedInFolder);
-        missingFromFolder.removeAll(matchedInFolder);
+                ORDER_BY_ID, predicate, inDatabase, matchedInDatabase);
         
         TreeSet<DatasetMetadata> missingFromDatabaseTimeOrdered = 
                 new TreeSet<DatasetMetadata>(ORDER_BY_TIME_AND_BASE_PATH);
