@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib uri="/paulTags" prefix="pt"%>
 <%@ page session="false"%>
 <html lang="en">
 <head>
@@ -10,14 +11,15 @@
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container-fluid">
-		<h1>Catchup Control for ${facilityName}</h1>
-		<p>
+		<div class="row-fluid"><h1>Catchup Control for ${facilityName}</h1></div>
+		<div class="row-fluid">
 			Grabber status : ${status.status} <br> Grabber message :
 			${status.message} <br> Grabber HWM timestamp :
 			${status.grabberHWMTimestamp} <br> Timestamp of last queued
 			Dataset : ${catchupTimestamp}
-		</p>
-		<h2>Statistics</h2>
+		</div>
+		<div class="row-fluid"><h2>Statistics</h2></div>
+		<div class="row-fluid">
 		<table class="table table-striped table-condensed">
 			<thead>
 				<tr><th class="span2">Timespan</th>
@@ -91,213 +93,120 @@
 				</c:if>
 			</tbody>
 		</table>
+		</div>
 		<c:if test="${analysis.problems.nosProblems > 0}">
-		<hr>
-		<h2>Problems</h2>
-		<table class="table table-striped table-condensed">
-			<thead>
-				<tr>
-					<th class="span4">Problem type</th>
-					<th class="span2">Count</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td>Metadata file missing</td>
-					<td>${analysis.problems.metadataMissing}
-				</tr>
-				<tr>
-					<td>Metadata file size wrong</td>
-					<td>${analysis.problems.metadataSize}
-				</tr>
-				<tr>
-					<td>Grabbed Datafile missing</td>
-					<td>${analysis.problems.fileMissing}
-				</tr>
-				<tr>
-					<td>Grabbed Datafile size doesn't match recorded size</td>
-					<td>${analysis.problems.fileSize}
-				</tr>
-				<tr>
-					<td>Grabbed Datafile size doesn't match current file size in S:</td>
-					<td>${analysis.problems.fileSize2}
-				</tr>
-			</tbody>
-		</table>
-		<table class="table table-striped table-condensed">
-			<thead>
-				<tr>
-					<th class="span1">Dataset Id</th>
-					<th class="span1">Problem Type</th>
-					<th class="span5">Details</th>
-				</tr>
-			</thead>
-			<tbody>
-				<c:forEach items="${analysis.problems.problems}" var="problem">
-					<tr>
-						<td><a href="/paul/datasets/${problem.dataset.id}">${problem.dataset.id}</a></td>
-						<td>${problem.type}</td>
-						<td>${problem.details}</td>
-					</tr>
-				</c:forEach>
-			</tbody>
-		</table>
+				<div class="row-fluid"><h2>Problems</h2></div>
+				<div class="row-fluid">
+					<table class="table table-striped table-condensed">
+						<thead>
+							<tr>
+								<th class="span4">Problem type</th>
+								<th class="span2">Count</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>Metadata file missing</td>
+								<td>${analysis.problems.metadataMissing}
+							</tr>
+							<tr>
+								<td>Metadata file size wrong</td>
+								<td>${analysis.problems.metadataSize}
+							</tr>
+							<tr>
+								<td>Grabbed Datafile missing</td>
+								<td>${analysis.problems.fileMissing}
+							</tr>
+							<tr>
+								<td>Grabbed Datafile size doesn't match recorded size</td>
+								<td>${analysis.problems.fileSize}
+							</tr>
+							<tr>
+								<td>Grabbed Datafile size doesn't match current file size
+									in S:</td>
+								<td>${analysis.problems.fileSize2}
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<div class="row-fluid">
+					<table class="table table-striped table-condensed">
+						<thead>
+							<tr>
+								<th class="span1">Dataset Id</th>
+								<th class="span1">Problem Type</th>
+								<th class="span5">Details</th>
+							</tr>
+						</thead>
+						<tbody>
+							<c:forEach items="${analysis.problems.problems}" var="problem">
+								<tr>
+									<td><a href="/paul/datasets/${problem.dataset.id}">${problem.dataset.id}</a></td>
+									<td>${problem.type}</td>
+									<td>${problem.details}</td>
+								</tr>
+							</c:forEach>
+						</tbody>
+					</table>
+				</div>
 		</c:if>
 		<c:if test="${analysis.all.missingFromFolder.size + analysis.all.missingFromDatabase.size > 0}">
-			<table class="table table-striped table-condensed">
-				<thead>
-					<tr>
-					    <th>Timespan</th>
-						<th colspan="2">Datasets missing from Queues</th>
-						<th colspan="2">Datasets missing from S:</th>
-					</tr>
-					<tr>
-						<th class="span1">&nbsp;</th>
-						<th class="span1">First</th>
-						<th class="span1">Last</th>
-						<th class="span1">First</th>
-						<th class="span1">Last</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<td>all</td>
-						<c:choose>
-							<c:when test="${empty analysis.all.missingFromDatabase}">
-								<td>-</td>
-								<td>-</td>
-							</c:when>
-							<c:otherwise>
-								<td>${analysis.all.missingFromDatabase.first.sourceFilePathnameBase}</td>
-								<td>${analysis.all.missingFromDatabase.last.sourceFilePathnameBase}</td>
-							</c:otherwise>
-						</c:choose>
-						<c:choose>
-							<c:when test="${empty analysis.all.missingFromFolder}">
-								<td>-</td>
-								<td>-</td>
-							</c:when>
-							<c:otherwise>
-								<td><a href="/paul/datasets/${analysis.all.missingFromFolder.first.id}">
-									${analysis.all.missingFromFolder.first.id}</a></td>
-								<td><a href="/paul/datasets/${analysis.all.missingFromFolder.last.id}">
-									${analysis.all.missingFromFolder.last.id}</a></td>
-							</c:otherwise>
-						</c:choose>
-					</tr>
-					<c:if test="${! empty analysis.beforeHWM}">
-						<tr>
-							<td>Before HWM</td>
-							<c:choose>
-								<c:when test="${empty analysis.beforeHWM.missingFromDatabase}">
-									<td>-</td>
-									<td>-</td>
-								</c:when>
-								<c:otherwise>
-									<td>${analysis.beforeHWM.missingFromDatabase.first.sourceFilePathnameBase}</td>
-									<td>${analysis.beforeHWM.missingFromDatabase.last.sourceFilePathnameBase}</td>
-								</c:otherwise>
-							</c:choose>
-							<c:choose>
-								<c:when test="${empty analysis.beforeHWM.missingFromFolder}">
-									<td>-</td>
-									<td>-</td>
-								</c:when>
-								<c:otherwise>
-									<td><a href="/paul/datasets/${analysis.beforeHWM.missingFromFolder.first.id}">
-										${analysis.beforeHWM.missingFromFolder.first.id}</a></td>
-									<td><a href="/paul/datasets/${analysis.beforeHWM.missingFromFolder.last.id}">
-										${analysis.beforeHWM.missingFromFolder.last.id}</a></td>
-								</c:otherwise>
-							</c:choose>
-						</tr>
-					</c:if>
-					<c:if test="${! empty analysis.afterHWM}">
-						<tr>
-							<td>After HWM</td>
-							<c:choose>
-								<c:when test="${empty analysis.afterHWM.missingFromDatabase}">
-									<td>-</td>
-									<td>-</td>
-								</c:when>
-								<c:otherwise>
-									<td>${analysis.afterHWM.missingFromDatabase.first.sourceFilePathnameBase}</td>
-									<td>${analysis.afterHWM.missingFromDatabase.last.sourceFilePathnameBase}</td>
-								</c:otherwise>
-							</c:choose>
-							<c:choose>
-								<c:when test="${empty analysis.afterHWM.missingFromFolder}">
-									<td>-</td>
-									<td>-</td>
-								</c:when>
-								<c:otherwise>
-									<td><a href="/paul/datasets/${analysis.afterHWM.missingFromFolder.first.id}">
-										${analysis.afterHWM.missingFromFolder.first.id}</a></td>
-									<td><a href="/paul/datasets/${analysis.afterHWM.missingFromFolder.last.id}">
-										${analysis.afterHWM.missingFromFolder.last.id}</a></td>
-								</c:otherwise>
-							</c:choose>
-						</tr>
-					</c:if>
-					<c:if test="${! empty analysis.beforeQEnd}">
-						<tr>
-							<td>Before current Queue End</td>
-							<c:choose>
-								<c:when test="${empty analysis.beforeQEnd.missingFromDatabase}">
-									<td>-</td>
-									<td>-</td>
-								</c:when>
-								<c:otherwise>
-									<td>${analysis.beforeQEnd.missingFromDatabase.first.sourceFilePathnameBase}</td>
-									<td>${analysis.beforeQEnd.missingFromDatabase.last.sourceFilePathnameBase}</td>
-								</c:otherwise>
-							</c:choose>
-							<c:choose>
-								<c:when test="${empty analysis.beforeQEnd.missingFromFolder}">
-									<td>-</td>
-									<td>-</td>
-								</c:when>
-								<c:otherwise>
-									<td><a href="/paul/datasets/${analysis.beforeQEnd.missingFromFolder.first.id}">
-										${analysis.beforeQEnd.missingFromFolder.first.id}</a></td>
-									<td><a href="/paul/datasets/${analysis.beforeQEnd.missingFromFolder.last.id}">
-										${analysis.beforeQEnd.missingFromFolder.last.id}</a></td>
-								</c:otherwise>
-							</c:choose>
-						</tr>
-					</c:if>
-					<c:if test="${! empty analysis.afterQEnd}">
-						<tr>
-							<td>After current Queue End</td>
-							<c:choose>
-								<c:when test="${empty analysis.afterQEnd.missingFromDatabase}">
-									<td>-</td>
-									<td>-</td>
-								</c:when>
-								<c:otherwise>
-									<td>${analysis.afterQEnd.missingFromDatabase.first.sourceFilePathnameBase}</td>
-									<td>${analysis.afterQEnd.missingFromDatabase.last.sourceFilePathnameBase}</td>
-								</c:otherwise>
-							</c:choose>
-							<c:choose>
-								<c:when test="${empty analysis.afterQEnd.missingFromFolder}">
-									<td>-</td>
-									<td>-</td>
-								</c:when>
-								<c:otherwise>
-									<td><a href="/paul/datasets/${analysis.afterQEnd.missingFromFolder.first.id}">
-										${analysis.afterQEnd.missingFromFolder.first.id}</a></td>
-									<td><a href="/paul/datasets/${analysis.afterQEnd.missingFromFolder.last.id}">
-										${analysis.afterQEnd.missingFromFolder.last.id}</a></td>
-								</c:otherwise>
-							</c:choose>
-						</tr>
-					</c:if>
-				</tbody>
-			</table>
+			<div class="row-fluid"><h2>Missing Datasets</h2></div>
+			<div class="row-fluid">
+				<div class="span6">
+					<table class="table table-striped table-condensed">
+						<thead>
+							<tr>
+								<th colspan="2">Datasets missing from Queues</th>
+							</tr>
+							<tr>
+								<th class="span2">Timespans</th>
+								<th class="span4">Details</th>
+							</tr>
+						</thead>
+						<tbody>
+							<pt:missingDatasets fromQueue="true">
+								<tr>
+									<td>${timespans}</td>
+									<td>${missing.sourceFilePathnameBase} | <fmt:formatDate
+											pattern="yyyy-MM-dd'T'HH:mm:ss"
+											value="${missing.indicativeFileTimestamp}" />
+									</td>
+								</tr>
+							</pt:missingDatasets>
+						</tbody>
+					</table>
+				</div>
+				<div class="span6">
+					<table class="table table-striped table-condensed">
+						<thead>
+							<tr>
+								<th colspan="2">Datasets missing from S:</th>
+							</tr>
+							<tr>
+								<th class="span2">Timespans</th>
+								<th class="span4">Missing Dataset details</th>
+							</tr>
+						</thead>
+						<tbody>
+							<pt:missingDatasets fromQueue="false">
+								<tr>
+									<td>${timespans}</td>
+									<td><a href="/paul/datasets/${missing.id}">Dataset #${missing.id}</a>
+										- ${missing.sourceFilePathnameBase} | <fmt:formatDate
+											pattern="yyyy-MM-dd'T'HH:mm:ss"
+											value="${missing.indicativeFileTimestamp}" /></td>
+								</tr>
+							</pt:missingDatasets>
+						</tbody>
+					</table>
+				</div>
+			</div>
 		</c:if>
-	    <hr>
+		<div class="row-fluid">
 		<h2>Diagnosis</h2>
+		</div>
+		<div class="row-fluid">
 		<ul>
 			<c:choose>
 			<c:when test="${status.status == 'ON'}">
@@ -358,7 +267,9 @@
 				</c:otherwise>
 			</c:choose>
 			</ul>
-		<h2>Actions</h2>
+		</div>
+		<div class="row-fluid"><h2>Actions</h2></div>
+		<div class="row-fluid">
 		<form method="post">
 		    <c:set var="isohwm"><fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss" value="${hwmTimestamp}"/></c:set>
 		    New HWM: <input type="text" name="hwmTimestamp" 
@@ -366,6 +277,7 @@
 			<button type="submit" name="hwm">Recalculate Statistics</button>
 			<button type="submit" name="setHWM">Set the HWM</button>
 		</form>
+		</div>
 	</div>
 	<!-- /container -->
 	<%@ include file="/WEB-INF/jsp/commonFooter.jspFrag"%>

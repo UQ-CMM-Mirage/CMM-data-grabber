@@ -401,18 +401,15 @@ public class Analyser extends AbstractFileGrabber {
         int multipleInDatabase = 0;
         if (fit.hasNext()) {
             f = fit.next();
-            LOG.error("f <- " + f);
             totalInFolder++;
         }
         if (dit.hasNext()) {
             d = dit.next();
-            LOG.error("d <- " + d);
             totalInDatabase++;
         }
         while (f != null || d != null) {
             final boolean skipping = f == null || d == null;
             final int test = ORDER_BY_BASE_PATH_AND_TIME_WITH_NULLS.compare(f, d);
-            LOG.error("f=" + f + ", d=" + d + ", test=" + test);
             if (test == 0) {
                 totalMatching++;
                 matchedInDatabase.add(d);
@@ -422,7 +419,6 @@ public class Analyser extends AbstractFileGrabber {
                 if (fit.hasNext()) {
                     fPrev = f;
                     f = fit.next();
-                    LOG.error("f <- " + f);
                     totalInFolder++;
                     if (fPrev != null && 
                             fPrev.getFacilityFilePathnameBase().equals(f.getFacilityFilePathnameBase())) {
@@ -437,7 +433,6 @@ public class Analyser extends AbstractFileGrabber {
                 if (dit.hasNext()) {
                     dPrev = d;
                     d = dit.next();
-                    LOG.error("d <- " + d);
                     totalInDatabase++;
                     if (dPrev != null && 
                             dPrev.getFacilityFilePathnameBase().equals(d.getFacilityFilePathnameBase())) {
