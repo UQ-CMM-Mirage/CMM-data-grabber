@@ -187,7 +187,7 @@
 				</div>
 		</c:if>
 		<c:if test="${analysis.all.missingFromFolder.size + analysis.all.missingFromDatabase.size > 0}">
-			<div class="row-fluid"><h2>Missing Datasets</h2></div>
+			<div class="row-fluid"><h2>Missing Datasets (between LWM and HWM)</h2></div>
 			<div class="row-fluid">
 				<div class="span6">
 					<table class="table table-striped table-condensed">
@@ -307,31 +307,29 @@
 		<div class="row-fluid">
 			<h2>Actions</h2>
 		</div>
-		<div class="row-fluid">
-			<form method="post">
+
+		<form method="post">
+			<div class="row-fluid">
 				<c:set var="isohwm">
 					<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
 						value="${hwmTimestamp}" />
 				</c:set>
 				New HWM: <input type="text" name="hwmTimestamp" value="${isohwm}">
 				<button type="submit" name="setHWM">Change the HWM</button>
-			</form>
-		</div>
-		<div class="row-fluid">
-			<form method="post">
+			</div>
+			<div class="row-fluid">
 				<c:set var="isolwm">
 					<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
 						value="${lwmTimestamp}" />
 				</c:set>
 				New LWM: <input type="text" name="lwmTimestamp" value="${isolwm}">
 				<button type="submit" name="setLWM">Change the LWM</button>
-			</form>
-		</div>
-		<div class="row-fluid">
-			<form method="post">
-				<button type="submit" name="analyse">Reanalyse with proposed LWM / HWM</button>
-			</form>
-		</div>
+			</div>
+			<div class="row-fluid">
+				<button type="submit" name="analyse">Reanalyse with
+					proposed LWM / HWM</button>
+			</div>
+		</form>
 	</div>
 	<!-- /container -->
 	<%@ include file="/WEB-INF/jsp/commonFooter.jspFrag"%>
