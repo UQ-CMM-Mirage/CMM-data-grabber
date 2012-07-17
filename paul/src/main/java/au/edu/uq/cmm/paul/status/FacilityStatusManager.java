@@ -128,19 +128,31 @@ public class FacilityStatusManager {
 
     public void updateHWMTimestamp(Facility facility, Date timestamp) {
         FacilityStatus status = getStatus(facility);
-        Date hwm = status.getGrabberHWMTimestamp();
-        if (hwm == null || hwm.getTime() < timestamp.getTime()) {
-            status.setGrabberHWMTimestamp(timestamp);
-            EntityManager em = emf.createEntityManager();
-            try {
-                em.getTransaction().begin();
-                FacilityStatus pstatus = em.getReference(
-                        FacilityStatus.class, status.getFacilityId());
-                pstatus.setGrabberHWMTimestamp(timestamp);
-                em.getTransaction().commit();
-            } finally {
-                em.close();
-            }
+        status.setGrabberHWMTimestamp(timestamp);
+        EntityManager em = emf.createEntityManager();
+        try {
+            em.getTransaction().begin();
+            FacilityStatus pstatus = em.getReference(
+                    FacilityStatus.class, status.getFacilityId());
+            pstatus.setGrabberHWMTimestamp(timestamp);
+            em.getTransaction().commit();
+        } finally {
+            em.close();
+        }
+    }
+
+    public void updateLWMTimestamp(Facility facility, Date timestamp) {
+        FacilityStatus status = getStatus(facility);
+        status.setGrabberLWMTimestamp(timestamp);
+        EntityManager em = emf.createEntityManager();
+        try {
+            em.getTransaction().begin();
+            FacilityStatus pstatus = em.getReference(
+                    FacilityStatus.class, status.getFacilityId());
+            pstatus.setGrabberLWMTimestamp(timestamp);
+            em.getTransaction().commit();
+        } finally {
+            em.close();
         }
     }
 

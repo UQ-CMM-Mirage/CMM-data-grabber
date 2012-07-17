@@ -316,9 +316,10 @@ public class WebUIController implements ServletContextAware {
     }
     
     @RequestMapping(value="/facilities/{facilityName:.+}",
-            params={"hwm"})
-    public String facilityHWM(@PathVariable String facilityName, Model model,
-            @RequestParam(required=false) String hwmTimestamp) 
+            params={"analyse"})
+    public String facilityAnalyse(@PathVariable String facilityName, Model model,
+            @RequestParam(required=false) String hwmTimestamp, 
+            @RequestParam(required=false) String lwmTimestamp) 
             throws ConfigurationException {
         Facility facility = lookupFacilityByName(facilityName);
         FacilityStatus status = getFacilityStatusManager().getStatus(facility);
@@ -332,10 +333,19 @@ public class WebUIController implements ServletContextAware {
                 hwm = tmp.toDate();
             }
         }
+        Date lwm = status.getGrabberLWMTimestamp();
+        if (!tidy(lwmTimestamp).isEmpty()) {
+            DateTime tmp = parseTimestamp(lwmTimestamp);
+            if (tmp != null) {
+                lwm = tmp.toDate();
+            }
+        }
+        model.addAttribute("lwmTimestamp", lwm);
         model.addAttribute("hwmTimestamp", hwm);
+        model.addAttribute("intertidal", true);
         model.addAttribute("catchupTimestamp", catchupTimestamp);
         model.addAttribute("analysis", 
-                new Analyser(services, facility).analyse(hwm, catchupTimestamp));
+                new Analyser(services, facility).analyse(lwm, hwm, catchupTimestamp));
         return "catchupControl";
     }
     
@@ -344,7 +354,12 @@ public class WebUIController implements ServletContextAware {
             @RequestParam String hwmTimestamp) 
             throws ConfigurationException {
         Facility facility = lookupFacilityByName(facilityName);
-        Date oldHwm = getFacilityStatusManager().getStatus(facility).getGrabberHWMTimestamp();
+        FacilityStatus status = getFacilityStatusManager().getStatus(facility);
+        if (status.getStatus() == FacilityStatusManager.Status.ON) {
+            model.addAttribute("message", "Cannot change HWM while the Grabber is running.");
+            return "failed";
+        }
+        Date oldHwm = status.getGrabberHWMTimestamp();
         Date hwm = null;
         if (!tidy(hwmTimestamp).isEmpty()) {
             DateTime tmp = parseTimestamp(hwmTimestamp);
@@ -354,11 +369,40 @@ public class WebUIController implements ServletContextAware {
         }
         if (hwm != null) {
             getFacilityStatusManager().updateHWMTimestamp(facility, hwm);
-            model.addAttribute("message", "Moved HWM for '" + facilityName + "' from " +
+            model.addAttribute("message", "Changed HWM for '" + facilityName + "' from " +
                     oldHwm + " to " + hwm);
             return "ok";
         } else {
             model.addAttribute("message", "Bad HWM value");
+            return "failed";
+        }
+    }
+    
+    @RequestMapping(value="/facilities/{facilityName:.+}", params={"setLWM"})
+    public String setFacilityLWM(@PathVariable String facilityName, Model model,
+            @RequestParam String lwmTimestamp) 
+            throws ConfigurationException {
+        Facility facility = lookupFacilityByName(facilityName);
+        FacilityStatus status = getFacilityStatusManager().getStatus(facility);
+        if (status.getStatus() == FacilityStatusManager.Status.ON) {
+            model.addAttribute("message", "Cannot change LWM while the Grabber is running.");
+            return "failed";
+        }
+        Date oldLwm = status.getGrabberLWMTimestamp();
+        Date lwm = null;
+        if (!tidy(lwmTimestamp).isEmpty()) {
+            DateTime tmp = parseTimestamp(lwmTimestamp);
+            if (tmp != null) {
+                lwm = tmp.toDate();
+            }
+        }
+        if (lwm != null) {
+            getFacilityStatusManager().updateLWMTimestamp(facility, lwm);
+            model.addAttribute("message", "Changed LWM for '" + facilityName + "' from " +
+                    oldLwm + " to " + lwm);
+            return "ok";
+        } else {
+            model.addAttribute("message", "Bad LWM value");
             return "failed";
         }
     }
