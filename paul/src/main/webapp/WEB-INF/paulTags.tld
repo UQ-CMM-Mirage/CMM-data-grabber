@@ -1,0 +1,23 @@
+<taglib>
+	<jsp-version>2.0</jsp-version>
+	<tlib-version>1.0</tlib-version>
+	<uri>/paulTags</uri>
+	<tag>
+		<name>missingDatasets</name>
+		<tag-class>au.edu.uq.cmm.paul.tag.MissingDatasetListingTag</tag-class>
+		<attribute>
+			<name>fromQueue</name>
+			<required>true</required>
+			<type>boolean</type>
+		</attribute>
+		<variable>
+			<name-given>timespans</name-given>
+			<variable-class>java.lang.String</variable-class>
+		</variable>
+		<variable>
+			<name-given>missing</name-given>
+			<variable-class>au.edu.uq.cmm.paul.grabber.DatasetMetadata</variable-class>
+		</variable>
+		<body-content>scriptless</body-content>
+	</tag>
+</taglib>
