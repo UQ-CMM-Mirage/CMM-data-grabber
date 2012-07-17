@@ -111,8 +111,12 @@ public class FileGrabber extends AbstractFileGrabber implements SimpleService {
         setShuttingDown(false);
         FacilityStatus status = statusManager.getStatus(getFacility());
         Date catchupFrom = queueManager.getCatchupTimestamp(getFacility());
+        Date lwm = status.getGrabberLWMTimestamp();
         Date hwm = status.getGrabberHWMTimestamp();
-        LOG.debug("Catchup from = " + catchupFrom + ", hwm = " + hwm);
+        LOG.debug("Catchup from = " + catchupFrom + ", lwm = " + lwm + ", hwm = " + hwm);
+        if (hwm == null) {
+            hwm = lwm;
+        }
         if (hwm != null && (catchupFrom == null || hwm.getTime() <= catchupFrom.getTime())) {
             executor = new ThreadPoolExecutor(0, 1, 999, TimeUnit.SECONDS, work);
             // We do "catchup" event generation with the executor paused, so that the worker
@@ -134,7 +138,7 @@ public class FileGrabber extends AbstractFileGrabber implements SimpleService {
             work.resume();
         } else {
             status.setStatus(Status.OFF);
-            status.setMessage("Grabber HWM needs attention");
+            status.setMessage("Grabber LWM / HWM need attention");
             throw new ServiceException(status.getMessage());
         }
     }
