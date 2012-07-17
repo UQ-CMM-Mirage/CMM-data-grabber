@@ -141,11 +141,43 @@ public class DatasetMetadata {
     
     @JsonIgnore
     @Transient
-    public Date getIndicativeFileTimestamp() {
+    public Date getFirstFileTimestamp() {
         if (datafiles.isEmpty()) {
             return null;
         } else {
-            return datafiles.get(0).getFileWriteTimestamp();
+            Date min = null;
+            for (DatafileMetadata datafile : datafiles) {
+                if (min == null) {
+                    min = datafile.getFileWriteTimestamp();
+                } else {
+                    Date tmp = datafile.getFileWriteTimestamp();
+                    if (tmp != null && tmp.getTime() < min.getTime()) {
+                        min = tmp;
+                    }
+                }
+            }
+            return min;
+        }
+    }
+
+    @JsonIgnore
+    @Transient
+    public Date getLastFileTimestamp() {
+        if (datafiles.isEmpty()) {
+            return null;
+        } else {
+            Date max = null;
+            for (DatafileMetadata datafile : datafiles) {
+                if (max == null) {
+                    max = datafile.getFileWriteTimestamp();
+                } else {
+                    Date tmp = datafile.getFileWriteTimestamp();
+                    if (tmp != null && tmp.getTime() > max.getTime()) {
+                        max = tmp;
+                    }
+                }
+            }
+            return max;
         }
     }
 

@@ -38,6 +38,8 @@ import javax.persistence.TypedQuery;
 import org.apache.commons.collections.IteratorUtils;
 import org.apache.commons.collections.Predicate;
 import org.apache.commons.collections.PredicateUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.paul.Paul;
@@ -54,6 +56,8 @@ import au.edu.uq.cmm.paul.watcher.UncPathnameMapper;
  * @author scrawley
  */
 public class Analyser extends AbstractFileGrabber {
+    
+    private static Logger LOG = LoggerFactory.getLogger(AbstractFileGrabber.class);
     
     public static class Statistics {
         private final int totalInFolder;
@@ -229,8 +233,8 @@ public class Analyser extends AbstractFileGrabber {
                 @Override
                 public int compare(DatasetMetadata o1, DatasetMetadata o2) {
                     int res = Long.compare(
-                            o1.getIndicativeFileTimestamp().getTime(), 
-                            o2.getIndicativeFileTimestamp().getTime());
+                            o1.getLastFileTimestamp().getTime(), 
+                            o2.getLastFileTimestamp().getTime());
                     if (res == 0) {
                         res = o1.getFacilityFilePathnameBase().compareTo(
                                 o2.getFacilityFilePathnameBase());
@@ -247,8 +251,8 @@ public class Analyser extends AbstractFileGrabber {
                             o2.getFacilityFilePathnameBase());
                     if (res == 0) {
                         res = Long.compare(
-                                o1.getIndicativeFileTimestamp().getTime(), 
-                                o2.getIndicativeFileTimestamp().getTime());
+                                o1.getLastFileTimestamp().getTime(), 
+                                o2.getLastFileTimestamp().getTime());
                     }
                     return res;
                 }
@@ -290,8 +294,10 @@ public class Analyser extends AbstractFileGrabber {
     }
     
     public Analyser analyse(Date hwmTimestamp, Date queueEndTimestamp) {
+        LOG.info("Analysing queues and folders for " + getFacility().getFacilityName());
         SortedSet<DatasetMetadata> inFolder = buildInFolderMetadata();
         SortedSet<DatasetMetadata> inDatabase = buildInDatabaseMetadata();
+        LOG.info("Gathering statistics for " + getFacility().getFacilityName());
         all = gatherStats(inFolder, inDatabase, PredicateUtils.truePredicate());
         if (hwmTimestamp == null) {
             beforeHWM = null;
@@ -300,12 +306,12 @@ public class Analyser extends AbstractFileGrabber {
             final long hwm = hwmTimestamp.getTime();
             beforeHWM = gatherStats(inFolder, inDatabase, new Predicate() {
                 public boolean evaluate(Object metadata) {
-                    return ((DatasetMetadata) metadata).getIndicativeFileTimestamp().getTime() <= hwm;
+                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() <= hwm;
                 }
             });
             afterHWM = gatherStats(inFolder, inDatabase, new Predicate() {
                 public boolean evaluate(Object metadata) {
-                    return ((DatasetMetadata) metadata).getIndicativeFileTimestamp().getTime() > hwm;
+                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() > hwm;
                 }
             });
         }
@@ -316,17 +322,17 @@ public class Analyser extends AbstractFileGrabber {
             final long qEnd = queueEndTimestamp.getTime();
             beforeQEnd = gatherStats(inFolder, inDatabase, new Predicate() {
                 public boolean evaluate(Object metadata) {
-                    return ((DatasetMetadata) metadata).getIndicativeFileTimestamp().getTime() <= qEnd;
+                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() <= qEnd;
                 }
             });
             afterQEnd = gatherStats(inFolder, inDatabase, new Predicate() {
                 public boolean evaluate(Object metadata) {
-                    return ((DatasetMetadata) metadata).getIndicativeFileTimestamp().getTime() > qEnd;
+                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() > qEnd;
                 }
             });
         }
+        LOG.info("Performing queue entry integrity checks for " + getFacility().getFacilityName());
         problems = integrityCheck(inDatabase);
-        
         return this;
     }
     
@@ -415,6 +421,7 @@ public class Analyser extends AbstractFileGrabber {
                 matchedInDatabase.add(d);
                 matchedInFolder.add(f);
             }
+            check(test, f, d, inFolder, inDatabase);
             if (test <= 0 || skipping) {
                 if (fit.hasNext()) {
                     fPrev = f;
@@ -463,6 +470,26 @@ public class Analyser extends AbstractFileGrabber {
         return stats;
     }
     
+    private void check(int test, DatasetMetadata f, DatasetMetadata d, 
+            Collection<DatasetMetadata> inFolder, Collection<DatasetMetadata> inDatabase) {
+        LOG.error("f is " + f + ", d is " + d + ", test is " + test);
+        if (f == null || d == null) {
+            return;
+        }
+        if (test == 0) {
+            if (!inFolder.contains(f)) {
+                LOG.error("f is not in source");
+            }
+            if (!inDatabase.contains(d)) {
+                LOG.error("d is not in source");
+            }
+        } else {
+            if (inFolder.contains(f) && inDatabase.contains(d)) {
+                LOG.error("f & d are both in sources");
+            }
+        }
+    }
+
     private TreeSet<DatasetMetadata> buildRemainderSet(
             Comparator<DatasetMetadata> comparator, Predicate predicate,
             Collection<DatasetMetadata> include, Collection<DatasetMetadata> exclude) {

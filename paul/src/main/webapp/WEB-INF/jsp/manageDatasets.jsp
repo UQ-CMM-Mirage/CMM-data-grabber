@@ -49,7 +49,7 @@ function selectAll(checked) {
 								<td><input type="checkbox" name="ids" value="${dataset.id}">
 								<a href="/paul/datasets/${dataset.id}">${dataset.id}</a></td>
 								<td>${dataset.userName}</td>
-								<td><fmt:formatDate value="${dataset.indicativeFileTimestamp}" 
+								<td><fmt:formatDate value="${dataset.lastFileTimestamp}" 
 										type="both" dateStyle="medium"/></td>
 								<td><fmt:formatDate value="${dataset.captureTimestamp}" 
 										type="both" dateStyle="medium"/></td>

@@ -54,7 +54,7 @@ function selectAll(checked) {
 						<c:forEach var="dataset" items="${datasets}">
 						    <tr>
 								<td><input type="checkbox" name="ids" value="${dataset.id}">${dataset.id}</td>
-								<td><fmt:formatDate value="${dataset.indicativeFileTimestamp}" 
+								<td><fmt:formatDate value="${dataset.lastFileTimestamp}" 
 										type="both" dateStyle="medium"/></td>
 								<td><fmt:formatDate value="${dataset.captureTimestamp}" 
 										type="both" dateStyle="medium"/></td>

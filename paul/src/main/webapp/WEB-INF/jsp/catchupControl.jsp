@@ -170,7 +170,7 @@
 									<td>${timespans}</td>
 									<td>${missing.sourceFilePathnameBase} | <fmt:formatDate
 											pattern="yyyy-MM-dd'T'HH:mm:ss"
-											value="${missing.indicativeFileTimestamp}" />
+											value="${missing.lastFileTimestamp}" />
 									</td>
 								</tr>
 							</pt:missingDatasets>
@@ -195,7 +195,7 @@
 									<td><a href="/paul/datasets/${missing.id}">Dataset #${missing.id}</a>
 										- ${missing.sourceFilePathnameBase} | <fmt:formatDate
 											pattern="yyyy-MM-dd'T'HH:mm:ss"
-											value="${missing.indicativeFileTimestamp}" /></td>
+											value="${missing.lastFileTimestamp}" /></td>
 								</tr>
 							</pt:missingDatasets>
 						</tbody>
