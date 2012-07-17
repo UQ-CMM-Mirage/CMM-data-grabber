@@ -75,11 +75,6 @@ public abstract class AbstractFileGrabber implements FileWatcherEventListener {
                 return Long.compare(w1.getLatestFileTimestamp(), w2.getLatestFileTimestamp());
             }
         });
-        for (Runnable r : workList) {
-            WorkEntry w = (WorkEntry) r;
-            LOG.debug("Entry for " + w.getBaseFile() + 
-                    " has latest file stamp " + w.getLatestFileTimestamp());
-        }
         queue.addAll(workList);
     }
 
