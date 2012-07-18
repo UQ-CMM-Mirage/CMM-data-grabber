@@ -21,6 +21,7 @@ package au.edu.uq.cmm.paul.tag;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.SimpleTagSupport;
@@ -33,7 +34,6 @@ import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 public class MissingDatasetListingTag extends SimpleTagSupport {
     
     private boolean fromQueue;
-   
 
     public final boolean isFromQueue() {
         return fromQueue;
@@ -46,15 +46,34 @@ public class MissingDatasetListingTag extends SimpleTagSupport {
     @Override
     public void doTag() throws JspException, IOException {
         Analyser analysis = (Analyser) getJspContext().findAttribute("analysis");
+        Boolean intertidal = (Boolean) getJspContext().findAttribute("intertidal");
         Collection<DatasetMetadata> all = fromQueue ? 
                 analysis.getAll().getMissingFromDatabaseTimeOrdered() : 
                 analysis.getAll().getMissingFromFolderTimeOrdered();
         Collection<DatasetMetadata> beforeQEnd = chooseTimespanSet(analysis.getBeforeQEnd());
         Collection<DatasetMetadata> afterQEnd = chooseTimespanSet(analysis.getAfterQEnd());
+        Collection<DatasetMetadata> beforeLWM = chooseTimespanSet(analysis.getBeforeLWM());
+        Collection<DatasetMetadata> afterLWM = chooseTimespanSet(analysis.getAfterLWM());
         Collection<DatasetMetadata> beforeHWM = chooseTimespanSet(analysis.getBeforeHWM());
         Collection<DatasetMetadata> afterHWM = chooseTimespanSet(analysis.getAfterHWM());
         for (DatasetMetadata missing : all) {
+            if (intertidal != null && intertidal) {
+                Date timestamp = missing.getLastFileTimestamp();
+                if (timestamp == null) {
+                    continue;
+                }
+                if (analysis.getLWM() != null &&
+                        analysis.getLWM().getTime() > timestamp.getTime()) {
+                    continue;
+                }
+                if (analysis.getHWM() != null &&
+                        analysis.getHWM().getTime() < timestamp.getTime()) {
+                    continue;
+                }
+            }
             StringBuilder sb = new StringBuilder();
+            addTimespan(sb, "&#x2264; LWM", beforeLWM.contains(missing));
+            addTimespan(sb, "&gt; LWM", afterLWM.contains(missing));
             addTimespan(sb, "&#x2264; HWM", beforeHWM.contains(missing));
             addTimespan(sb, "&gt; HWM", afterHWM.contains(missing));
             addTimespan(sb, "&#x2264; QEnd", beforeQEnd.contains(missing));
