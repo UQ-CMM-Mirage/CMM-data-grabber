@@ -20,7 +20,6 @@
 					<th class="span2">Facility</th>
 					<th class="span2">Description</th>
 					<th class="span2">Data Grabber Status</th>
-					<th class="span2">Grabber "High Water Mark" (HWM)</th>
 					<th class="span4"></th>
 				</tr>
 			</thead>
@@ -35,10 +34,6 @@
 							<c:if test="${! empty facility.status.message}">
 								<br>${facility.status.message}
 							</c:if>
-						</td>
-						<td>
-							<fmt:formatDate value="${facility.status.grabberHWMTimestamp}" 
-										type="both" dateStyle="medium"/>
 						</td>
 						<td class="form-inline,btn-toolbar">
 							<form action="facilities/${facility.facilityName}" method="post">
@@ -57,7 +52,7 @@
 								<button class="btn" type="submit" name="sessionLog">Session Log</button>
 								<button class="btn" type="submit" name="copy">Copy</button>
 								<button class="btn" type="submit" name="delete">Delete</button>
-								<button class="btn" type="submit" name="hwm">Adjust HWM</button>
+								<button class="btn" type="submit" name="analyse">Analyse Queues</button>
 							</form>
 						</td>
 					</tr>

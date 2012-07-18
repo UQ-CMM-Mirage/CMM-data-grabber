@@ -41,6 +41,7 @@ public class FacilityStatus {
     private File localDirectory;
     private FileGrabber fileGrabber;
     private Date grabberHWMTimestamp;
+    private Date grabberLWMTimestamp;
     private Service fileGrabberService;
     
     public FacilityStatus() {
@@ -90,6 +91,15 @@ public class FacilityStatus {
         this.grabberHWMTimestamp = grabberHWMTimestamp;
     }
 
+    @Temporal(TemporalType.TIMESTAMP)
+    public Date getGrabberLWMTimestamp() {
+        return grabberLWMTimestamp;
+    }
+
+    public void setGrabberLWMTimestamp(Date grabberLWMTimestamp) {
+        this.grabberLWMTimestamp = grabberLWMTimestamp;
+    }
+
     @Transient
     public FileGrabber getFileGrabber() {
         return this.fileGrabber;
@@ -116,10 +126,15 @@ public class FacilityStatus {
     public void setLocalDirectory(File localDirectory) {
         this.localDirectory = localDirectory;
     }
-    
+
     @Override
     public String toString() {
         return "FacilityStatus [facilityId=" + facilityId + ", status="
-                + status + ", message=" + message + "]";
+                + status + ", message=" + message + ", localDirectory="
+                + localDirectory + ", fileGrabber=" + fileGrabber
+                + ", grabberHWMTimestamp=" + grabberHWMTimestamp
+                + ", grabberLWMTimestamp=" + grabberLWMTimestamp
+                + ", fileGrabberService=" + fileGrabberService + "]";
     }
+    
 }

@@ -13,10 +13,22 @@
 	<div class="container-fluid">
 		<div class="row-fluid"><h1>Catchup Control for ${facilityName}</h1></div>
 		<div class="row-fluid">
-			Grabber status : ${status.status} <br> Grabber message :
-			${status.message} <br> Grabber HWM timestamp :
-			${status.grabberHWMTimestamp} <br> Timestamp of last queued
-			Dataset : ${catchupTimestamp}
+			Grabber status : ${status.status} <br> 
+			Grabber message : ${status.message} <br> 
+			Grabber LWM timestamp : 
+				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+						value="${status.grabberLWMTimestamp}"/> <br>
+			Grabber HWM timestamp : 
+				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+						value="${status.grabberHWMTimestamp}"/> <br>
+			Timestamp of last queued Dataset : 
+				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+						value="${catchupTimestamp}"/> <br>
+			LWM / HWM used in analysis : 
+				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+						value="${lwmTimestamp}"/> / 
+				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+						value="${hwmTimestamp}"/>
 		</div>
 		<div class="row-fluid"><h2>Statistics</h2></div>
 		<div class="row-fluid">
@@ -43,6 +55,30 @@
 					<td>${analysis.all.missingFromFolder.size}</td>
 					<td>${analysis.all.missingFromDatabase.size}</td>
 				</tr>
+				<c:if test="${!empty analysis.beforeLWM}">
+					<tr>
+						<td>&#x2264; LWM</td>
+						<td>${analysis.beforeLWM.totalInFolder}</td>
+						<td>${analysis.beforeLWM.multipleInFolder}</td>
+						<td>${analysis.beforeLWM.totalInDatabase}</td>
+						<td>${analysis.beforeLWM.multipleInDatabase}</td>
+						<td>${analysis.beforeLWM.totalMatching}</td>
+						<td>${analysis.beforeLWM.missingFromFolder.size}</td>
+						<td>${analysis.beforeLWM.missingFromDatabase.size}</td>
+					</tr>
+				</c:if>
+				<c:if test="${!empty analysis.afterLWM}">
+					<tr>
+						<td>&gt; LWM</td>
+						<td>${analysis.afterLWM.totalInFolder}</td>
+						<td>${analysis.afterLWM.multipleInFolder}</td>
+						<td>${analysis.afterLWM.totalInDatabase}</td>
+						<td>${analysis.afterLWM.multipleInDatabase}</td>
+						<td>${analysis.afterLWM.totalMatching}</td>
+						<td>${analysis.afterLWM.missingFromFolder.size}</td>
+						<td>${analysis.afterLWM.missingFromDatabase.size}</td>
+					</tr>
+				</c:if>
 				<c:if test="${!empty analysis.beforeHWM}">
 					<tr>
 						<td>&#x2264; HWM</td>
@@ -151,7 +187,7 @@
 				</div>
 		</c:if>
 		<c:if test="${analysis.all.missingFromFolder.size + analysis.all.missingFromDatabase.size > 0}">
-			<div class="row-fluid"><h2>Missing Datasets</h2></div>
+			<div class="row-fluid"><h2>Missing Datasets (between LWM and HWM)</h2></div>
 			<div class="row-fluid">
 				<div class="span6">
 					<table class="table table-striped table-condensed">
@@ -204,80 +240,31 @@
 			</div>
 		</c:if>
 		<div class="row-fluid">
-		<h2>Diagnosis</h2>
+			<h2>Actions</h2>
 		</div>
-		<div class="row-fluid">
-		<ul>
-			<c:choose>
-			<c:when test="${status.status == 'ON'}">
-				<li>
-					The Data Grabber is currently running for this Facility.
-				</li>
-			</c:when>
-			<c:when test="${status.status == 'OFF'}">
-				<li>
-					The Data Grabber is currently not running for this Facility.
-				</li>
-			</c:when>
-			<c:when test="${status.status == 'DISABLED'}">
-				<li>
-					This Facility is currently disabled.
-				</li>
-			</c:when>
-			</c:choose>
-			<c:choose>
-				<c:when test="${empty status.grabberHWMTimestamp}">
-				<li>
-					It appears that the Data Grabber has never been activated for this facility.
-				</li>
-				</c:when>
-				<c:when test="${empty catchupTimestamp}">
-				<li>
-					Any previously grabbed Datasets have either expired or been deleted.
-					</li>
-				</c:when>
-				<c:when test="${catchupTimestamp.time == status.grabberHWMTimestamp.time}">
-				<li>
-					The last queued Dataset and HWM are in agreement.
-					</li>
-				</c:when>
-				<c:when test="${catchupTimestamp.time < status.grabberHWMTimestamp.time}">
-				<li>
-					The last queued Dataset is before the HWM.  Maybe some recently
-					grabbed Datasets were deleted from the queues.
-					</li>
-				</c:when>
-				<c:when test="${catchupTimestamp.time > status.grabberHWMTimestamp.time}">
-				<li>
-					The last queued Dataset is after the HWM.
-					</li>
-				</c:when>
-			</c:choose>
-			<c:choose>
-				<c:when test="${analysis.all.totalInFolder == analysis.all.totalMatching}">
-					<li>
-						All Datasets in the S: folder are queued.
-					</li>
-				</c:when>
-				<c:otherwise>
-					<li>
-						There are ${analysis.all.totalInFolder - analysis.all.totalMatching} 
-						Datasets in the S: folder that are not in the queues.
-					</li>
-				</c:otherwise>
-			</c:choose>
-			</ul>
-		</div>
-		<div class="row-fluid"><h2>Actions</h2></div>
-		<div class="row-fluid">
+
 		<form method="post">
-		    <c:set var="isohwm"><fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss" value="${hwmTimestamp}"/></c:set>
-		    New HWM: <input type="text" name="hwmTimestamp" 
-		        value="${isohwm}">
-			<button type="submit" name="hwm">Recalculate Statistics</button>
-			<button type="submit" name="setHWM">Set the HWM</button>
+			<div class="row-fluid">
+				<c:set var="isohwm">
+					<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+						value="${hwmTimestamp}" />
+				</c:set>
+				New HWM: <input type="text" name="hwmTimestamp" value="${isohwm}">
+				<button type="submit" name="setHWM">Change the HWM</button>
+			</div>
+			<div class="row-fluid">
+				<c:set var="isolwm">
+					<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+						value="${lwmTimestamp}" />
+				</c:set>
+				New LWM: <input type="text" name="lwmTimestamp" value="${isolwm}">
+				<button type="submit" name="setLWM">Change the LWM</button>
+			</div>
+			<div class="row-fluid">
+				<button type="submit" name="analyse">Reanalyse with
+					proposed LWM / HWM</button>
+			</div>
 		</form>
-		</div>
 	</div>
 	<!-- /container -->
 	<%@ include file="/WEB-INF/jsp/commonFooter.jspFrag"%>

@@ -279,11 +279,17 @@ public class Analyser extends AbstractFileGrabber {
     private EntityManagerFactory emf;
     private UncPathnameMapper uncNameMapper;
     private Statistics all;
+    private Statistics beforeLWM;
+    private Statistics afterLWM;
     private Statistics beforeHWM;
     private Statistics afterHWM;
     private Problems problems;
     private Statistics beforeQEnd;
     private Statistics afterQEnd;
+
+    private Date lwm;
+    private Date hwm;
+    private Date qEnd;
     
     
     public Analyser(Paul services, Facility facility) {
@@ -293,12 +299,31 @@ public class Analyser extends AbstractFileGrabber {
         emf = services.getEntityManagerFactory();
     }
     
-    public Analyser analyse(Date hwmTimestamp, Date queueEndTimestamp) {
+    public Analyser analyse(Date lwmTimestamp, Date hwmTimestamp, Date queueEndTimestamp) {
+        this.lwm = lwmTimestamp;
+        this.hwm = hwmTimestamp;
+        this.qEnd = queueEndTimestamp;
         LOG.info("Analysing queues and folders for " + getFacility().getFacilityName());
         SortedSet<DatasetMetadata> inFolder = buildInFolderMetadata();
         SortedSet<DatasetMetadata> inDatabase = buildInDatabaseMetadata();
         LOG.info("Gathering statistics for " + getFacility().getFacilityName());
         all = gatherStats(inFolder, inDatabase, PredicateUtils.truePredicate());
+        if (lwmTimestamp == null) {
+            beforeLWM = null;
+            afterLWM = null;
+        } else {
+            final long lwm = lwmTimestamp.getTime();
+            beforeLWM = gatherStats(inFolder, inDatabase, new Predicate() {
+                public boolean evaluate(Object metadata) {
+                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() <= lwm;
+                }
+            });
+            afterLWM = gatherStats(inFolder, inDatabase, new Predicate() {
+                public boolean evaluate(Object metadata) {
+                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() > lwm;
+                }
+            });
+        }
         if (hwmTimestamp == null) {
             beforeHWM = null;
             afterHWM = null;
@@ -472,22 +497,22 @@ public class Analyser extends AbstractFileGrabber {
     
     private void check(int test, DatasetMetadata f, DatasetMetadata d, 
             Collection<DatasetMetadata> inFolder, Collection<DatasetMetadata> inDatabase) {
-        LOG.error("f is " + f + ", d is " + d + ", test is " + test);
-        if (f == null || d == null) {
-            return;
-        }
-        if (test == 0) {
-            if (!inFolder.contains(f)) {
-                LOG.error("f is not in source");
-            }
-            if (!inDatabase.contains(d)) {
-                LOG.error("d is not in source");
-            }
-        } else {
-            if (inFolder.contains(f) && inDatabase.contains(d)) {
-                LOG.error("f & d are both in sources");
-            }
-        }
+//        LOG.error("f is " + f + ", d is " + d + ", test is " + test);
+//        if (f == null || d == null) {
+//            return;
+//        }
+//        if (test == 0) {
+//            if (!inFolder.contains(f)) {
+//                LOG.error("f is not in source");
+//            }
+//            if (!inDatabase.contains(d)) {
+//                LOG.error("d is not in source");
+//            }
+//        } else {
+//            if (inFolder.contains(f) && inDatabase.contains(d)) {
+//                LOG.error("f & d are both in sources");
+//            }
+//        }
     }
 
     private TreeSet<DatasetMetadata> buildRemainderSet(
@@ -553,6 +578,14 @@ public class Analyser extends AbstractFileGrabber {
         return all;
     }
 
+    public final Statistics getBeforeLWM() {
+        return beforeLWM;
+    }
+
+    public final Statistics getAfterLWM() {
+        return afterLWM;
+    }
+
     public final Statistics getBeforeHWM() {
         return beforeHWM;
     }
@@ -571,6 +604,18 @@ public class Analyser extends AbstractFileGrabber {
 
     public final Problems getProblems() {
         return problems;
+    }
+
+    public final Date getLWM() {
+        return lwm;
+    }
+
+    public final Date getHWM() {
+        return hwm;
+    }
+
+    public final Date getQEnd() {
+        return qEnd;
     }
 
     public final void setProblems(Problems problems) {
