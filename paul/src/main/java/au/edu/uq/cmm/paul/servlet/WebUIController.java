@@ -20,6 +20,7 @@
 package au.edu.uq.cmm.paul.servlet;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -73,6 +74,7 @@ import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.grabber.Analyser;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
+import au.edu.uq.cmm.paul.grabber.FileRegrabber;
 import au.edu.uq.cmm.paul.queue.AtomFeed;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.queue.QueueManager.Slice;
@@ -862,6 +864,35 @@ public class WebUIController implements ServletContextAware {
     public String queueEntry(@PathVariable String entry, Model model, 
             HttpServletRequest request, HttpServletResponse response) 
             throws IOException {
+        DatasetMetadata metadata = findDataset(entry, response);
+        if (metadata != null) {
+            model.addAttribute("entry", metadata);
+            model.addAttribute("returnTo", inferReturnTo(request));
+            return "dataset";
+        } else {
+            return null;
+        }
+    }
+    
+    @RequestMapping(value="/datasets/{entry:.+}", params={"regrab"},
+            method=RequestMethod.POST)
+    public String regrabEntry(@PathVariable String entry, Model model, 
+            HttpServletRequest request, HttpServletResponse response) 
+            throws IOException {
+        DatasetMetadata dataset = findDataset(entry, response);
+        if (dataset != null) {
+            DatasetMetadata grabbedMetadata = new FileRegrabber(services, dataset).getCandidateDataset();
+            model.addAttribute("oldEntry", dataset);
+            model.addAttribute("newEntry", grabbedMetadata);
+            model.addAttribute("returnTo", inferReturnTo(request));
+            return "regrabConfirmation";
+        } else {
+            return null;
+        }
+    }
+
+    private DatasetMetadata findDataset(String entry,
+            HttpServletResponse response) throws IOException {
         long id;
         try {
             id = Long.parseLong(entry);
@@ -876,9 +907,7 @@ public class WebUIController implements ServletContextAware {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return null;
         }
-        model.addAttribute("entry", metadata);
-        model.addAttribute("returnTo", inferReturnTo(request));
-        return "dataset";
+        return metadata;
     }
     
     @RequestMapping(value="/files/{fileName:.+}", method=RequestMethod.GET)

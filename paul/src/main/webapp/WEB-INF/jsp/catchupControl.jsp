@@ -172,6 +172,7 @@
 								<th class="span1">Dataset Id</th>
 								<th class="span1">Problem Type</th>
 								<th class="span5">Details</th>
+								<th class="span2">&nbsp;</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -180,6 +181,11 @@
 									<td><a href="/paul/datasets/${problem.dataset.id}">${problem.dataset.id}</a></td>
 									<td>${problem.type}</td>
 									<td>${problem.details}</td>
+									<td>
+										<form action="/paul/datasets/${problem.dataset.id}" method=post>
+											<button type="submit" name="regrab">Regrab Dataset</button>
+										</form>
+									</td>
 								</tr>
 							</c:forEach>
 						</tbody>
@@ -197,7 +203,8 @@
 							</tr>
 							<tr>
 								<th class="span1">Timespans</th>
-								<th class="span5">Details</th>
+								<th class="span4">Missing Dataset Details</th>
+								<th class="span1">&nbsp;</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -207,6 +214,13 @@
 									<td>${missing.sourceFilePathnameBase} | <fmt:formatDate
 											pattern="yyyy-MM-dd'T'HH:mm:ss"
 											value="${missing.lastFileTimestamp}" />
+									</td>
+									<td>
+										<form action="/paul/datasets/" method=post>
+											<input type="hidden" name="pathnameBase" 
+												   value="${missing.sourceFilePathnameBase}">
+											<button type="submit" name="grab">Grab Dataset</button>
+										</form>
 									</td>
 								</tr>
 							</pt:missingDatasets>
@@ -221,17 +235,23 @@
 							</tr>
 							<tr>
 								<th class="span1">Timespans</th>
-								<th class="span5">Missing Dataset details</th>
+								<th class="span4">Missing Dataset Details</th>
+								<th class="span2">&nbsp;</th>
 							</tr>
 						</thead>
 						<tbody>
 							<pt:missingDatasets fromQueue="false">
 								<tr>
 									<td>${timespans}</td>
-									<td><a href="/paul/datasets/${missing.id}">Dataset #${missing.id}</a>
+									<td><a href="/paul/datasets/">Dataset #${missing.id}</a>
 										- ${missing.sourceFilePathnameBase} | <fmt:formatDate
 											pattern="yyyy-MM-dd'T'HH:mm:ss"
 											value="${missing.lastFileTimestamp}" /></td>
+									<td>
+										<form action="/paul/datasets/${missing.id}" method=post>
+											<button type="submit" name="delete">Delete from Queue</button>
+										</form>
+									</td>
 								</tr>
 							</pt:missingDatasets>
 						</tbody>

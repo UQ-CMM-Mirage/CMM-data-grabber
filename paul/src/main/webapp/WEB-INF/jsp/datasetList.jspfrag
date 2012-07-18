@@ -1,0 +1,40 @@
+<%@ taglib uri="/paulTags" prefix="pt"%>
+	<ul>
+		<li>Facility : ${requestScope[entryName].facilityName}</li>
+		<li>User : ${requestScope[entryName].userName}</li>
+		<li>Account : ${entry.accountName}</li>
+		<li>Email : ${requestScope[entryName].emailAddress}</li>
+		<li>Captured: <fmt:formatDate value="${requestScope[entryName].captureTimestamp}" 
+										type="both" dateStyle="medium"/></li>
+		<li>Metadata updated: <fmt:formatDate value="${requestScope[entryName].updateTimestamp}" 
+										type="both" dateStyle="medium"/></li>
+		<li>Session uuid: ${requestScope[entryName].sessionUuid}</li>
+		<li>Session start time: <fmt:formatDate value="${requestScope[entryName].sessionStartTimestamp}" 
+										type="both" dateStyle="medium"/></li>
+		<li>Dataset uuid: ${requestScope[entryName].recordUuid}</li>
+		<li>Dataset base filename: ${requestScope[entryName].sourceFilePathnameBase} / 
+			                       ${requestScope[entryName].facilityFilePathnameBase}</li>
+		<li>Dataset hash: <pt:split value="${requestScope[entryName].datasetHash}"/></li>
+		<li>Datafiles:
+			<ul>
+				<c:forEach items="${requestScope[entryName].datafiles}" var="datafile">
+					<li>Filename: ${datafile.sourceFilePathname} / ${datafile.facilityFilePathname}
+						<ul>
+							<li>File id: ${datafile.id}</li>
+							<li>Captured filename: ${datafile.capturedFilePathname}</li>
+							<li>File modified: 
+								<fmt:formatDate value="${datafile.fileWriteTimestamp}" 
+										type="both" dateStyle="medium"/></li>
+							<li>File captured:
+								<fmt:formatDate value="${datafile.captureTimestamp}" 
+										type="both" dateStyle="medium"/></li>
+							<li>Mime type: ${datafile.mimeType}</li>
+							<li>File size: ${datafile.fileSize}</li>
+							<li>Datafile hash: <pt:split value="${datafile.datafileHash}"/></li>
+						</ul>
+					</li>
+				</c:forEach>
+			</ul>
+		</li>
+		<li>Metadata filename: ${requestScope[entryName].metadataFilePathname}</li>
+	</ul>

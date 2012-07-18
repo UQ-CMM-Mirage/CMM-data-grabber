@@ -150,4 +150,8 @@ public abstract class AbstractFileGrabber implements FileWatcherEventListener {
     protected final Facility getFacility() {
         return facility;
     }
+    
+    protected final Paul getServices() {
+        return services;
+    }
 }
