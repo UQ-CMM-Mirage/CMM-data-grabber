@@ -60,6 +60,7 @@ public class DatasetRegrabber extends AbstractFileGrabber {
     }
     
     void captureWorkEntry() {
+        LOG.debug("Capturing regrab workEntry for " + dataset.getSourceFilePathnameBase());
         File dir = new File(dataset.getSourceFilePathnameBase()).getParentFile();
         analyseTree(dir, Long.MIN_VALUE, Long.MAX_VALUE);
     }
@@ -75,7 +76,9 @@ public class DatasetRegrabber extends AbstractFileGrabber {
 
     public DatasetMetadata regrabDataset(boolean newDataset) throws InterruptedException, IOException {
         captureWorkEntry();
-        return entry.grabFiles(newDataset);
+        LOG.debug("Regrabbing dataset for " + dataset.getSourceFilePathnameBase());
+        entry.setTimestamp(new Date());
+        return entry.grabFiles(!newDataset);
     }
     
     public void commitRegrabbedDataset(DatasetMetadata dataset, boolean newDataset) throws IOException {

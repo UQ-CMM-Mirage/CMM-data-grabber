@@ -74,10 +74,11 @@ class WorkEntry implements Runnable {
     private final String instrumentBasePath;
     private final Map<File, GrabbedFile> files;
     private final Facility facility;
-    private final Date timestamp;
+    private Date timestamp;
     private long latestFileTimestamp = 0L;
     private final boolean holdDatasetsWithNoUser;
     private final boolean catchup;
+    private final File safeDirectory;
     
     
     public WorkEntry(Paul services, FileWatcherEvent event, File baseFile) {
@@ -95,6 +96,8 @@ class WorkEntry implements Runnable {
         long timeout = services.getConfiguration().getGrabberTimeout();
         this.grabberTimeout = timeout == 0 ? DEFAULT_GRABBER_TIMEOUT : timeout;
         this.catchup = event.isCatchup();
+        this.safeDirectory = new File(
+                services.getConfiguration().getCaptureDirectory());
         addEvent(event);
     }
     
@@ -165,8 +168,12 @@ class WorkEntry implements Runnable {
         return latestFileTimestamp;
     }
 
-    protected final Date getTimestamp() {
+    public final Date getTimestamp() {
         return timestamp;
+    }
+    
+    public final void setTimestamp(Date timestamp) {
+        this.timestamp = timestamp;
     }
 
     public File getBaseFile() {
@@ -181,7 +188,7 @@ class WorkEntry implements Runnable {
                 return;
             }
             grabFiles(false);
-            fileGrabber.getStatusManager().updateHWMTimestamp(facility, timestamp);
+            statusManager.updateHWMTimestamp(facility, timestamp);
         } catch (InterruptedException ex) {
             LOG.debug("interrupted");
         } catch (Throwable ex) {
@@ -196,7 +203,7 @@ class WorkEntry implements Runnable {
     public DatasetMetadata grabFiles(boolean regrabbing) 
             throws InterruptedException, IOException {
         // Prepare for grabbing
-        FacilitySession session = fileGrabber.getStatusManager().getLoginDetails(
+        FacilitySession session = statusManager.getLoginDetails(
                 facility.getFacilityName(), timestamp.getTime());
         // Optionally lock the files, then grab them.
         // FIXME - note that we may not see all of the files ... see above.
@@ -398,7 +405,7 @@ class WorkEntry implements Runnable {
         for (int i = 0; i < RETRY; i++) {
             long now = System.currentTimeMillis();
             String name = String.format(template, now, threadId, i, suffix);
-            File file = new File(fileGrabber.getSafeDirectory(), name);
+            File file = new File(safeDirectory, name);
             if (!file.exists()) {
                 return file;
             }

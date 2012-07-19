@@ -317,6 +317,9 @@ public class DatasetMetadata {
     }
     
     public void updateDatasetHash() {
+        for (DatafileMetadata datafile : datafiles) {
+            datafile.updateDatafileHash();
+        }
         setDatasetHash(calculateDatasetHash());
     }
 

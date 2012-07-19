@@ -906,6 +906,8 @@ public class WebUIController implements ServletContextAware {
             DatasetMetadata grabbedDataset = dsr.regrabDataset(regrabNew.equalsIgnoreCase("yes"));
             grabbedDataset.updateDatasetHash();
             if (!hash.equals(grabbedDataset.getCombinedDatafileHash())) {
+                LOG.debug("supplied hash is " + hash);
+                LOG.debug("actual hash is   " + grabbedDataset.getCombinedDatafileHash());
                 model.addAttribute("message", "Dataset files were apparently changed");
                 return "failed";
             } else {
