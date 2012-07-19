@@ -23,8 +23,6 @@ import java.io.IOException;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.SimpleTagSupport;
 
-import org.slf4j.LoggerFactory;
-
 public class SplitStringTag extends SimpleTagSupport {
     
     private int width = 8;
@@ -64,8 +62,6 @@ public class SplitStringTag extends SimpleTagSupport {
             }
             sb.append(value.charAt(i));
         }
-        LoggerFactory.getLogger(SplitStringTag.class).error(
-                "value = '" + value + ", result is '" + sb.toString() + "'");
         getJspContext().getOut().write(sb.toString());
     }
 
