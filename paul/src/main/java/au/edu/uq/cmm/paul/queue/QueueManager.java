@@ -115,17 +115,17 @@ public class QueueManager {
         return res;
     }
 
-    public void addEntry(DatasetMetadata metadata, File metadataFile) 
+    public void addEntry(DatasetMetadata dataset) 
             throws JsonGenerationException, IOException {
-        saveToFileSystem(metadataFile, metadata);
-        saveToDatabase(metadata);
+        saveToFileSystem(new File(dataset.getMetadataFilePathname()), dataset);
+        saveToDatabase(dataset);
     }
 
-    private void saveToDatabase(DatasetMetadata metadata) {
+    private void saveToDatabase(DatasetMetadata dataset) {
         EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
-            em.persist(metadata);
+            em.persist(dataset);
             em.getTransaction().commit();
         } finally {
             em.close();

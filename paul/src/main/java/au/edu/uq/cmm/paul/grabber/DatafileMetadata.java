@@ -22,7 +22,6 @@ package au.edu.uq.cmm.paul.grabber;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 
 import javax.persistence.Entity;
@@ -153,8 +152,8 @@ public class DatafileMetadata {
         return datafileHash;
     }
 
-    public void setDatafileHash(String datafileHash) {
-        this.datafileHash = datafileHash;
+    public void setDatafileHash(String hash) {
+        this.datafileHash = (hash != null && hash.isEmpty()) ? null : hash;
     }
 
     public void checkDatafileHash() throws IncorrectHashException {
@@ -167,26 +166,24 @@ public class DatafileMetadata {
     }
     
     public void updateDatafileHash() {
-        datafileHash = calculateDatafileHash();
+        setDatafileHash(calculateDatafileHash());
     }
 
     private String calculateDatafileHash() {
         try {
             try (FileInputStream fis = new FileInputStream(capturedFilePathname)) {
-                MessageDigest md = MessageDigest.getInstance("SHA-512");
+                MessageDigest md = HashUtils.createDigester();
                 byte[] data = new byte[8192];
                 int count;
                 while ((count = fis.read(data)) > 0) {
                     md.update(data, 0, count);
                 }
                 byte[] hash = md.digest();
-                return DatasetMetadata.bytesToHexString(hash);
+                return HashUtils.bytesToHexString(hash);
             }
         } catch (IOException ex) {
             throw new PaulException("Problem reading datafile", ex);
-        } catch (NoSuchAlgorithmException ex) {
-            throw new PaulException("Can't find the required secure hash algorithm", ex);
-        }
+        } 
     }
 
 }

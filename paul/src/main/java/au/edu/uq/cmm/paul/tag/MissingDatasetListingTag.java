@@ -26,7 +26,6 @@ import java.util.Date;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.SimpleTagSupport;
 
-
 import au.edu.uq.cmm.paul.grabber.Analyser;
 import au.edu.uq.cmm.paul.grabber.Analyser.Statistics;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;

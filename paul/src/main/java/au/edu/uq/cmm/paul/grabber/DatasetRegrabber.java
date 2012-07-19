@@ -20,6 +20,7 @@
 package au.edu.uq.cmm.paul.grabber;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Date;
 
 import au.edu.uq.cmm.eccles.FacilitySession;
@@ -32,13 +33,13 @@ import au.edu.uq.cmm.paul.status.Facility;
  * 
  * @author scrawley
  */
-public class FileRegrabber extends AbstractFileGrabber {
+public class DatasetRegrabber extends AbstractFileGrabber {
     
     private final DatasetMetadata dataset;
     private final File datasetFile;
     private WorkEntry entry;
 
-    public FileRegrabber(Paul services, DatasetMetadata dataset) {
+    public DatasetRegrabber(Paul services, DatasetMetadata dataset) {
         super(services, getFacility(services, dataset));
         this.dataset = dataset;
         this.datasetFile = new File(dataset.getSourceFilePathnameBase());
@@ -67,12 +68,19 @@ public class FileRegrabber extends AbstractFileGrabber {
         captureWorkEntry();
         entry.pretendToGrabFiles();
         FacilitySession session = getServices().getFacilityStatusManager().getSession(dataset.getSessionUuid());
-        DatasetMetadata metadata = entry.assembleMetadata(
+        DatasetMetadata metadata = entry.assembleDatasetMetadata(
                 new Date(), session, new File(dataset.getMetadataFilePathname()));
         return metadata;
     }
 
-    public final DatasetMetadata getDataset() {
-        return dataset;
+    public DatasetMetadata regrabDataset(boolean newDataset) throws InterruptedException, IOException {
+        captureWorkEntry();
+        return entry.grabFiles(newDataset);
+    }
+    
+    public void commitRegrabbedDataset(DatasetMetadata dataset, boolean newDataset) throws IOException {
+        if (!newDataset) {
+            entry.commitRegrabbedDataset(dataset);
+        }
     }
 }

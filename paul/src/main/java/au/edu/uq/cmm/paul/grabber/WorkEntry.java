@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.FilenameUtils;
 import org.codehaus.jackson.JsonGenerationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +62,7 @@ import au.edu.uq.cmm.paul.watcher.FileWatcherEvent;
 class WorkEntry implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(WorkEntry.class);
     private static final long DEFAULT_GRABBER_TIMEOUT = 600000; // milliseconds == 10 minutes
+    private static final int RETRY = 10;
     
     private final long grabberTimeout;
 
@@ -175,29 +177,26 @@ class WorkEntry implements Runnable {
     public void run() {
         LOG.debug("Processing workEntry for " + baseFile);
         try {
-            grabFiles();
+            if (!datasetCompleted()) {
+                return;
+            }
+            grabFiles(false);
+            fileGrabber.getStatusManager().updateHWMTimestamp(facility, timestamp);
         } catch (InterruptedException ex) {
             LOG.debug("interrupted");
-        } catch (RuntimeException ex) {
+        } catch (Throwable ex) {
             LOG.error("unexpected exception", ex);
-            throw ex;
-        } catch (Error ex) {
-            LOG.error("unexpected error", ex);
-            throw ex;
-        }
-        synchronized (fileGrabber) {
+            return;
+        } finally {
             fileGrabber.remove(baseFile);
         }
         LOG.debug("Finished processing workEntry for " + baseFile);
     }
 
-    private void grabFiles() throws InterruptedException {
-        if (!datasetCompleted()) {
-            return;
-        }
+    public DatasetMetadata grabFiles(boolean regrabbing) 
+            throws InterruptedException, IOException {
         // Prepare for grabbing
-        FacilityStatusManager fsm = fileGrabber.getStatusManager();
-        FacilitySession session = fsm.getLoginDetails(
+        FacilitySession session = fileGrabber.getStatusManager().getLoginDetails(
                 facility.getFacilityName(), timestamp.getTime());
         // Optionally lock the files, then grab them.
         // FIXME - note that we may not see all of the files ... see above.
@@ -207,24 +206,21 @@ class WorkEntry implements Runnable {
                     LOG.debug("acquiring lock on " + file);
                     try (FileLock lock = is.getChannel().lock(0, Long.MAX_VALUE, true)) {
                         LOG.debug("locked " + file);
-                        doGrabFile(file, is);
+                        doGrabFile(file, is, regrabbing);
                     }
                     LOG.debug("unlocked " + file);
                 } else {
-                    doGrabFile(file, is);
+                    doGrabFile(file, is, regrabbing);
                 }
             } catch (IOException ex) {
                 LOG.error("Unexpected IO Error", ex);
             }
         }
         try {
-            saveMetadata(timestamp, session);
-            fsm.updateHWMTimestamp(facility, timestamp);
+            return saveMetadata(timestamp, session, regrabbing);
         } catch (JsonGenerationException ex) {
-            LOG.error("Unexpected JSON Error", ex);
-        } catch (IOException ex) {
-            LOG.error("Unexpected IO Error", ex);
-        }
+            throw new PaulException(ex);
+        } 
     }
 
     /**
@@ -313,33 +309,35 @@ class WorkEntry implements Runnable {
         return true;
     }
 
-    private void doGrabFile(GrabbedFile file, FileInputStream is) 
+    private void doGrabFile(GrabbedFile file, FileInputStream is, boolean regrabbing) 
             throws InterruptedException, IOException {
         LOG.debug("Start file grabbing");
         Date now = new Date();
         Date fileTimestamp = new Date(file.getFile().lastModified());
         String suffix = (file.getTemplate() == null) ?
                 ".data" : file.getTemplate().getSuffix();
-        File copiedFile = copyFile(is, file.getFile(), suffix);
+        File copiedFile = copyFile(is, file.getFile(), suffix, regrabbing);
         file.setCopiedFile(copiedFile);
         file.setFileTimestamp(fileTimestamp);
         file.setCopyTimestamp(now);
         LOG.debug("Done grabbing");
     }
 
-    private DatasetMetadata saveMetadata(Date now, FacilitySession session)
+    private DatasetMetadata saveMetadata(Date now, FacilitySession session, boolean regrabbing)
             throws IOException, JsonGenerationException {
-        File metadataFile = generateUniqueFile(".admin");
-        DatasetMetadata metadata = assembleMetadata(now, session, metadataFile);
-        for (DatafileMetadata d : metadata.getDatafiles()) {
+        File metadataFile = generateUniqueFile(".admin", regrabbing);
+        DatasetMetadata dataset = assembleDatasetMetadata(now, session, metadataFile);
+        for (DatafileMetadata d : dataset.getDatafiles()) {
             d.updateDatafileHash();
         }
-        metadata.updateDatasetHash();
-        queueManager.addEntry(metadata, metadataFile);
-        return metadata;
+        dataset.updateDatasetHash();
+        if (!regrabbing) {
+            queueManager.addEntry(dataset);
+        }
+        return dataset;
     }
 
-    public DatasetMetadata assembleMetadata(
+    public DatasetMetadata assembleDatasetMetadata(
             Date now, FacilitySession session, File metadataFile) {
         if (session == null && !holdDatasetsWithNoUser) {
             session = FacilitySession.makeDummySession(facility.getFacilityName(), now);
@@ -361,19 +359,19 @@ class WorkEntry implements Runnable {
                     g.getCopiedFile().length(), null);
             list.add(d);
         }
-        DatasetMetadata metadata = new DatasetMetadata(
+        DatasetMetadata dataset = new DatasetMetadata(
                 baseFile.getAbsolutePath(), 
                 instrumentBasePath, metadataFile.getAbsolutePath(), 
                 userName, facility.getFacilityName(), facility.getId(), 
                 account, emailAddress, now, sessionUuid, loginTime, list);
-        return metadata;
+        return dataset;
     }
 
-    private File copyFile(FileInputStream is, File source, String suffix) 
+    private File copyFile(FileInputStream is, File source, String suffix, boolean regrabbing) 
             throws IOException {
         // TODO - if the time taken to copy files is a problem, we could 
         // potentially improve this by using NIO or memory mapped files.
-        File target = generateUniqueFile(suffix);
+        File target = generateUniqueFile(suffix, regrabbing);
         long size = source.length();
         try (FileOutputStream os = new FileOutputStream(target)) {
             byte[] buffer = new byte[(int) Math.min(size, 8192)];
@@ -394,16 +392,47 @@ class WorkEntry implements Runnable {
         return target;
     }
 
-    private File generateUniqueFile(String suffix) {
-        long now = System.currentTimeMillis();
-        for (int i = 0; i < 10; i++) {
-            String name = String.format("file-%d-%d-%d%s", 
-                    now, Thread.currentThread().getId(), i, suffix);
+    private File generateUniqueFile(String suffix, boolean regrabbing) {
+        String template = regrabbing ? "regrabbed-%d-%d-%d%s" : "file-%d-%d-%d%s";
+        long threadId = Thread.currentThread().getId();
+        for (int i = 0; i < RETRY; i++) {
+            long now = System.currentTimeMillis();
+            String name = String.format(template, now, threadId, i, suffix);
             File file = new File(fileGrabber.getSafeDirectory(), name);
             if (!file.exists()) {
                 return file;
             }
         }
-        throw new PaulException("Can't generate a unique filename!");
+        throw new PaulException(RETRY + " attempts to generate a unique filename failed!");
+    }
+
+    public void commitRegrabbedDataset(DatasetMetadata dataset) throws IOException {
+        String metadataFile = renameRegrabbedFile(dataset.getMetadataFilePathname());
+        dataset.setMetadataFilePathname(metadataFile);
+        for (DatafileMetadata datafile : dataset.getDatafiles()) {
+            String datafileFile = renameRegrabbedFile(datafile.getCapturedFilePathname());
+            datafile.setCapturedFilePathname(datafileFile);
+        }
+        // This will save the updated dataset metadata to the database and file system.
+        queueManager.addEntry(dataset);
+    }
+    
+    private String renameRegrabbedFile(String filePath) throws IOException {
+        File file = new File(filePath);
+        String name = file.getName();
+        if (!name.startsWith("regrabbed")) {
+            throw new PaulException("Not a regrabbed file: " + file.toString());
+        }
+        for (int i = 0; i < RETRY; i++) {
+            File newFile = generateUniqueFile(FilenameUtils.getExtension(name), false);
+            if (!file.renameTo(newFile)) {
+                if (!newFile.exists()) {
+                    throw new IOException("Rename of " + file + " to " + newFile + " failed");
+                }
+            } else {
+                return newFile.toString();
+            }
+        }
+        throw new PaulException(RETRY + " attempts to rename file failed!");
     }
 }

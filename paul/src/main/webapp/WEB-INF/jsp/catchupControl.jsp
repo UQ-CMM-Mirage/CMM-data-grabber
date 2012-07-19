@@ -182,7 +182,7 @@
 									<td>${problem.type}</td>
 									<td>${problem.details}</td>
 									<td>
-										<form action="/paul/datasets/${problem.dataset.id}" method=post>
+										<form action="/paul/datasets/${problem.dataset.id}">
 											<button type="submit" name="regrab">Regrab Dataset</button>
 										</form>
 									</td>

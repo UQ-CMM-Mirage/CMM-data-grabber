@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -49,6 +48,8 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.hibernate.annotations.GenericGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import au.edu.uq.cmm.paul.PaulException;
 
@@ -63,6 +64,8 @@ import au.edu.uq.cmm.paul.PaulException;
 @Table(name = "DATASET_METADATA",
         uniqueConstraints=@UniqueConstraint(columnNames={"recordUuid"}))
 public class DatasetMetadata {
+    private static final Logger LOG = LoggerFactory.getLogger(DatasetMetadata.class);
+    
     private String userName;
     private Long facilityId;
     private String facilityName;
@@ -285,7 +288,20 @@ public class DatasetMetadata {
     }
 
     public void setDatasetHash(String hash) {
-        this.datasetHash = hash;
+        this.datasetHash = (hash != null && hash.isEmpty()) ? null : hash;
+    }
+    
+    @Transient 
+    public String getCombinedDatafileHash() {
+        String hash = null;
+        for (DatafileMetadata datafile : datafiles) {
+            try {
+                hash = HashUtils.combineHashes(hash, datafile.getDatafileHash());
+            } catch (InvalidHashException ex) {
+                LOG.warn("Skipped an invalid hash for datafile " + datafile);
+            }
+        }
+        return hash;
     }
     
     public void checkHashes(boolean includeDatasetHash) throws IncorrectHashException {
@@ -301,37 +317,26 @@ public class DatasetMetadata {
     }
     
     public void updateDatasetHash() {
-        datasetHash = calculateDatasetHash();
+        setDatasetHash(calculateDatasetHash());
     }
 
-    private synchronized String calculateDatasetHash() {
+    private String calculateDatasetHash() {
         StringWriter sw = new StringWriter();
-        // Note that we exclude any previously compu
+        // Note that the hash excludes the 'datasetHash' field ...
         String savedHash = datasetHash;
         try {
             datasetHash = null;
             serialize(sw);
             byte[] data = sw.toString().getBytes("UTF-8");
-            MessageDigest md = MessageDigest.getInstance("SHA-512");
+            MessageDigest md = HashUtils.createDigester();
             md.update(data);
             byte[] hash = md.digest();
-            return bytesToHexString(hash);
+            return HashUtils.bytesToHexString(hash);
         } catch (IOException ex) {
             throw new PaulException("Impossible exception", ex);
-        } catch (NoSuchAlgorithmException ex) {
-            throw new PaulException("Can't find the required secure hash algorithm", ex);
         } finally {
             datasetHash = savedHash;
         }
-    }
-
-    static String bytesToHexString(byte[] bytes) {
-        StringBuilder sb = new StringBuilder(bytes.length * 2);
-        for (byte b : bytes) {
-            sb.append("0123456789ABCDEF".charAt(0xF & (b >> 4)));
-            sb.append("0123456789ABCDEF".charAt(0xF & b));
-        }
-        return sb.toString();
     }
 
     public void serialize(Writer writer) throws IOException {
@@ -353,7 +358,7 @@ public class DatasetMetadata {
         try {
             serialize(sw);
         } catch (IOException ex) {
-            throw new AssertionError("Impossible exception", ex);
+            throw new PaulException("Impossible exception", ex);
         }
         return sw.toString();
     }

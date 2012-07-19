@@ -62,7 +62,7 @@ public abstract class AbstractFileGrabber implements FileWatcherEventListener {
         workMap.remove(file);
     }
 
-    public final void reorderQueue(BlockingQueue<Runnable> queue) {
+    public final synchronized void reorderQueue(BlockingQueue<Runnable> queue) {
         LOG.info("Reordering a FileGrabber work queue (contains " + 
                 queue.size() + " potential datasets)");
         List<Runnable> workList = new ArrayList<Runnable>(queue.size());
@@ -78,7 +78,7 @@ public abstract class AbstractFileGrabber implements FileWatcherEventListener {
         queue.addAll(workList);
     }
 
-    public final int analyseTree(File directory, long after, long before) {
+    public final synchronized int analyseTree(File directory, long after, long before) {
         int count = 0;
         for (File member : directory.listFiles()) {
             long lastModified;

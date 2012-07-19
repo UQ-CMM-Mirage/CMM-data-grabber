@@ -20,7 +20,6 @@
 package au.edu.uq.cmm.paul.servlet;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -74,7 +73,7 @@ import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.grabber.Analyser;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
-import au.edu.uq.cmm.paul.grabber.FileRegrabber;
+import au.edu.uq.cmm.paul.grabber.DatasetRegrabber;
 import au.edu.uq.cmm.paul.queue.AtomFeed;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.queue.QueueManager.Slice;
@@ -875,17 +874,45 @@ public class WebUIController implements ServletContextAware {
     }
     
     @RequestMapping(value="/datasets/{entry:.+}", params={"regrab"},
-            method=RequestMethod.POST)
-    public String regrabEntry(@PathVariable String entry, Model model, 
+            method=RequestMethod.GET)
+    public String regrabPrepare(@PathVariable String entry, Model model, 
             HttpServletRequest request, HttpServletResponse response) 
             throws IOException {
         DatasetMetadata dataset = findDataset(entry, response);
         if (dataset != null) {
-            DatasetMetadata grabbedMetadata = new FileRegrabber(services, dataset).getCandidateDataset();
+            DatasetMetadata grabbedMetadata = new DatasetRegrabber(services, dataset).getCandidateDataset();
+            grabbedMetadata.updateDatasetHash();
+            dataset.updateDatasetHash();
             model.addAttribute("oldEntry", dataset);
             model.addAttribute("newEntry", grabbedMetadata);
             model.addAttribute("returnTo", inferReturnTo(request));
             return "regrabConfirmation";
+        } else {
+            return null;
+        }
+    }
+    
+    @RequestMapping(value="/datasets/{entry:.+}", 
+            method=RequestMethod.POST)
+    public String regrabNew(@PathVariable String entry, Model model, 
+            @RequestParam String hash,
+            @RequestParam String regrabNew,
+            HttpServletRequest request, HttpServletResponse response) 
+            throws IOException, InterruptedException {
+        DatasetMetadata dataset = findDataset(entry, response);
+        if (dataset != null) {
+            model.addAttribute("returnTo", inferReturnTo(request));
+            DatasetRegrabber dsr = new DatasetRegrabber(services, dataset);
+            DatasetMetadata grabbedDataset = dsr.regrabDataset(regrabNew.equalsIgnoreCase("yes"));
+            grabbedDataset.updateDatasetHash();
+            if (!hash.equals(grabbedDataset.getCombinedDatafileHash())) {
+                model.addAttribute("message", "Dataset files were apparently changed");
+                return "failed";
+            } else {
+                dsr.commitRegrabbedDataset(grabbedDataset, regrabNew.equalsIgnoreCase("yes"));
+                model.addAttribute("message", "Dataset regrab succeeded");
+                return "ok";
+            }
         } else {
             return null;
         }

@@ -14,9 +14,7 @@
 		var availableTags = [
             <c:forEach items="${userNames}" var="userName">'${userName}',</c:forEach> 
 		];
-		$( "#users" ).autocomplete({
-			source: availableTags
-		});
+		$( "#users" ).autocomplete({source: availableTags});
 	});
 </script>
 </head>
@@ -34,6 +32,13 @@
 				<%@ include file="/WEB-INF/jsp/datasetList.jspfrag"%>
 			</div>
 			<button class="btn btn-small" type="button" onclick="history.back()">OK</button>
+		</div>
+		<div class="row">
+			<form action="/paul/datasets/${oldEntry.id}" method=post>
+				<input type="hidden" name="hash" value="${newEntry.combinedDatafileHash}">
+				<button type="submit" name="regrabNew" value="no">Update Existing Dataset</button>
+				<button type="submit" name="regrabNew" value="yes">Create New Dataset</button>
+			</form>
 		</div>
 	</div><!-- /container -->
 <%@ include file="/WEB-INF/jsp/commonFooter.jspFrag" %>
