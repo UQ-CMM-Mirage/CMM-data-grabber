@@ -20,6 +20,7 @@
 package au.edu.uq.cmm.paul.grabber;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -139,7 +140,8 @@ public class Analyser extends AbstractFileGrabber {
     
     public enum ProblemType {
         METADATA_MISSING, METADATA_SIZE,
-        FILE_MISSING, FILE_SIZE, FILE_SIZE_2;
+        FILE_MISSING, FILE_SIZE, FILE_SIZE_2,
+        FILE_HASH, FILE_HASH_2, IO_ERROR;
     }
     
     public static class Problem {
@@ -185,12 +187,24 @@ public class Analyser extends AbstractFileGrabber {
             return problems.size();
         }
 
+        public final int getIoError() {
+            return count(ProblemType.IO_ERROR);
+        }
+
         public final int getFileSize2() {
             return count(ProblemType.FILE_SIZE_2);
         }
 
         public final int getFileSize() {
             return count(ProblemType.FILE_SIZE);
+        }
+
+        public final int getFileHash2() {
+            return count(ProblemType.FILE_HASH_2);
+        }
+
+        public final int getFileHash() {
+            return count(ProblemType.FILE_HASH);
         }
 
         public final int getFileMissing() {
@@ -253,6 +267,24 @@ public class Analyser extends AbstractFileGrabber {
                         res = Long.compare(
                                 o1.getLastFileTimestamp().getTime(), 
                                 o2.getLastFileTimestamp().getTime());
+                    }
+                    return res;
+                }
+    };
+    
+    private static final Comparator<DatasetMetadata> ORDER_BY_BASE_PATH_AND_TIME_AND_ID =
+            new Comparator<DatasetMetadata>() {
+                @Override
+                public int compare(DatasetMetadata o1, DatasetMetadata o2) {
+                    int res = o1.getFacilityFilePathnameBase().compareTo(
+                            o2.getFacilityFilePathnameBase());
+                    if (res == 0) {
+                        res = Long.compare(
+                                o1.getLastFileTimestamp().getTime(), 
+                                o2.getLastFileTimestamp().getTime());
+                    }
+                    if (res == 0) {
+                        res = o1.getId().compareTo(o2.getId());
                     }
                     return res;
                 }
@@ -373,24 +405,42 @@ public class Analyser extends AbstractFileGrabber {
                         "Metadata file empty: " + adminFile);
             }
             for (DatafileMetadata datafile : dataset.getDatafiles()) {
-                File file = new File(datafile.getCapturedFilePathname());
-                if (!file.exists()) {
-                    logProblem(dataset, datafile, ProblemType.FILE_MISSING, problems, 
-                            "Data file missing: " + file);
-                } else if (file.length() != datafile.getFileSize()) {
-                    logProblem(dataset, datafile, ProblemType.FILE_SIZE, problems,
-                            "Data file size mismatch: " + file + 
-                            ": admin metadata says " + datafile.getFileSize() + 
-                            " but actual captured file size is " + file.length());
-                }
-                File source = new File(datafile.getSourceFilePathname());
-                if (source.exists()) {
-                    if (source.length() != file.length()) {
-                        logProblem(dataset, datafile, ProblemType.FILE_SIZE_2, problems, 
+                try {
+                    LOG.error("stored hash - " + datafile.getDatafileHash());
+                    File file = new File(datafile.getCapturedFilePathname());
+                    if (!file.exists()) {
+                        logProblem(dataset, datafile, ProblemType.FILE_MISSING, problems, 
+                                "Data file missing: " + file);
+                    } else if (file.length() != datafile.getFileSize()) {
+                        logProblem(dataset, datafile, ProblemType.FILE_SIZE, problems,
                                 "Data file size mismatch: " + file + 
-                                ": original file size is " + source.length() + 
+                                ": admin metadata says " + datafile.getFileSize() + 
                                 " but actual captured file size is " + file.length());
+                    } else if (!datafile.getDatafileHash().equals(HashUtils.fileHash(file))) {
+                        logProblem(dataset, datafile, ProblemType.FILE_HASH, problems,
+                                "Data file hash mismatch between metadata and " + file);
+                    } else {
+                        LOG.error("captured hash - " + HashUtils.fileHash(file));
                     }
+                    File source = new File(datafile.getSourceFilePathname());
+                    if (source.exists()) {
+                        if (source.length() != file.length()) {
+                            logProblem(dataset, datafile, ProblemType.FILE_SIZE_2, problems, 
+                                    "Data file size mismatch: " + file + 
+                                    ": original file size is " + source.length() + 
+                                    " but actual captured file size is " + file.length());
+                        } else if (!datafile.getDatafileHash().equals(HashUtils.fileHash(source))) {
+                            logProblem(dataset, datafile, ProblemType.FILE_HASH_2, problems,
+                                    "Data file hash mismatch between metadata and " + source);
+                        } else {
+                            LOG.error("source hash - " + HashUtils.fileHash(source));
+                        }
+                    }
+                } catch (IOException ex) {
+                    LOG.error("Unexpected IOException while checking hashes", ex);
+                    logProblem(dataset, datafile, ProblemType.IO_ERROR, problems,
+                            "IO error while checking file hashes - see logs");
+
                 }
             }
         }
@@ -533,7 +583,7 @@ public class Analyser extends AbstractFileGrabber {
     }
 
     private SortedSet<DatasetMetadata> buildInDatabaseMetadata() {
-        TreeSet<DatasetMetadata> inDatabase =  new TreeSet<DatasetMetadata>(ORDER_BY_BASE_PATH_AND_TIME);
+        TreeSet<DatasetMetadata> inDatabase =  new TreeSet<DatasetMetadata>(ORDER_BY_BASE_PATH_AND_TIME_AND_ID);
         EntityManager em = emf.createEntityManager();
         try {
             TypedQuery<DatasetMetadata> query = em.createQuery(

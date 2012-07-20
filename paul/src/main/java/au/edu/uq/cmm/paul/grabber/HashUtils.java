@@ -1,11 +1,38 @@
+/*
+* Copyright 2012, CMM, University of Queensland.
+*
+* This file is part of Paul.
+*
+* Paul is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* Paul is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with Paul. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package au.edu.uq.cmm.paul.grabber;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import au.edu.uq.cmm.paul.PaulException;
 
-
+/**
+ * A collection of helpewr methods for ccreating and combining hashes.
+ * 
+ * @author scrawley
+ */
 public class HashUtils {
     
     private static String ALGORITHM = "SHA-512";
@@ -54,6 +81,19 @@ public class HashUtils {
             return MessageDigest.getInstance(ALGORITHM);
         } catch (NoSuchAlgorithmException ex) {
             throw new PaulException("Can't find the required secure hash algorithm", ex);
+        }
+    }
+
+    public static String fileHash(File source) throws FileNotFoundException, IOException {
+        try (FileInputStream fis = new FileInputStream(source)) {
+            MessageDigest md = HashUtils.createDigester();
+            byte[] data = new byte[8192];
+            int count;
+            while ((count = fis.read(data)) > 0) {
+                md.update(data, 0, count);
+            }
+            byte[] hash = md.digest();
+            return HashUtils.bytesToHexString(hash);
         }
     }
 }

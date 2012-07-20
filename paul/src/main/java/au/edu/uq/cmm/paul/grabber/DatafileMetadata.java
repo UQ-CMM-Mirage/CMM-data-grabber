@@ -19,9 +19,8 @@
 
 package au.edu.uq.cmm.paul.grabber;
 
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.IOException;
-import java.security.MessageDigest;
 import java.util.Date;
 
 import javax.persistence.Entity;
@@ -178,16 +177,7 @@ public class DatafileMetadata {
      */
     private String calculateDatafileHash() {
         try {
-            try (FileInputStream fis = new FileInputStream(capturedFilePathname)) {
-                MessageDigest md = HashUtils.createDigester();
-                byte[] data = new byte[8192];
-                int count;
-                while ((count = fis.read(data)) > 0) {
-                    md.update(data, 0, count);
-                }
-                byte[] hash = md.digest();
-                return HashUtils.bytesToHexString(hash);
-            }
+            return HashUtils.fileHash(new File(capturedFilePathname));
         } catch (IOException ex) {
             LOG.debug("Problem reading datafile", ex);
             return null;

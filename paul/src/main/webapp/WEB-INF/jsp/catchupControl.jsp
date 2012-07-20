@@ -162,6 +162,19 @@
 									in S:</td>
 								<td>${analysis.problems.fileSize2}
 							</tr>
+							<tr>
+								<td>Grabbed Datafile hash doesn't match recorded hash</td>
+								<td>${analysis.problems.fileHash}
+							</tr>
+							<tr>
+								<td>Grabbed Datafile hash doesn't match current file hash
+									in S:</td>
+								<td>${analysis.problems.fileHash2}
+							</tr>
+							<tr>
+								<td>Unexpected IO Errors</td>
+								<td>${analysis.problems.ioError}
+							</tr>
 						</tbody>
 					</table>
 				</div>
