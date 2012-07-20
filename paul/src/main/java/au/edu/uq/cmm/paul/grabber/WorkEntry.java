@@ -37,6 +37,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.servlet.jsp.tagext.TryCatchFinally;
+
 import org.apache.commons.io.FilenameUtils;
 import org.codehaus.jackson.JsonGenerationException;
 import org.slf4j.Logger;
@@ -399,7 +401,8 @@ class WorkEntry implements Runnable {
         return target;
     }
 
-    private File generateUniqueFile(String suffix, boolean regrabbing) {
+    private File generateUniqueFile(String suffix, boolean regrabbing) 
+            throws IOException {
         String template = regrabbing ? "regrabbed-%d-%d-%d%s" : "file-%d-%d-%d%s";
         long threadId = Thread.currentThread().getId();
         for (int i = 0; i < RETRY; i++) {
@@ -410,36 +413,46 @@ class WorkEntry implements Runnable {
                 return file;
             }
         }
-        throw new PaulException(RETRY + " attempts to generate a unique filename failed!");
+        throw new IOException(
+                RETRY + " attempts to generate a unique filename failed!");
     }
 
-    public void commitRegrabbedDataset(DatasetMetadata dataset) throws IOException {
-        String metadataFile = renameRegrabbedFile(dataset.getMetadataFilePathname());
-        dataset.setMetadataFilePathname(metadataFile);
-        for (DatafileMetadata datafile : dataset.getDatafiles()) {
-            String datafileFile = renameRegrabbedFile(datafile.getCapturedFilePathname());
-            datafile.setCapturedFilePathname(datafileFile);
+    public void commitRegrabbedDataset(DatasetMetadata dataset) 
+            throws IOException {
+        DatasetMetadata originalDataset = queueManager.fetchDataset(dataset.getId());
+        dataset.setMetadataFilePathname(originalDataset.getMetadataFilePathname());
+        // Delete the original dataset's captured files
+        for (DatafileMetadata of : originalDataset.getDatafiles()) {
+            new File(of.getCapturedFilePathname()).delete();
+        }
+        // Rename the new dataset's captured files
+        for (DatafileMetadata f : dataset.getDatafiles()) {
+            renameGrabbedDatafile(f);
         }
         // This will save the updated dataset metadata to the database and file system.
         queueManager.addEntry(dataset);
     }
     
-    private String renameRegrabbedFile(String filePath) throws IOException {
-        File file = new File(filePath);
-        String name = file.getName();
-        if (!name.startsWith("regrabbed")) {
-            throw new PaulException("Not a regrabbed file: " + file.toString());
+    private void renameGrabbedDatafile(DatafileMetadata datafile) throws IOException {
+        File currentFile = new File(datafile.getCapturedFilePathname());
+        String extension = FilenameUtils.getExtension(
+                datafile.getCapturedFilePathname());
+        if (extension.isEmpty()) {
+            extension = "." + extension;
         }
         for (int i = 0; i < RETRY; i++) {
-            File newFile = generateUniqueFile(FilenameUtils.getExtension(name), false);
-            if (!file.renameTo(newFile)) {
+            File newFile = generateUniqueFile(extension, false);
+            if (!currentFile.renameTo(newFile)) {
                 if (!newFile.exists()) {
-                    throw new IOException("Rename of " + file + " to " + newFile + " failed");
+                    throw new IOException(
+                            "Unable to rename " + currentFile + " to " + newFile);
                 }
             } else {
-                return newFile.toString();
+                datafile.setCapturedFilePathname(newFile.toString());
+                return;
             }
         }
-        throw new PaulException(RETRY + " attempts to rename file failed!");
+        throw new IOException(RETRY + " attempts to rename file failed!");
     }
+    
 }

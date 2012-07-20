@@ -125,7 +125,11 @@ public class QueueManager {
         EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
-            em.persist(dataset);
+            if (dataset.getId() == null) {
+                em.persist(dataset);
+            } else {
+                em.merge(dataset);
+            }
             em.getTransaction().commit();
         } finally {
             em.close();
@@ -270,6 +274,21 @@ public class QueueManager {
             LOG.info("File " + pathname + " deleted from queue area");
         } else {
             LOG.info("File " + pathname + " not deleted from queue area");
+        }
+    }
+    
+    public DatasetMetadata fetchDataset(long id) {
+        EntityManager entityManager = createEntityManager();
+        try {
+            TypedQuery<DatasetMetadata> query = entityManager.createQuery(
+                    "from DatasetMetadata d where d.id = :id", 
+                    DatasetMetadata.class);
+            query.setParameter("id", id);
+            return query.getSingleResult();
+        } catch (NoResultException ex) {
+            return null;
+        } finally {
+            entityManager.close();
         }
     }
 

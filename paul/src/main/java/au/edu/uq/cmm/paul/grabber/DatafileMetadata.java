@@ -34,6 +34,8 @@ import javax.persistence.UniqueConstraint;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.hibernate.annotations.GenericGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import au.edu.uq.cmm.paul.PaulException;
 
@@ -48,6 +50,8 @@ import au.edu.uq.cmm.paul.PaulException;
 @Table(name = "DATAFILE_METADATA",
         uniqueConstraints=@UniqueConstraint(columnNames={"capturedFilePathname"}))
 public class DatafileMetadata {
+    private static final Logger LOG = LoggerFactory.getLogger(DatafileMetadata.class);
+    
     private String sourceFilePathname;
     private String facilityFilePathname;
     private Date captureTimestamp;
@@ -169,6 +173,10 @@ public class DatafileMetadata {
         setDatafileHash(calculateDatafileHash());
     }
 
+    /**
+     * Calculate the hash based on the captured file content.
+     * @return the hash, or null if the captured file is missing.
+     */
     private String calculateDatafileHash() {
         try {
             try (FileInputStream fis = new FileInputStream(capturedFilePathname)) {
@@ -182,7 +190,8 @@ public class DatafileMetadata {
                 return HashUtils.bytesToHexString(hash);
             }
         } catch (IOException ex) {
-            throw new PaulException("Problem reading datafile", ex);
+            LOG.debug("Problem reading datafile", ex);
+            return null;
         } 
     }
 

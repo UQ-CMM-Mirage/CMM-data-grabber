@@ -911,7 +911,7 @@ public class WebUIController implements ServletContextAware {
                 model.addAttribute("message", "Dataset files were apparently changed");
                 return "failed";
             } else {
-                dsr.commitRegrabbedDataset(grabbedDataset, regrabNew.equalsIgnoreCase("yes"));
+                dsr.commitRegrabbedDataset(dataset, grabbedDataset, regrabNew.equalsIgnoreCase("yes"));
                 model.addAttribute("message", "Dataset regrab succeeded");
                 return "ok";
             }
@@ -930,13 +930,13 @@ public class WebUIController implements ServletContextAware {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return null;
         }
-        DatasetMetadata metadata = fetchMetadata(id);
-        if (metadata == null) {
+        DatasetMetadata dataset = getQueueManager().fetchDataset(id);
+        if (dataset == null) {
             LOG.debug("Rejected request for unknown entry");
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return null;
         }
-        return metadata;
+        return dataset;
     }
     
     @RequestMapping(value="/files/{fileName:.+}", method=RequestMethod.GET)
@@ -1014,21 +1014,6 @@ public class WebUIController implements ServletContextAware {
                     "from DatafileMetadata d where d.capturedFilePathname = :pathName", 
                     DatafileMetadata.class);
             query.setParameter("pathName", file.getAbsolutePath());
-            return query.getSingleResult();
-        } catch (NoResultException ex) {
-            return null;
-        } finally {
-            entityManager.close();
-        }
-    }
-
-    private DatasetMetadata fetchMetadata(long id) {
-        EntityManager entityManager = createEntityManager();
-        try {
-            TypedQuery<DatasetMetadata> query = entityManager.createQuery(
-                    "from DatasetMetadata d where d.id = :id", 
-                    DatasetMetadata.class);
-            query.setParameter("id", id);
             return query.getSingleResult();
         } catch (NoResultException ex) {
             return null;

@@ -81,9 +81,11 @@ public class DatasetRegrabber extends AbstractFileGrabber {
         return entry.grabFiles(!newDataset);
     }
     
-    public void commitRegrabbedDataset(DatasetMetadata dataset, boolean newDataset) throws IOException {
+    public void commitRegrabbedDataset(DatasetMetadata dataset, 
+            DatasetMetadata grabbedDataset, boolean newDataset) throws IOException {
         if (!newDataset) {
-            entry.commitRegrabbedDataset(dataset);
+            grabbedDataset.setId(dataset.getId());
+            entry.commitRegrabbedDataset(grabbedDataset);
         }
     }
 }
