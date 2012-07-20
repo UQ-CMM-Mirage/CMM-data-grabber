@@ -436,7 +436,7 @@ class WorkEntry implements Runnable {
         File currentFile = new File(datafile.getCapturedFilePathname());
         String extension = FilenameUtils.getExtension(
                 datafile.getCapturedFilePathname());
-        if (extension.isEmpty()) {
+        if (!extension.isEmpty()) {
             extension = "." + extension;
         }
         for (int i = 0; i < RETRY; i++) {
