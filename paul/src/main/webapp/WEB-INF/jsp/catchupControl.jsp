@@ -6,12 +6,12 @@
 <html lang="en">
 <head>
 <%@ include file="/WEB-INF/jsp/commonHead.jspFrag"%>
-<title>Data Grabber Catchup Control</title>
+<title>Data Grabber Queue Diagnostics</title>
 </head>
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container-fluid">
-		<div class="row-fluid"><h1>Catchup Control for ${facilityName}</h1></div>
+		<div class="row-fluid"><h1>Queue Diagnostics for ${facilityName}</h1></div>
 		<div class="row-fluid">
 			Grabber status : ${status.status} <br> 
 			Grabber message : ${status.message} <br> 
@@ -258,7 +258,7 @@
 							<pt:missingDatasets fromQueue="false">
 								<tr>
 									<td>${timespans}</td>
-									<td><a href="/paul/datasets/">Dataset #${missing.id}</a>
+									<td><a href="/paul/datasets/${missing.id}">Dataset #${missing.id}</a>
 										- ${missing.sourceFilePathnameBase} | <fmt:formatDate
 											pattern="yyyy-MM-dd'T'HH:mm:ss"
 											value="${missing.lastFileTimestamp}" /></td>
