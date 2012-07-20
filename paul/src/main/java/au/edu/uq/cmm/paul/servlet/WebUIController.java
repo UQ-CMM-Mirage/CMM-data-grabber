@@ -73,7 +73,7 @@ import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.grabber.Analyser;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
-import au.edu.uq.cmm.paul.grabber.DatasetRegrabber;
+import au.edu.uq.cmm.paul.grabber.DatasetGrabber;
 import au.edu.uq.cmm.paul.queue.AtomFeed;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.queue.QueueManager.Slice;
@@ -880,7 +880,7 @@ public class WebUIController implements ServletContextAware {
             throws IOException {
         DatasetMetadata dataset = findDataset(entry, response);
         if (dataset != null) {
-            DatasetMetadata grabbedMetadata = new DatasetRegrabber(services, dataset).getCandidateDataset();
+            DatasetMetadata grabbedMetadata = new DatasetGrabber(services, dataset).getCandidateDataset();
             grabbedMetadata.updateDatasetHash();
             dataset.updateDatasetHash();
             model.addAttribute("oldEntry", dataset);
@@ -892,9 +892,25 @@ public class WebUIController implements ServletContextAware {
         }
     }
     
+    @RequestMapping(value="/datasets/", params={"grab"},
+            method=RequestMethod.POST)
+    public String grab(Model model, 
+            @RequestParam String pathnameBase,
+            @RequestParam String facilityName,
+            HttpServletRequest request, HttpServletResponse response) 
+                    throws IOException, InterruptedException {
+        model.addAttribute("returnTo", inferReturnTo(request));
+        Facility facility = lookupFacilityByName(facilityName);
+        DatasetGrabber dsr = new DatasetGrabber(services, new File(pathnameBase), facility);
+        DatasetMetadata grabbedDataset = dsr.grabDataset();
+        grabbedDataset.updateDatasetHash();
+        model.addAttribute("message", "Dataset grab succeeded");
+        return "ok";
+    }
+
     @RequestMapping(value="/datasets/{entry:.+}", 
             method=RequestMethod.POST)
-    public String regrabNew(@PathVariable String entry, Model model, 
+    public String regrab(@PathVariable String entry, Model model, 
             @RequestParam String hash,
             @RequestParam String regrabNew,
             HttpServletRequest request, HttpServletResponse response) 
@@ -902,7 +918,7 @@ public class WebUIController implements ServletContextAware {
         DatasetMetadata dataset = findDataset(entry, response);
         if (dataset != null) {
             model.addAttribute("returnTo", inferReturnTo(request));
-            DatasetRegrabber dsr = new DatasetRegrabber(services, dataset);
+            DatasetGrabber dsr = new DatasetGrabber(services, dataset);
             DatasetMetadata grabbedDataset = dsr.regrabDataset(regrabNew.equalsIgnoreCase("yes"));
             grabbedDataset.updateDatasetHash();
             if (!hash.equals(grabbedDataset.getCombinedDatafileHash())) {

@@ -219,6 +219,8 @@
 										<form action="/paul/datasets/" method=post>
 											<input type="hidden" name="pathnameBase" 
 												   value="${missing.sourceFilePathnameBase}">
+										    <input type="hidden" name="facilityName"
+										    	   value="${facilityName}">
 											<button type="submit" name="grab">Grab Dataset</button>
 										</form>
 									</td>
@@ -236,7 +238,7 @@
 							<tr>
 								<th class="span1">Timespans</th>
 								<th class="span4">Missing Dataset Details</th>
-								<th class="span2">&nbsp;</th>
+								<th class="span1">&nbsp;</th>
 							</tr>
 						</thead>
 						<tbody>

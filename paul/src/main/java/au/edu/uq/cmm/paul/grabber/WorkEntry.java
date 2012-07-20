@@ -202,6 +202,7 @@ class WorkEntry implements Runnable {
 
     public DatasetMetadata grabFiles(boolean regrabbing) 
             throws InterruptedException, IOException {
+        LOG.debug("WorkEntry.grabFiles has " + files.size() + " files to grab");
         // Prepare for grabbing
         FacilitySession session = statusManager.getLoginDetails(
                 facility.getFacilityName(), timestamp.getTime());
@@ -318,7 +319,7 @@ class WorkEntry implements Runnable {
 
     private void doGrabFile(GrabbedFile file, FileInputStream is, boolean regrabbing) 
             throws InterruptedException, IOException {
-        LOG.debug("Start file grabbing");
+        LOG.debug("Start file grabbing for " + file.getFile());
         Date now = new Date();
         Date fileTimestamp = new Date(file.getFile().lastModified());
         String suffix = (file.getTemplate() == null) ?
@@ -327,7 +328,7 @@ class WorkEntry implements Runnable {
         file.setCopiedFile(copiedFile);
         file.setFileTimestamp(fileTimestamp);
         file.setCopyTimestamp(now);
-        LOG.debug("Done grabbing");
+        LOG.debug("Done grabbing "+ file.getFile() + " -> " + copiedFile);
     }
 
     private DatasetMetadata saveMetadata(Date now, FacilitySession session, boolean regrabbing)
