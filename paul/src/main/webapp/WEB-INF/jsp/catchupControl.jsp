@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
-<%@ taglib uri="/paulTags" prefix="pt"%>
 <%@ page session="false"%>
 <html lang="en">
 <head>
@@ -225,25 +224,22 @@
 					</table>
 				</div>
 		</c:if>
-		<c:if test="${analysis.all.missingFromFolder.size + analysis.all.missingFromDatabase.size > 0}">
+		<c:if test="${analysis.all.missingFromFolderGrouped.size + analysis.all.missingFromDatabaseInRange.size > 0}">
 			<div class="row-fluid"><h2>Missing Datasets (between LWM and HWM)</h2></div>
 			<div class="row-fluid">
-				<div class="span6">
+				<div class="span4">
 					<table class="table table-striped table-condensed">
 						<thead>
 							<tr>
 								<th colspan="2">Datasets missing from Queues</th>
 							</tr>
 							<tr>
-								<th class="span1">Timespans</th>
 								<th class="span4">Missing Dataset Details</th>
-								<th class="span1">&nbsp;</th>
 							</tr>
 						</thead>
 						<tbody>
-							<pt:missingDatasets fromQueue="true">
+							<c:forEach var="missing" items="${analysis.all.missingFromDatabaseInRange}">
 								<tr>
-									<td>${timespans}</td>
 									<td>${missing.sourceFilePathnameBase} | <fmt:formatDate
 											pattern="yyyy-MM-dd'T'HH:mm:ss"
 											value="${missing.lastFileTimestamp}" />
@@ -262,51 +258,63 @@
 										</form>
 									</td>
 								</tr>
-							</pt:missingDatasets>
+							</c:forEach>
 						</tbody>
 					</table>
 				</div>
-				<div class="span6">
+				<div class="span8">
 					<table class="table table-striped table-condensed">
 						<thead>
 							<tr>
 								<th colspan="2">Datasets missing from S:</th>
 							</tr>
 							<tr>
-								<th class="span1">Timespans</th>
-								<th class="span3">Missing Dataset Details</th>
-								<th class="span2">&nbsp;</th>
+								<th class="span5">Missing Dataset Details</th>
+								<th class="span3">&nbsp;</th>
 							</tr>
 						</thead>
 						<tbody>
-							<pt:missingDatasets fromQueue="false">
+							<c:forEach var="group" items="${analysis.all.missingFromFolderGrouped}">
+							    <c:forEach var="inDatabase" items="${group.allInDatabase}">
 								<tr>
-									<td>${timespans}</td>
-									<td><a href="/paul/datasets/${missing.id}">Dataset #${missing.id}</a>
-										- ${missing.sourceFilePathnameBase} <br> <fmt:formatDate
+									<td><a href="/paul/datasets/${inDatabase.id}">Dataset #${inDatabase.id}</a>
+										- ${inDatabase.sourceFilePathnameBase} <br> <fmt:formatDate
 											pattern="yyyy-MM-dd'T'HH:mm:ss"
-											value="${missing.lastFileTimestamp}" /></td>
-									<td>
-										<form class="well,form-horizontal"
-											  style="margin: 0px 0px 0px"
-											  action="/paul/datasets/${missing.id}" method=post>
-											<input type="hidden" name="returnTo" 
-												   value="/paul/queueDiagnostics/${facilityName}">
-											<button class="btn" type="submit" name="delete">Delete</button>
-											<button class="btn" type="submit" name="archive">Archive</button>
-										</form>
+											value="${inDatabase.captureTimestamp}" />
 									</td>
+									<c:choose>
+										<c:when test="${group.matched != inDatabase}">	
+											<td>
+												<form class="well,form-horizontal"
+													  style="margin: 0px 0px 0px"
+													  action="/paul/datasets/${inDatabase.id}" method=post>
+													<input type="hidden" name="returnTo" 
+														   value="/paul/queueDiagnostics/${facilityName}">
+													<button class="btn" type="button"
+														    onClick="document.location = '/paul/datasets/${inDatabase.id}' + 
+														             '?regrab&returnTo/paul/queueDiagnostics/${facilityName}'">
+														Regrab Dataset
+													</button>
+													<button class="btn" type="submit" name="delete">Delete</button>
+													<button class="btn" type="submit" name="archive">Archive</button>
+												</form>
+											</td>
+										</c:when>
+										<c:otherwise>
+											<td>
+												Matched!
+											</td>
+										</c:otherwise>
+									</c:choose>
 								</tr>
-							</pt:missingDatasets>
+								</c:forEach>
+							</c:forEach>
 						</tbody>
 					</table>
 				</div>
 			</div>
 		</c:if>
-		<div class="row-fluid">
-			<h2>Actions</h2>
-		</div>
-
+		<div class="row-fluid"><h2>Actions</h2></div>
 		<form method="post">
 			<div class="row-fluid">
 				<c:set var="isohwm">

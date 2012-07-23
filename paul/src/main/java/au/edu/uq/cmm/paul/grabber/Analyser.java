@@ -68,15 +68,15 @@ public class Analyser extends AbstractFileGrabber {
         private final int totalMatching;
         private final BeanSetWrapper<DatasetMetadata> missingFromDatabase;
         private final BeanSetWrapper<DatasetMetadata> missingFromFolder;
-        private final BeanSetWrapper<DatasetMetadata> missingFromDatabaseTimeOrdered;
-        private final BeanSetWrapper<DatasetMetadata> missingFromFolderTimeOrdered;
+        private final BeanSetWrapper<DatasetMetadata> missingFromDatabaseInRange;
+        private final BeanSetWrapper<Group> missingFromFolderGrouped;
 
         public Statistics(int totalInFolder, int multipleInFolder,
                 int totalInDatabase, int multipleInDatabase, int totalMatching,
                 SortedSet<DatasetMetadata> missingFromDatabase,
                 SortedSet<DatasetMetadata> missingFromFolder,
-                SortedSet<DatasetMetadata> missingFromDatabaseTimeOrdered,
-                SortedSet<DatasetMetadata> missingFromFolderTimeOrdered) {
+                SortedSet<DatasetMetadata> missingFromDatabaseInRange,
+                SortedSet<Group> missingFromFolderTimeOrdered) {
             super();
             this.totalInFolder = totalInFolder;
             this.multipleInFolder = multipleInFolder;
@@ -87,10 +87,10 @@ public class Analyser extends AbstractFileGrabber {
                     new BeanSetWrapper<DatasetMetadata>(missingFromDatabase);
             this.missingFromFolder = 
                     new BeanSetWrapper<DatasetMetadata>(missingFromFolder);
-            this.missingFromDatabaseTimeOrdered = 
-                    new BeanSetWrapper<DatasetMetadata>(missingFromDatabaseTimeOrdered);
-            this.missingFromFolderTimeOrdered =
-                    new BeanSetWrapper<DatasetMetadata>(missingFromFolderTimeOrdered);
+            this.missingFromDatabaseInRange = 
+                    new BeanSetWrapper<DatasetMetadata>(missingFromDatabaseInRange);
+            this.missingFromFolderGrouped =
+                    new BeanSetWrapper<Group>(missingFromFolderTimeOrdered);
         }
 
         public final int getTotalInFolder() {
@@ -129,12 +129,12 @@ public class Analyser extends AbstractFileGrabber {
             return missingFromFolder;
         }
 
-        public final BeanSetWrapper<DatasetMetadata> getMissingFromDatabaseTimeOrdered() {
-            return missingFromDatabaseTimeOrdered;
+        public final BeanSetWrapper<DatasetMetadata> getMissingFromDatabaseInRange() {
+            return missingFromDatabaseInRange;
         }
 
-        public final BeanSetWrapper<DatasetMetadata> getMissingFromFolderTimeOrdered() {
-            return missingFromFolderTimeOrdered;
+        public final BeanSetWrapper<Group> getMissingFromFolderGrouped() {
+            return missingFromFolderGrouped;
         }
     }
     
@@ -231,6 +231,51 @@ public class Analyser extends AbstractFileGrabber {
 
         public final List<Problem> getProblems() {
             return problems;
+        }
+    }
+    
+    public static class Group implements Comparable<Group> {
+        private final String basePathname;
+        private DatasetMetadata inFolder;
+        private DatasetMetadata matched;
+        private List<DatasetMetadata> allInDatabase = new ArrayList<DatasetMetadata>();
+        
+        public Group(String basePathname) {
+            super();
+            this.basePathname = basePathname;
+        }
+
+        public final String getBasePathname() {
+            return basePathname;
+        }
+
+        public final DatasetMetadata getInFolder() {
+            return inFolder;
+        }
+
+        public final DatasetMetadata getMatched() {
+            return matched;
+        }
+
+        public final List<DatasetMetadata> getAllInDatabase() {
+            return allInDatabase;
+        }
+
+        public final void setInFolder(DatasetMetadata inFolder) {
+            this.inFolder = inFolder;
+        }
+
+        public final void setMatched(DatasetMetadata matched) {
+            this.matched = matched;
+        }
+        
+        public final void addInDatabase(DatasetMetadata inDatabase) {
+            this.allInDatabase.add(inDatabase);
+        }
+
+        @Override
+        public int compareTo(Group o) {
+            return basePathname.compareTo(o.getBasePathname());
         }
     }
     
@@ -528,23 +573,94 @@ public class Analyser extends AbstractFileGrabber {
         TreeSet<DatasetMetadata> missingFromDatabase = buildRemainderSet(
                 ORDER_BY_BASE_PATH_AND_TIME, predicate, inFolder, matchedInFolder);
         TreeSet<DatasetMetadata> missingFromFolder = buildRemainderSet(
-                ORDER_BY_ID, predicate, inDatabase, matchedInDatabase);
+                ORDER_BY_BASE_PATH_AND_TIME, predicate, inDatabase, matchedInDatabase);
         
-        TreeSet<DatasetMetadata> missingFromDatabaseTimeOrdered = 
-                new TreeSet<DatasetMetadata>(ORDER_BY_TIME_AND_BASE_PATH);
-        missingFromDatabaseTimeOrdered.addAll(missingFromDatabase);
-        
-        TreeSet<DatasetMetadata> missingFromFolderTimeOrdered = 
-                new TreeSet<DatasetMetadata>(ORDER_BY_TIME_AND_BASE_PATH);
-        missingFromFolderTimeOrdered.addAll(missingFromFolder);
+        TreeSet<DatasetMetadata> missingFromDatabaseInRange = rangeFilter(missingFromDatabase);
+        TreeSet<Group> missingFromFolderGrouped = groupDatasets(
+                missingFromFolder, inFolder, inDatabase);
 
         Statistics stats = new Statistics(totalInFolder, multipleInFolder, 
                 totalInDatabase, multipleInDatabase, totalMatching, 
                 missingFromDatabase, missingFromFolder, 
-                missingFromDatabaseTimeOrdered, missingFromFolderTimeOrdered);
+                missingFromDatabaseInRange, missingFromFolderGrouped);
         return stats;
     }
     
+    private TreeSet<DatasetMetadata> rangeFilter(TreeSet<DatasetMetadata> missingFromDatabase) {
+        TreeSet<DatasetMetadata>res = new TreeSet<DatasetMetadata>(ORDER_BY_TIME_AND_BASE_PATH);
+        for (DatasetMetadata d : missingFromDatabase) {
+            if ((lwm != null && d.getFirstFileTimestamp().getTime() < lwm.getTime()) ||
+                (hwm != null && d.getLastFileTimestamp().getTime() > hwm.getTime())) {
+                continue;
+            }
+            res.add(d);
+        }
+        return res;
+    }
+
+    private TreeSet<Group> groupDatasets(
+            TreeSet<DatasetMetadata> missingFromFolder,
+            Collection<DatasetMetadata> inFolder,
+            Collection<DatasetMetadata> inDatabase) {
+        TreeSet<Group> res = new TreeSet<Group>();
+        PushbackIterator<DatasetMetadata> dit = 
+                new PushbackIterator<DatasetMetadata>(inDatabase.iterator());
+        PushbackIterator<DatasetMetadata> fit = 
+                new PushbackIterator<DatasetMetadata>(inFolder.iterator());
+        Group t = null;
+        for (DatasetMetadata d : missingFromFolder) {
+            if (t == null || !t.getBasePathname().equals(d.getFacilityFilePathnameBase())) {
+                t = new Group(d.getFacilityFilePathnameBase());
+                res.add(t);
+            }
+            t.addInDatabase(d);
+            t.setInFolder(getMatching(fit, t.getBasePathname()));
+            if (t.getInFolder() != null) { 
+                t.setMatched(getMatching(dit, t.getBasePathname(),
+                        t.getInFolder().getLastFileTimestamp()));
+            }
+            if (t.getMatched() != null) {
+                t.addInDatabase(t.getMatched());
+            }
+        }
+        return res;
+    }
+
+    private DatasetMetadata getMatching(PushbackIterator<DatasetMetadata> it,
+            String basePathname) {
+        while (it.hasNext()) {
+            DatasetMetadata d = it.next();
+            int cmp = d.getFacilityFilePathnameBase().compareTo(basePathname);
+            if (cmp == 0) {
+                return d;
+            } else if (cmp > 0) {
+                it.pushback(d);
+                return null;
+            }
+        }
+        return null;
+    }
+
+    private DatasetMetadata getMatching(PushbackIterator<DatasetMetadata> it,
+            String basePathname, Date timestamp) {
+        while (it.hasNext()) {
+            DatasetMetadata d = it.next();
+            int cmp = d.getFacilityFilePathnameBase().compareTo(basePathname);
+            if (cmp == 0) {
+                int cmp2 = Long.compare(d.getCaptureTimestamp().getTime(), timestamp.getTime());
+                if (cmp2 == 0) {
+                    return d;
+                } else if (cmp2 > 0) {
+                    return null;
+                }
+            } else if (cmp > 0) {
+                it.pushback(d);
+                return null;
+            }
+        }
+        return null;
+    }
+
     private void check(int test, DatasetMetadata f, DatasetMetadata d, 
             Collection<DatasetMetadata> inFolder, Collection<DatasetMetadata> inDatabase) {
 //        LOG.error("f is " + f + ", d is " + d + ", test is " + test);
