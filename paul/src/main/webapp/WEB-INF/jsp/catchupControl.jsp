@@ -211,6 +211,8 @@
 													<button class="btn" type="submit" name="regrab">
 														Regrab Dataset
 													</button>
+													<button class="btn" type="submit" name="delete">Delete</button>
+													<button class="btn" type="submit" name="archive">Archive</button>
 												</form>
 											</td>
 										</c:when>
