@@ -292,7 +292,7 @@
 														   value="/paul/queueDiagnostics/${facilityName}">
 													<button class="btn" type="button"
 														    onClick="document.location = '/paul/datasets/${inDatabase.id}' + 
-														             '?regrab&returnTo/paul/queueDiagnostics/${facilityName}'">
+														             '?regrab&returnTo=/paul/queueDiagnostics/${facilityName}'">
 														Regrab Dataset
 													</button>
 													<button class="btn" type="submit" name="delete">Delete</button>
