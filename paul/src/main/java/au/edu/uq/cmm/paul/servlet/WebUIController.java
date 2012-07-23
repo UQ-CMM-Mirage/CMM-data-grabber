@@ -906,7 +906,7 @@ public class WebUIController implements ServletContextAware {
         return "ok";
     }
 
-    @RequestMapping(value="/datasets/{entry:.+}", 
+    @RequestMapping(value="/datasets/{entry:.+}", params={"regrabNew"},
             method=RequestMethod.POST)
     public String regrab(@PathVariable String entry, Model model, 
             @RequestParam String hash,
@@ -927,6 +927,43 @@ public class WebUIController implements ServletContextAware {
             } else {
                 dsr.commitRegrabbedDataset(dataset, grabbedDataset, regrabNew.equalsIgnoreCase("yes"));
                 model.addAttribute("message", "Dataset regrab succeeded");
+                return "ok";
+            }
+        } else {
+            return null;
+        }
+    }
+
+    @RequestMapping(value="/datasets/{entry:.+}", params={"delete"},
+            method=RequestMethod.POST)
+    public String delete(@PathVariable String entry, Model model, 
+            HttpServletRequest request, HttpServletResponse response) 
+            throws IOException, InterruptedException {
+        return doDelete(entry, model, request, response, true);
+    }
+
+    @RequestMapping(value="/datasets/{entry:.+}", params={"archive"},
+            method=RequestMethod.POST)
+    public String archive(@PathVariable String entry, Model model, 
+            HttpServletRequest request, HttpServletResponse response) 
+            throws IOException, InterruptedException {
+        return doDelete(entry, model, request, response, false);
+    }
+
+    private String doDelete(String entry, Model model,
+            HttpServletRequest request, HttpServletResponse response, boolean delete)
+            throws IOException {
+        DatasetMetadata dataset = findDataset(entry, response);
+        if (dataset != null) {
+            model.addAttribute("returnTo", inferReturnTo(request));
+            QueueManager qm = getQueueManager();
+            int nosDeleted = qm.delete(new String[]{entry}, delete);
+            if (nosDeleted == 0) {
+                model.addAttribute("message", "Could not find that dataset");
+                return "failed";
+            } else {
+                model.addAttribute("message", "Dataset #" + entry + 
+                        (delete ? " deleted" : " archived"));
                 return "ok";
             }
         } else {

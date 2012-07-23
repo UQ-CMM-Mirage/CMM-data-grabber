@@ -272,8 +272,8 @@
 							</tr>
 							<tr>
 								<th class="span1">Timespans</th>
-								<th class="span4">Missing Dataset Details</th>
-								<th class="span1">&nbsp;</th>
+								<th class="span3">Missing Dataset Details</th>
+								<th class="span2">&nbsp;</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -281,7 +281,7 @@
 								<tr>
 									<td>${timespans}</td>
 									<td><a href="/paul/datasets/${missing.id}">Dataset #${missing.id}</a>
-										- ${missing.sourceFilePathnameBase} | <fmt:formatDate
+										- ${missing.sourceFilePathnameBase} <br> <fmt:formatDate
 											pattern="yyyy-MM-dd'T'HH:mm:ss"
 											value="${missing.lastFileTimestamp}" /></td>
 									<td>
@@ -290,9 +290,8 @@
 											  action="/paul/datasets/${missing.id}" method=post>
 											<input type="hidden" name="returnTo" 
 												   value="/paul/queueDiagnostics/${facilityName}">
-											<button class="btn" type="submit" name="delete">
-												Delete from Queue
-											</button>
+											<button class="btn" type="submit" name="delete">Delete</button>
+											<button class="btn" type="submit" name="archive">Archive</button>
 										</form>
 									</td>
 								</tr>
