@@ -36,6 +36,7 @@
 		<div class="row">
 			<form action="/paul/datasets/${oldEntry.id}" method=post>
 				<input type="hidden" name="hash" value="${newEntry.combinedDatafileHash}">
+				<input type="hidden" name="returnTo" value="${returnTo}">
 				<button type="submit" name="regrabNew" value="no">Update Existing Dataset</button>
 				<button type="submit" name="regrabNew" value="yes">Create New Dataset</button>
 			</form>

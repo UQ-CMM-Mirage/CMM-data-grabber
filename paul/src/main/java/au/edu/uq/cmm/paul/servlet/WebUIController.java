@@ -306,8 +306,7 @@ public class WebUIController implements ServletContextAware {
         return "ok";
     }
     
-    @RequestMapping(value="/facilities/{facilityName:.+}",
-            params={"sessionLog"})
+    @RequestMapping(value="/sessions/{facilityName:.+}")
     public String facilitySessions(@PathVariable String facilityName, Model model) 
             throws ConfigurationException {
         model.addAttribute("sessions", 
@@ -316,9 +315,8 @@ public class WebUIController implements ServletContextAware {
         return "facilitySessions";
     }
     
-    @RequestMapping(value="/facilities/{facilityName:.+}",
-            params={"analyse"})
-    public String facilityAnalyse(@PathVariable String facilityName, Model model,
+    @RequestMapping(value="/queueDiagnostics/{facilityName:.+}")
+    public String queueDiagnostics(@PathVariable String facilityName, Model model,
             @RequestParam(required=false) String hwmTimestamp, 
             @RequestParam(required=false) String lwmTimestamp) 
             throws ConfigurationException {

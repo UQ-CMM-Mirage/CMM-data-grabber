@@ -190,16 +190,34 @@
 						</thead>
 						<tbody>
 							<c:forEach items="${analysis.problems.problems}" var="problem">
-								<tr>
-									<td><a href="/paul/datasets/${problem.dataset.id}">${problem.dataset.id}</a></td>
+								<tr >
+									<c:choose>
+									    <c:when test="${empty prevId || prevId != problem.dataset.id}">
+									    	<td><a href="/paul/datasets/${problem.dataset.id}">
+									    		${problem.dataset.id}</a></td>
+										</c:when>
+										<c:otherwise><td>&nbsp;</td></c:otherwise>
+									</c:choose>
 									<td>${problem.type}</td>
 									<td>${problem.details}</td>
-									<td>
-										<form action="/paul/datasets/${problem.dataset.id}">
-											<button type="submit" name="regrab">Regrab Dataset</button>
-										</form>
-									</td>
+									<c:choose>
+									    <c:when test="${empty prevId || prevId != problem.dataset.id}">
+									    	<td>
+												<form class="well,form-horizontal"
+													  style="margin: 0px 0px 0px"
+												      action="/paul/datasets/${problem.dataset.id}">
+													<input type="hidden" name="returnTo" 
+												   		   value="/paul/queueDiagnostics/${facilityName}">
+													<button class="btn" type="submit" name="regrab">
+														Regrab Dataset
+													</button>
+												</form>
+											</td>
+										</c:when>
+										<c:otherwise><td>&nbsp;</td></c:otherwise>
+									</c:choose>
 								</tr>
+								<c:set var="prevId" value="${problem.dataset.id}"/>
 							</c:forEach>
 						</tbody>
 					</table>
@@ -229,12 +247,16 @@
 											value="${missing.lastFileTimestamp}" />
 									</td>
 									<td>
-										<form action="/paul/datasets/" method=post>
+										<form class="well,form-horizontal"
+											  style="margin: 0px 0px 0px"
+											  action="/paul/datasets/" method=post>
 											<input type="hidden" name="pathnameBase" 
 												   value="${missing.sourceFilePathnameBase}">
 										    <input type="hidden" name="facilityName"
 										    	   value="${facilityName}">
-											<button type="submit" name="grab">Grab Dataset</button>
+											<input type="hidden" name="returnTo" 
+												   value="/paul/queueDiagnostics/${facilityName}">
+											<button class="btn" type="submit" name="grab">Grab Dataset</button>
 										</form>
 									</td>
 								</tr>
@@ -263,8 +285,14 @@
 											pattern="yyyy-MM-dd'T'HH:mm:ss"
 											value="${missing.lastFileTimestamp}" /></td>
 									<td>
-										<form action="/paul/datasets/${missing.id}" method=post>
-											<button type="submit" name="delete">Delete from Queue</button>
+										<form class="well,form-horizontal"
+											  style="margin: 0px 0px 0px"
+											  action="/paul/datasets/${missing.id}" method=post>
+											<input type="hidden" name="returnTo" 
+												   value="/paul/queueDiagnostics/${facilityName}">
+											<button class="btn" type="submit" name="delete">
+												Delete from Queue
+											</button>
 										</form>
 									</td>
 								</tr>
