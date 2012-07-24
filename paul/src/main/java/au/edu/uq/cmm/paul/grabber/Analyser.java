@@ -36,7 +36,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.TypedQuery;
 
-import org.apache.commons.collections.IteratorUtils;
 import org.apache.commons.collections.Predicate;
 import org.apache.commons.collections.PredicateUtils;
 import org.slf4j.Logger;
@@ -61,80 +60,41 @@ public class Analyser extends AbstractFileGrabber {
     private static Logger LOG = LoggerFactory.getLogger(AbstractFileGrabber.class);
     
     public static class Statistics {
-        private final int totalInFolder;
-        private final int multipleInFolder;
-        private final int totalInDatabase;
-        private final int multipleInDatabase;
-        private final int totalMatching;
-        private final BeanSetWrapper<DatasetMetadata> missingFromDatabase;
-        private final BeanSetWrapper<DatasetMetadata> missingFromFolder;
-        private final BeanSetWrapper<DatasetMetadata> missingFromDatabaseInRange;
-        private final BeanSetWrapper<Group> missingFromFolderGrouped;
+        private final int datasetsInFolder;
+        private final int datasetsInDatabase;
+        private int groupsWithDuplicatesInDatabase;
+        private int datasetsUnmatchedInFolder;
+        private int groupsUnmatchedInDatabase;
 
-        public Statistics(int totalInFolder, int multipleInFolder,
-                int totalInDatabase, int multipleInDatabase, int totalMatching,
-                SortedSet<DatasetMetadata> missingFromDatabase,
-                SortedSet<DatasetMetadata> missingFromFolder,
-                SortedSet<DatasetMetadata> missingFromDatabaseInRange,
-                SortedSet<Group> missingFromFolderTimeOrdered) {
+        public Statistics(int datasetsInFolder, int datasetsInDatabase, 
+                int groupsWithDuplicatesInDatabase, int datasetsUnmatchedInFolder, 
+                int groupsUnmatchedInDatabase) {
             super();
-            this.totalInFolder = totalInFolder;
-            this.multipleInFolder = multipleInFolder;
-            this.totalInDatabase = totalInDatabase;
-            this.multipleInDatabase = multipleInDatabase;
-            this.totalMatching = totalMatching;
-            this.missingFromDatabase =
-                    new BeanSetWrapper<DatasetMetadata>(missingFromDatabase);
-            this.missingFromFolder = 
-                    new BeanSetWrapper<DatasetMetadata>(missingFromFolder);
-            this.missingFromDatabaseInRange = 
-                    new BeanSetWrapper<DatasetMetadata>(missingFromDatabaseInRange);
-            this.missingFromFolderGrouped =
-                    new BeanSetWrapper<Group>(missingFromFolderTimeOrdered);
+            this.datasetsInFolder = datasetsInFolder;
+            this.datasetsInDatabase = datasetsInDatabase;
+            this.groupsWithDuplicatesInDatabase = groupsWithDuplicatesInDatabase;
+            this.datasetsUnmatchedInFolder = datasetsUnmatchedInFolder;
+            this.groupsUnmatchedInDatabase = groupsUnmatchedInDatabase;
         }
 
-        public final int getTotalInFolder() {
-            return totalInFolder;
+        public final int getDatasetsInFolder() {
+            return datasetsInFolder;
         }
 
-        public final int getMultipleInFolder() {
-            return multipleInFolder;
+        public final int getDatasetsInDatabase() {
+            return datasetsInDatabase;
         }
 
-        public final int getTotalInDatabase() {
-            return totalInDatabase;
+        public final int getGroupsWithDuplicatesInDatabase() {
+            return groupsWithDuplicatesInDatabase;
         }
 
-        public final int getMultipleInDatabase() {
-            return multipleInDatabase;
+        public final int getDatasetsUnmatchedInFolder() {
+            return datasetsUnmatchedInFolder;
         }
 
-        public final int getTotalMatching() {
-            return totalMatching;
-        }
-        
-        public final int getTotalMissingFromDatabase() {
-            return missingFromDatabase.size();
-        }
-        
-        public final int getTotalMissingFromFolder() {
-            return missingFromFolder.size();
-        }
-
-        public final BeanSetWrapper<DatasetMetadata> getMissingFromDatabase() {
-            return missingFromDatabase;
-        }
-
-        public final BeanSetWrapper<DatasetMetadata> getMissingFromFolder() {
-            return missingFromFolder;
-        }
-
-        public final BeanSetWrapper<DatasetMetadata> getMissingFromDatabaseInRange() {
-            return missingFromDatabaseInRange;
-        }
-
-        public final BeanSetWrapper<Group> getMissingFromFolderGrouped() {
-            return missingFromFolderGrouped;
+        public final int getGroupsUnmatchedInDatabase() {
+            return groupsUnmatchedInDatabase;
         }
     }
     
@@ -237,7 +197,6 @@ public class Analyser extends AbstractFileGrabber {
     public static class Group implements Comparable<Group> {
         private final String basePathname;
         private DatasetMetadata inFolder;
-        private DatasetMetadata matched;
         private List<DatasetMetadata> allInDatabase = new ArrayList<DatasetMetadata>();
         
         public Group(String basePathname) {
@@ -253,20 +212,49 @@ public class Analyser extends AbstractFileGrabber {
             return inFolder;
         }
 
-        public final DatasetMetadata getMatched() {
-            return matched;
-        }
-
         public final List<DatasetMetadata> getAllInDatabase() {
             return allInDatabase;
         }
-
-        public final void setInFolder(DatasetMetadata inFolder) {
-            this.inFolder = inFolder;
+        
+        public final List<DecoratedDatasetMetadata> getAllDecorated() {
+            List<DecoratedDatasetMetadata> res = 
+                    new ArrayList<DecoratedDatasetMetadata>(allInDatabase.size() + 1);
+            if (inFolder != null) {
+                res.add(new DecoratedDatasetMetadata(inFolder, inFolder));
+            }
+            for (DatasetMetadata dataset : allInDatabase) {
+                res.add(new DecoratedDatasetMetadata(dataset, inFolder));
+            }
+            return res;
+        }
+        
+        public final boolean isUnmatchedInDatabase() {
+            if (inFolder == null) {
+                return true;
+            }
+            for (DatasetMetadata dataset : allInDatabase) {
+                if (!matches(dataset, inFolder)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
-        public final void setMatched(DatasetMetadata matched) {
-            this.matched = matched;
+        public final boolean isDuplicatesInDatabase() {
+            if (inFolder == null) {
+                return false;
+            }
+            int count = 0;
+            for (DatasetMetadata dataset : allInDatabase) {
+                if (matches(dataset, inFolder)) {
+                    count++;
+                }
+            }
+            return count > 1;
+        }
+        
+        public final void setInFolder(DatasetMetadata inFolder) {
+            this.inFolder = inFolder;
         }
         
         public final void addInDatabase(DatasetMetadata inDatabase) {
@@ -279,28 +267,40 @@ public class Analyser extends AbstractFileGrabber {
         }
     }
     
-    private static final Comparator<DatasetMetadata> ORDER_BY_ID =
-            new Comparator<DatasetMetadata>() {
-                @Override
-                public int compare(DatasetMetadata o1, DatasetMetadata o2) {
-                    return o1.getId().compareTo(o2.getId());
-                }
-    };
-    
-    private static final Comparator<DatasetMetadata> ORDER_BY_TIME_AND_BASE_PATH =
-            new Comparator<DatasetMetadata>() {
-                @Override
-                public int compare(DatasetMetadata o1, DatasetMetadata o2) {
-                    int res = Long.compare(
-                            o1.getLastFileTimestamp().getTime(), 
-                            o2.getLastFileTimestamp().getTime());
-                    if (res == 0) {
-                        res = o1.getFacilityFilePathnameBase().compareTo(
-                                o2.getFacilityFilePathnameBase());
-                    }
-                    return res;
-                }
-    };
+    public static class DecoratedDatasetMetadata extends DatasetMetadata {
+        private final DatasetMetadata inFolder;
+        private final boolean isInFolder;
+
+        public DecoratedDatasetMetadata(DatasetMetadata dataset, DatasetMetadata inFolder) {
+            super(dataset.getSourceFilePathnameBase(), 
+                    dataset.getFacilityFilePathnameBase(), 
+                    dataset.getMetadataFilePathname(),
+                    dataset.getUserName(), 
+                    dataset.getFacilityName(), 
+                    dataset.getFacilityId(), 
+                    dataset.getAccountName(), 
+                    dataset.getEmailAddress(),
+                    dataset.getCaptureTimestamp(), 
+                    dataset.getSessionUuid(), 
+                    dataset.getSessionStartTimestamp(), 
+                    dataset.getDatafiles());
+            this.inFolder = inFolder;
+            this.isInFolder = dataset == inFolder;
+            this.setId(dataset.getId());
+        }
+        
+        public boolean isInFolder() {
+            return isInFolder;
+        }
+        
+        public boolean isMatched() {
+            return inFolder != null && matches(inFolder, this);
+        }
+        
+        public boolean isUnmatched() {
+            return inFolder == null || !matches(inFolder, this);
+        }
+    }
     
     private static final Comparator<DatasetMetadata> ORDER_BY_BASE_PATH_AND_TIME =
             new Comparator<DatasetMetadata>() {
@@ -334,27 +334,12 @@ public class Analyser extends AbstractFileGrabber {
                     return res;
                 }
     };
-            
-    private static final Comparator<DatasetMetadata> ORDER_BY_BASE_PATH_AND_TIME_WITH_NULLS =
-            new Comparator<DatasetMetadata>() {
-                @Override
-                public int compare(DatasetMetadata o1, DatasetMetadata o2) {
-                    if (o1 == o2) {
-                        return 0;
-                    } else if (o1 == null) {
-                        return -1;
-                    } else if (o2 == null) {
-                        return 1;
-                    } else {
-                        return ORDER_BY_BASE_PATH_AND_TIME.compare(o1, o2);
-                    }
-                }
-    };
     
     private BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
     private FacilityStatusManager fsm;
     private EntityManagerFactory emf;
     private UncPathnameMapper uncNameMapper;
+    private List<Group> grouped;
     private Statistics all;
     private Statistics beforeLWM;
     private Statistics afterLWM;
@@ -383,19 +368,21 @@ public class Analyser extends AbstractFileGrabber {
         LOG.info("Analysing queues and folders for " + getFacility().getFacilityName());
         SortedSet<DatasetMetadata> inFolder = buildInFolderMetadata();
         SortedSet<DatasetMetadata> inDatabase = buildInDatabaseMetadata();
+        LOG.info("Grouping datasets for " + getFacility().getFacilityName());
+        grouped = groupDatasets(inFolder, inDatabase);
         LOG.info("Gathering statistics for " + getFacility().getFacilityName());
-        all = gatherStats(inFolder, inDatabase, PredicateUtils.truePredicate());
+        all = gatherStats(grouped, PredicateUtils.truePredicate());
         if (lwmTimestamp == null) {
             beforeLWM = null;
             afterLWM = null;
         } else {
             final long lwm = lwmTimestamp.getTime();
-            beforeLWM = gatherStats(inFolder, inDatabase, new Predicate() {
+            beforeLWM = gatherStats(grouped, new Predicate() {
                 public boolean evaluate(Object metadata) {
                     return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() <= lwm;
                 }
             });
-            afterLWM = gatherStats(inFolder, inDatabase, new Predicate() {
+            afterLWM = gatherStats(grouped, new Predicate() {
                 public boolean evaluate(Object metadata) {
                     return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() > lwm;
                 }
@@ -406,12 +393,12 @@ public class Analyser extends AbstractFileGrabber {
             afterHWM = null;
         } else {
             final long hwm = hwmTimestamp.getTime();
-            beforeHWM = gatherStats(inFolder, inDatabase, new Predicate() {
+            beforeHWM = gatherStats(grouped, new Predicate() {
                 public boolean evaluate(Object metadata) {
                     return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() <= hwm;
                 }
             });
-            afterHWM = gatherStats(inFolder, inDatabase, new Predicate() {
+            afterHWM = gatherStats(grouped, new Predicate() {
                 public boolean evaluate(Object metadata) {
                     return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() > hwm;
                 }
@@ -422,12 +409,12 @@ public class Analyser extends AbstractFileGrabber {
             afterQEnd = null;
         } else {
             final long qEnd = queueEndTimestamp.getTime();
-            beforeQEnd = gatherStats(inFolder, inDatabase, new Predicate() {
+            beforeQEnd = gatherStats(grouped, new Predicate() {
                 public boolean evaluate(Object metadata) {
                     return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() <= qEnd;
                 }
             });
-            afterQEnd = gatherStats(inFolder, inDatabase, new Predicate() {
+            afterQEnd = gatherStats(grouped, new Predicate() {
                 public boolean evaluate(Object metadata) {
                     return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() > qEnd;
                 }
@@ -500,200 +487,100 @@ public class Analyser extends AbstractFileGrabber {
         list.add(new Problem(dataset, datafile, type, details));
     }
 
-    private Statistics gatherStats(
-            Collection<DatasetMetadata> inFolder,
-            Collection<DatasetMetadata> inDatabase,
-            Predicate predicate) {
-        // datasets in the database that match a dataset in the folder (via filtered views)
-        TreeSet<DatasetMetadata> matchedInDatabase = 
-                new TreeSet<DatasetMetadata>(ORDER_BY_ID);
-        // datasets in the folder that match a dataset in the database (via filtered views)
-        TreeSet<DatasetMetadata> matchedInFolder = 
-                new TreeSet<DatasetMetadata>(ORDER_BY_BASE_PATH_AND_TIME);
-        @SuppressWarnings("unchecked")
-        Iterator<DatasetMetadata> fit = 
-                IteratorUtils.filteredIterator(inFolder.iterator(), predicate);
-        @SuppressWarnings("unchecked")
-        Iterator<DatasetMetadata> dit = 
-                IteratorUtils.filteredIterator(inDatabase.iterator(), predicate);
-        DatasetMetadata f = null;
-        DatasetMetadata fPrev = null;
-        DatasetMetadata d = null;
-        DatasetMetadata dPrev = null;
-        int totalInFolder = 0;
-        int totalInDatabase = 0;
-        int totalMatching = 0;
-        int multipleInFolder = 0;
-        int multipleInDatabase = 0;
-        if (fit.hasNext()) {
-            f = fit.next();
-            totalInFolder++;
-        }
-        if (dit.hasNext()) {
-            d = dit.next();
-            totalInDatabase++;
-        }
-        while (f != null || d != null) {
-            final boolean skipping = f == null || d == null;
-            final int test = ORDER_BY_BASE_PATH_AND_TIME_WITH_NULLS.compare(f, d);
-            if (test == 0) {
-                totalMatching++;
-                matchedInDatabase.add(d);
-                matchedInFolder.add(f);
-            }
-            check(test, f, d, inFolder, inDatabase);
-            if (test <= 0 || skipping) {
-                if (fit.hasNext()) {
-                    fPrev = f;
-                    f = fit.next();
-                    totalInFolder++;
-                    if (fPrev != null && 
-                            fPrev.getFacilityFilePathnameBase().equals(f.getFacilityFilePathnameBase())) {
-                        // We shouldn't see any of these ...
-                        multipleInFolder++;
-                    }
-                } else {
-                    f = null;
+    private Statistics gatherStats(List<Group> grouped, Predicate predicate) {
+        int datasetsInFolder = 0;
+        int datasetsInDatabase = 0;
+        int datasetsUnmatchedInFolder = 0;
+        int groupsUnmatchedInDatabase = 0;
+        int groupsWithDuplicatesInDatabase = 0;
+        for (Group group : grouped) {
+            if (group.getInFolder() != null && predicate.evaluate(group.getInFolder())) {
+                datasetsInFolder++;
+                if (group.getAllInDatabase().size() == 0) {
+                    datasetsUnmatchedInFolder++;
                 }
             }
-            if (test >= 0 || skipping) {
-                if (dit.hasNext()) {
-                    dPrev = d;
-                    d = dit.next();
-                    totalInDatabase++;
-                    if (dPrev != null && 
-                            dPrev.getFacilityFilePathnameBase().equals(d.getFacilityFilePathnameBase())) {
-                        multipleInDatabase++;
-                    }
-                } else {
-                    d = null;
+            int inDatabase = 0;
+            for (DatasetMetadata dataset : group.getAllInDatabase()) {
+                if (predicate.evaluate(dataset)) {
+                    inDatabase++;
                 }
-            } 
+            }
+            datasetsInDatabase += inDatabase;
+            if (inDatabase > 1) {
+                groupsWithDuplicatesInDatabase++;
+            }
+            for (DatasetMetadata dataset : group.getAllInDatabase()) {
+                if (predicate.evaluate(dataset)) {
+                    if (group.inFolder == null || !matches(group.inFolder, dataset))
+                    groupsUnmatchedInDatabase++;
+                }
+            }
         }
-        TreeSet<DatasetMetadata> missingFromDatabase = buildRemainderSet(
-                ORDER_BY_BASE_PATH_AND_TIME, predicate, inFolder, matchedInFolder);
-        TreeSet<DatasetMetadata> missingFromFolder = buildRemainderSet(
-                ORDER_BY_BASE_PATH_AND_TIME, predicate, inDatabase, matchedInDatabase);
-        
-        TreeSet<DatasetMetadata> missingFromDatabaseInRange = rangeFilter(missingFromDatabase);
-        TreeSet<Group> missingFromFolderGrouped = groupDatasets(
-                missingFromFolder, inFolder, inDatabase);
-
-        Statistics stats = new Statistics(totalInFolder, multipleInFolder, 
-                totalInDatabase, multipleInDatabase, totalMatching, 
-                missingFromDatabase, missingFromFolder, 
-                missingFromDatabaseInRange, missingFromFolderGrouped);
-        return stats;
+        return new Statistics(datasetsInFolder, datasetsInDatabase, 
+                groupsWithDuplicatesInDatabase, datasetsUnmatchedInFolder, groupsUnmatchedInDatabase);
     }
     
-    private TreeSet<DatasetMetadata> rangeFilter(TreeSet<DatasetMetadata> missingFromDatabase) {
-        TreeSet<DatasetMetadata>res = new TreeSet<DatasetMetadata>(ORDER_BY_TIME_AND_BASE_PATH);
-        for (DatasetMetadata d : missingFromDatabase) {
-            if ((lwm != null && d.getFirstFileTimestamp().getTime() < lwm.getTime()) ||
-                (hwm != null && d.getLastFileTimestamp().getTime() > hwm.getTime())) {
-                continue;
-            }
-            res.add(d);
-        }
-        return res;
+    private static boolean matches(DatasetMetadata d1, DatasetMetadata d2) {
+        return d1.getFacilityFilePathnameBase().equals(d2.getFacilityFilePathnameBase()) &&
+                d1.getLastFileTimestamp().getTime() == d2.getLastFileTimestamp().getTime();
     }
-
-    private TreeSet<Group> groupDatasets(
-            TreeSet<DatasetMetadata> missingFromFolder,
+    
+    private List<Group> groupDatasets(
             Collection<DatasetMetadata> inFolder,
             Collection<DatasetMetadata> inDatabase) {
-        TreeSet<Group> res = new TreeSet<Group>();
-        PushbackIterator<DatasetMetadata> dit = 
-                new PushbackIterator<DatasetMetadata>(inDatabase.iterator());
-        PushbackIterator<DatasetMetadata> fit = 
-                new PushbackIterator<DatasetMetadata>(inFolder.iterator());
-        Group t = null;
-        for (DatasetMetadata d : missingFromFolder) {
-            if (t == null || !t.getBasePathname().equals(d.getFacilityFilePathnameBase())) {
-                t = new Group(d.getFacilityFilePathnameBase());
-                res.add(t);
-            }
-            t.addInDatabase(d);
-            t.setInFolder(getMatching(fit, t.getBasePathname()));
-            if (t.getInFolder() != null) { 
-                t.setMatched(getMatching(dit, t.getBasePathname(),
-                        t.getInFolder().getLastFileTimestamp()));
-            }
-            if (t.getMatched() != null) {
-                t.addInDatabase(t.getMatched());
-            }
-        }
-        return res;
+        ArrayList<Group> grouped = createGroupsFromDatabase(inDatabase);
+        mergeGroupsFromFolder(grouped, inFolder);
+        return grouped;
     }
 
-    private DatasetMetadata getMatching(PushbackIterator<DatasetMetadata> it,
-            String basePathname) {
-        while (it.hasNext()) {
-            DatasetMetadata d = it.next();
-            int cmp = d.getFacilityFilePathnameBase().compareTo(basePathname);
-            if (cmp == 0) {
-                return d;
-            } else if (cmp > 0) {
-                it.pushback(d);
-                return null;
+    private ArrayList<Group> createGroupsFromDatabase(
+            Collection<DatasetMetadata> inDatabase) {
+        ArrayList<Group> grouped = new ArrayList<Group>();
+        
+        Group group = null;
+        for (DatasetMetadata dataset : inDatabase) {
+            String pathname = dataset.getFacilityFilePathnameBase();
+            if (group == null || !group.getBasePathname().equals(pathname)) {
+                group = new Group(pathname);
+                grouped.add(group);
             }
+            group.addInDatabase(dataset);
         }
-        return null;
+        return grouped;
     }
-
-    private DatasetMetadata getMatching(PushbackIterator<DatasetMetadata> it,
-            String basePathname, Date timestamp) {
-        while (it.hasNext()) {
-            DatasetMetadata d = it.next();
-            int cmp = d.getFacilityFilePathnameBase().compareTo(basePathname);
-            if (cmp == 0) {
-                int cmp2 = Long.compare(d.getCaptureTimestamp().getTime(), timestamp.getTime());
-                if (cmp2 == 0) {
-                    return d;
-                } else if (cmp2 > 0) {
-                    return null;
+    
+    private ArrayList<Group> mergeGroupsFromFolder(ArrayList<Group> grouped,
+            Collection<DatasetMetadata> inFolder) {
+        ArrayList<Group> res = new ArrayList<Group>();
+        Iterator<Group> git = grouped.iterator();
+        Iterator<DatasetMetadata> dit = inFolder.iterator();
+        Group group = git.hasNext() ? git.next() : null;
+        DatasetMetadata dataset = dit.hasNext() ? dit.next() : null;
+        while (group != null || dataset != null) {
+            if (dataset == null) {
+                res.add(group);
+                group = git.hasNext() ? git.next() : null;
+            } else if (group == null) {
+                Group newGroup = new Group(dataset.getFacilityFilePathnameBase());
+                newGroup.setInFolder(dataset);
+                res.add(newGroup);
+                dataset = dit.hasNext() ? dit.next() : null;
+            } else {
+                int cmp = group.getBasePathname().compareTo(dataset.getFacilityFilePathnameBase());
+                if (cmp == 0) {
+                    res.add(group);
+                    group.setInFolder(dataset);
+                    group = git.hasNext() ? git.next() : null;
+                    dataset = dit.hasNext() ? dit.next() : null;
+                } else if (cmp < 0) {
+                    res.add(group);
+                } else {
+                    Group newGroup = new Group(dataset.getFacilityFilePathnameBase());
+                    newGroup.setInFolder(dataset);
+                    res.add(newGroup);
                 }
-            } else if (cmp > 0) {
-                it.pushback(d);
-                return null;
             }
-        }
-        return null;
-    }
-
-    private void check(int test, DatasetMetadata f, DatasetMetadata d, 
-            Collection<DatasetMetadata> inFolder, Collection<DatasetMetadata> inDatabase) {
-//        LOG.error("f is " + f + ", d is " + d + ", test is " + test);
-//        if (f == null || d == null) {
-//            return;
-//        }
-//        if (test == 0) {
-//            if (!inFolder.contains(f)) {
-//                LOG.error("f is not in source");
-//            }
-//            if (!inDatabase.contains(d)) {
-//                LOG.error("d is not in source");
-//            }
-//        } else {
-//            if (inFolder.contains(f) && inDatabase.contains(d)) {
-//                LOG.error("f & d are both in sources");
-//            }
-//        }
-    }
-
-    private TreeSet<DatasetMetadata> buildRemainderSet(
-            Comparator<DatasetMetadata> comparator, Predicate predicate,
-            Collection<DatasetMetadata> include, Collection<DatasetMetadata> exclude) {
-        TreeSet<DatasetMetadata> res = new TreeSet<DatasetMetadata>(comparator);
-        for (@SuppressWarnings("unchecked") Iterator<DatasetMetadata> it = 
-                IteratorUtils.filteredIterator(include.iterator(), predicate);
-                it.hasNext(); ) {
-            res.add(it.next());
-        }
-        for (@SuppressWarnings("unchecked") Iterator<DatasetMetadata> it = 
-                IteratorUtils.filteredIterator(exclude.iterator(), predicate);
-                it.hasNext(); ) {
-            res.remove(it.next());
         }
         return res;
     }
@@ -738,6 +625,10 @@ public class Analyser extends AbstractFileGrabber {
     @Override
     protected void enqueueWorkEntry(WorkEntry entry) {
         queue.add(entry);
+    }
+
+    public final List<Group> getGrouped() {
+        return grouped;
     }
 
     public final Statistics getAll() {

@@ -34,96 +34,80 @@
 		<table class="table table-striped table-condensed">
 			<thead>
 				<tr><th class="span2">Timespan</th>
-					<th class="span2">All Datasets on S:</th>
-					<th class="span2">Duplicate Datasets on S:</th>
+					<th class="span2">All Datasets in "instrument data"</th>
+					<th class="span2">Unmatched Datasets on "instrument data"</th>
 					<th class="span2">All Datasets in queues</th>
-					<th class="span2">Duplicate Datasets in queues</th>
-					<th class="span2">Datasets in both places</th>
-					<th class="span2">Datasets missing from S:</th>
-					<th class="span2">Datasets missing from Queues</th>
+					<th class="span2">Dataset groups with multiples in queues</th>
+					<th class="span2">Unmatched Dataset groups in queues</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr>
 					<td>all</td>
-					<td>${analysis.all.totalInFolder}</td>
-					<td>${analysis.all.multipleInFolder}</td>
-					<td>${analysis.all.totalInDatabase}</td>
-					<td>${analysis.all.multipleInDatabase}</td>
-					<td>${analysis.all.totalMatching}</td>
-					<td>${analysis.all.missingFromFolder.size}</td>
-					<td>${analysis.all.missingFromDatabase.size}</td>
+					<td>${analysis.all.datasetsInFolder}</td>
+					<td>${analysis.all.datasetsUnmatchedInFolder}</td>
+					<td>${analysis.all.datasetsInDatabase}</td>
+					<td>${analysis.all.groupsWithDuplicatesInDatabase}</td>
+					<td>${analysis.all.groupsUnmatchedInDatabase}</td>
 				</tr>
 				<c:if test="${!empty analysis.beforeLWM}">
 					<tr>
 						<td>&#x2264; LWM</td>
-						<td>${analysis.beforeLWM.totalInFolder}</td>
-						<td>${analysis.beforeLWM.multipleInFolder}</td>
-						<td>${analysis.beforeLWM.totalInDatabase}</td>
-						<td>${analysis.beforeLWM.multipleInDatabase}</td>
-						<td>${analysis.beforeLWM.totalMatching}</td>
-						<td>${analysis.beforeLWM.missingFromFolder.size}</td>
-						<td>${analysis.beforeLWM.missingFromDatabase.size}</td>
+						<td>${analysis.beforeLWM.datasetsInFolder}</td>
+						<td>${analysis.beforeLWM.datasetsUnmatchedInFolder}</td>
+						<td>${analysis.beforeLWM.datasetsInDatabase}</td>
+						<td>${analysis.beforeLWM.groupsWithDuplicatesInDatabase}</td>
+						<td>${analysis.beforeLWM.groupsUnmatchedInDatabase}</td>
 					</tr>
 				</c:if>
 				<c:if test="${!empty analysis.afterLWM}">
 					<tr>
 						<td>&gt; LWM</td>
-						<td>${analysis.afterLWM.totalInFolder}</td>
-						<td>${analysis.afterLWM.multipleInFolder}</td>
-						<td>${analysis.afterLWM.totalInDatabase}</td>
-						<td>${analysis.afterLWM.multipleInDatabase}</td>
-						<td>${analysis.afterLWM.totalMatching}</td>
-						<td>${analysis.afterLWM.missingFromFolder.size}</td>
-						<td>${analysis.afterLWM.missingFromDatabase.size}</td>
+						<td>${analysis.afterLWM.datasetsInFolder}</td>
+						<td>${analysis.afterLWM.datasetsUnmatchedInFolder}</td>
+						<td>${analysis.afterLWM.datasetsInDatabase}</td>
+						<td>${analysis.afterLWM.groupsWithDuplicatesInDatabase}</td>
+						<td>${analysis.afterLWM.groupsUnmatchedInDatabase}</td>
 					</tr>
 				</c:if>
 				<c:if test="${!empty analysis.beforeHWM}">
 					<tr>
 						<td>&#x2264; HWM</td>
-						<td>${analysis.beforeHWM.totalInFolder}</td>
-						<td>${analysis.beforeHWM.multipleInFolder}</td>
-						<td>${analysis.beforeHWM.totalInDatabase}</td>
-						<td>${analysis.beforeHWM.multipleInDatabase}</td>
-						<td>${analysis.beforeHWM.totalMatching}</td>
-						<td>${analysis.beforeHWM.missingFromFolder.size}</td>
-						<td>${analysis.beforeHWM.missingFromDatabase.size}</td>
+						<td>${analysis.beforeHWM.datasetsInFolder}</td>
+						<td>${analysis.beforeHWM.datasetsUnmatchedInFolder}</td>
+						<td>${analysis.beforeHWM.datasetsInDatabase}</td>
+						<td>${analysis.beforeHWM.groupsWithDuplicatesInDatabase}</td>
+						<td>${analysis.beforeHWM.groupsUnmatchedInDatabase}</td>
 					</tr>
 				</c:if>
 				<c:if test="${!empty analysis.afterHWM}">
 					<tr>
 						<td>&gt; HWM</td>
-						<td>${analysis.afterHWM.totalInFolder}</td>
-						<td>${analysis.afterHWM.multipleInFolder}</td>
-						<td>${analysis.afterHWM.totalInDatabase}</td>
-						<td>${analysis.afterHWM.multipleInDatabase}</td>
-						<td>${analysis.afterHWM.totalMatching}</td>
-						<td>${analysis.afterHWM.missingFromFolder.size}</td>
-						<td>${analysis.afterHWM.missingFromDatabase.size}</td>
+						<td>${analysis.afterHWM.datasetsInFolder}</td>
+						<td>${analysis.afterHWM.datasetsUnmatchedInFolder}</td>
+						<td>${analysis.afterHWM.datasetsInDatabase}</td>
+						<td>${analysis.afterHWM.groupsWithDuplicatesInDatabase}</td>
+						<td>${analysis.afterHWM.groupsUnmatchedInDatabase}</td>
 					</tr>
 				</c:if>
 				<c:if test="${!empty analysis.beforeQEnd}">
 					<tr>
 						<td>&#x2264; current Queue End</td>
-						<td>${analysis.beforeQEnd.totalInFolder}</td>
-						<td>${analysis.beforeQEnd.multipleInFolder}</td>
-						<td>${analysis.beforeQEnd.totalInDatabase}</td>
-						<td>${analysis.beforeQEnd.multipleInDatabase}</td>
-						<td>${analysis.beforeQEnd.totalMatching}</td>
-						<td>${analysis.beforeQEnd.missingFromFolder.size}</td>
-						<td>${analysis.beforeQEnd.missingFromDatabase.size}</td>
+						<td>${analysis.beforeQEnd.datasetsInFolder}</td>
+						<td>${analysis.beforeQEnd.datasetsUnmatchedInFolder}</td>
+						<td>${analysis.beforeQEnd.datasetsInDatabase}</td>
+						<td>${analysis.beforeQEnd.groupsWithDuplicatesInDatabase}</td>
+						<td>${analysis.beforeQEnd.groupsUnmatchedInDatabase}</td>
 					</tr>
 				</c:if>
 				<c:if test="${!empty analysis.afterQEnd}">
 					<tr>
 						<td>&gt; current Queue End</td>
-						<td>${analysis.afterQEnd.totalInFolder}</td>
-						<td>${analysis.afterQEnd.multipleInFolder}</td>
-						<td>${analysis.afterQEnd.totalInDatabase}</td>
-						<td>${analysis.afterQEnd.multipleInDatabase}</td>
-						<td>${analysis.afterQEnd.totalMatching}</td>
-						<td>${analysis.afterQEnd.missingFromFolder.size}</td>
-						<td>${analysis.afterQEnd.missingFromDatabase.size}</td>
+						<td>${analysis.afterQEnd.datasetsInFolder}</td>
+						<td>${analysis.afterQEnd.datasetsUnmatchedInFolder}</td>
+						<td>${analysis.afterQEnd.datasetsInDatabase}</td>
+						<td>${analysis.afterQEnd.groupsWithDuplicatesInDatabase}</td>
+						<td>${analysis.afterQEnd.groupsUnmatchedInDatabase}</td>
 					</tr>
 				</c:if>
 			</tbody>
@@ -224,96 +208,128 @@
 					</table>
 				</div>
 		</c:if>
-		<c:if test="${analysis.all.missingFromFolderGrouped.size + analysis.all.missingFromDatabaseInRange.size > 0}">
-			<div class="row-fluid"><h2>Missing Datasets (between LWM and HWM)</h2></div>
-			<div class="row-fluid">
-				<div class="span4">
-					<table class="table table-striped table-condensed">
-						<thead>
-							<tr>
-								<th colspan="2">Datasets missing from Queues</th>
-							</tr>
-							<tr>
-								<th class="span4">Missing Dataset Details</th>
-							</tr>
-						</thead>
-						<tbody>
-							<c:forEach var="missing" items="${analysis.all.missingFromDatabaseInRange}">
+		<div class="row-fluid">
+			<h2>Missing or duplicated Datasets (between LWM and HWM)</h2>
+		</div>
+		<div class="row-fluid">
+			<div class="span4">
+				<table class="table table-striped table-condensed">
+					<thead>
+						<tr>
+							<th colspan="2">Datasets missing from queues</th>
+						</tr>
+						<tr>
+							<th class="span4">Dataset Details</th>
+						</tr>
+					</thead>
+					<tbody>
+						<c:forEach var="group" items="${analysis.grouped}">
+							<c:if test="${empty group.allInDatabase}">
 								<tr>
-									<td>${missing.sourceFilePathnameBase} | <fmt:formatDate
+									<td>${group.inFolder.sourceFilePathnameBase} | <fmt:formatDate
 											pattern="yyyy-MM-dd'T'HH:mm:ss"
-											value="${missing.lastFileTimestamp}" />
+											value="${group.inFolder.lastFileTimestamp}" />
 									</td>
 									<td>
-										<form class="well,form-horizontal"
-											  style="margin: 0px 0px 0px"
-											  action="/paul/datasets/" method=post>
-											<input type="hidden" name="pathnameBase" 
-												   value="${missing.sourceFilePathnameBase}">
-										    <input type="hidden" name="facilityName"
-										    	   value="${facilityName}">
-											<input type="hidden" name="returnTo" 
-												   value="/paul/queueDiagnostics/${facilityName}">
-											<button class="btn" type="submit" name="grab">Grab Dataset</button>
+										<form class="well,form-horizontal" style="margin: 0px 0px 0px"
+											action="/paul/datasets/" method=post>
+											<input type="hidden" name="pathnameBase"
+												value="${group.inFolder.sourceFilePathnameBase}"> <input
+												type="hidden" name="facilityName" value="${facilityName}">
+											<input type="hidden" name="returnTo"
+												value="/paul/queueDiagnostics/${facilityName}">
+											<button class="btn" type="submit" name="grab">Grab
+												Dataset</button>
 										</form>
 									</td>
 								</tr>
-							</c:forEach>
-						</tbody>
-					</table>
-				</div>
-				<div class="span8">
-					<table class="table table-striped table-condensed">
-						<thead>
-							<tr>
-								<th colspan="2">Datasets missing from S:</th>
-							</tr>
-							<tr>
-								<th class="span5">Missing Dataset Details</th>
-								<th class="span3">&nbsp;</th>
-							</tr>
-						</thead>
-						<tbody>
-							<c:forEach var="group" items="${analysis.all.missingFromFolderGrouped}">
-							    <c:forEach var="inDatabase" items="${group.allInDatabase}">
-								<tr>
-									<td><a href="/paul/datasets/${inDatabase.id}">Dataset #${inDatabase.id}</a>
-										- ${inDatabase.sourceFilePathnameBase} <br> <fmt:formatDate
-											pattern="yyyy-MM-dd'T'HH:mm:ss"
-											value="${inDatabase.captureTimestamp}" />
-									</td>
-									<c:choose>
-										<c:when test="${group.matched != inDatabase}">	
-											<td>
-												<form class="well,form-horizontal"
-													  style="margin: 0px 0px 0px"
-													  action="/paul/datasets/${inDatabase.id}" method=post>
-													<input type="hidden" name="returnTo" 
-														   value="/paul/queueDiagnostics/${facilityName}">
-													<button class="btn" type="button"
-														    onClick="document.location = '/paul/datasets/${inDatabase.id}' + 
-														             '?regrab&returnTo=/paul/queueDiagnostics/${facilityName}'">
-														Regrab Dataset
-													</button>
-													<button class="btn" type="submit" name="delete">Delete</button>
-													<button class="btn" type="submit" name="archive">Archive</button>
-												</form>
-											</td>
-										</c:when>
-										<c:otherwise>
-											<td>
-												Matched!
-											</td>
-										</c:otherwise>
-									</c:choose>
-								</tr>
-								</c:forEach>
-							</c:forEach>
-						</tbody>
-					</table>
-				</div>
+							</c:if>
+						</c:forEach>
+					</tbody>
+				</table>
 			</div>
-		</c:if>
+			<div class="span8">
+				<table class="table table-striped table-condensed">
+					<thead>
+						<tr>
+							<th colspan="2">Datasets in queues</th>
+						</tr>
+						<tr>
+							<th class="span5">Dataset Details</th>
+							<th class="span3">&nbsp;</th>
+						</tr>
+					</thead>
+					<tbody>
+						<c:forEach var="group" items="${analysis.grouped}">
+							<c:if test="${group.unmatchedInDatabase || group.duplicatesInDatabase}">
+							    <c:set var="seenMatched" value=""/>
+								<c:forEach var="dataset" items="${group.allDecorated}">
+									<tr>
+										<c:choose>
+											<c:when test="${dataset.inFolder}">
+												<td>In-folder version -
+													${dataset.sourceFilePathnameBase} <br> <fmt:formatDate
+														pattern="yyyy-MM-dd'T'HH:mm:ss"
+														value="${dataset.lastFileTimestamp}" />
+												</td>
+											</c:when>
+											<c:otherwise>
+												<td>
+													<c:choose>
+														<c:when test="${dataset.unmatched}">Unmatched - </c:when>
+														<c:when test="${empty seenMatched}">Matched - </c:when>
+														<c:otherwise>Duplicate - </c:otherwise>
+													</c:choose>
+													<a href="/paul/datasets/${dataset.id}">Dataset
+														#${dataset.id}</a> - ${dataset.sourceFilePathnameBase} <br>
+													<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+														value="${dataset.lastFileTimestamp}" />
+												</td>
+											</c:otherwise>
+										</c:choose>
+										<c:choose>
+											<c:when test="${dataset.inFolder}">
+												<td>&nbsp;</td>
+											</c:when>
+											<c:when test="${dataset.unmatched}">
+												<td>
+													<form class="well,form-horizontal"
+														style="margin: 0px 0px 0px"
+														action="/paul/datasets/${dataset.id}" method=post>
+														<input type="hidden" name="returnTo"
+															value="/paul/queueDiagnostics/${facilityName}">
+														<button class="btn" type="button"
+															onClick="document.location = '/paul/datasets/${dataset.id}' + 
+														             '?regrab&returnTo=/paul/queueDiagnostics/${facilityName}'">
+															Regrab Dataset</button>
+														<button class="btn" type="submit" name="delete">Delete</button>
+														<button class="btn" type="submit" name="archive">Archive</button>
+													</form>
+												</td>
+											</c:when>
+											<c:when test="${group.duplicatesInDatabase}">
+												<td><form class="well,form-horizontal"
+														style="margin: 0px 0px 0px"
+														action="/paul/datasets/${dataset.id}" method=post>
+														<input type="hidden" name="returnTo"
+															value="/paul/queueDiagnostics/${facilityName}">
+														<button class="btn" type="submit" name="delete">Delete</button>
+													 </form>
+											    </td>
+											    <c:set var="seenMatched" value="yes"/>
+											</c:when>
+											<c:otherwise>
+												<td></td>
+											</c:otherwise>
+										</c:choose>
+									</tr>
+								</c:forEach>
+							</c:if>
+						</c:forEach>
+					</tbody>
+				</table>
+			</div>
+		</div>
 		<div class="row-fluid"><h2>Actions</h2></div>
 		<form method="post">
 			<div class="row-fluid">
