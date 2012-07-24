@@ -299,6 +299,7 @@
 														<input type="hidden" name="returnTo"
 															value="/paul/queueDiagnostics/${facilityName}">
 														<button class="btn" type="button"
+														    ${!dataset.inFolder ? 'disabled' : ''}
 															onClick="document.location = '/paul/datasets/${dataset.id}' + 
 														             '?regrab&returnTo=/paul/queueDiagnostics/${facilityName}'">
 															Regrab Dataset</button>
