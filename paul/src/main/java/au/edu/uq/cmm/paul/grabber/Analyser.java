@@ -575,10 +575,12 @@ public class Analyser extends AbstractFileGrabber {
                     dataset = dit.hasNext() ? dit.next() : null;
                 } else if (cmp < 0) {
                     res.add(group);
+                    group = git.hasNext() ? git.next() : null;
                 } else {
                     Group newGroup = new Group(dataset.getFacilityFilePathnameBase());
                     newGroup.setInFolder(dataset);
                     res.add(newGroup);
+                    dataset = dit.hasNext() ? dit.next() : null;
                 }
             }
         }
