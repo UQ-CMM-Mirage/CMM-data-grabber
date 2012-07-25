@@ -226,15 +226,25 @@
 						<c:forEach var="group" items="${analysis.grouped}">
 							<c:if test="${empty group.allInDatabase}">
 								<tr>
-									<td>${group.inFolder.sourceFilePathnameBase} | <fmt:formatDate
+									<td>${group.inFolder.sourceFilePathnameBase} | 
+										<fmt:formatDate
+											pattern="yyyy-MM-dd'T'HH:mm:ss"
+											value="${group.inFolder.firstFileTimestamp}" />
+										<fmt:formatDate
 											pattern="yyyy-MM-dd'T'HH:mm:ss"
 											value="${group.inFolder.lastFileTimestamp}" />
+										<fmt:formatDate
+											pattern="yyyy-MM-dd'T'HH:mm:ss"
+											value="${group.inFolder.captureTimestamp}" />
+										<fmt:formatDate
+											pattern="yyyy-MM-dd'T'HH:mm:ss"
+											value="${group.inFolder.updateTimestamp}" />
 									</td>
 									<td>
 										<form class="well,form-horizontal" style="margin: 0px 0px 0px"
 											action="/paul/datasets/" method=post>
 											<input type="hidden" name="pathnameBase"
-												value="${group.inFolder.sourceFilePathnameBase}"> <input
+												value="${group.inFolder.facilityFilePathnameBase}"> <input
 												type="hidden" name="facilityName" value="${facilityName}">
 											<input type="hidden" name="returnTo"
 												value="/paul/queueDiagnostics/${facilityName}">
@@ -268,9 +278,15 @@
 										<c:choose>
 											<c:when test="${dataset.inFolder}">
 												<td>In-folder version -
-													${dataset.sourceFilePathnameBase} <br> <fmt:formatDate
-														pattern="yyyy-MM-dd'T'HH:mm:ss"
+													${dataset.facilityFilePathnameBase} <br> 
+													<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+														value="${dataset.firstFileTimestamp}" />
+													<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
 														value="${dataset.lastFileTimestamp}" />
+													<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+														value="${dataset.captureTimestamp}" />
+													<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+														value="${dataset.updateTimestamp}" />
 												</td>
 											</c:when>
 											<c:otherwise>
@@ -281,9 +297,15 @@
 														<c:otherwise>Duplicate - </c:otherwise>
 													</c:choose>
 													<a href="/paul/datasets/${dataset.id}">Dataset
-														#${dataset.id}</a> - ${dataset.sourceFilePathnameBase} <br>
+														#${dataset.id}</a> - ${dataset.facilityFilePathnameBase} <br>
+													<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+														value="${dataset.firstFileTimestamp}" />
 													<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
 														value="${dataset.lastFileTimestamp}" />
+													<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+														value="${dataset.captureTimestamp}" />
+													<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+														value="${dataset.updateTimestamp}" />
 												</td>
 											</c:otherwise>
 										</c:choose>
@@ -332,7 +354,7 @@
 			</div>
 		</div>
 		<div class="row-fluid"><h2>Actions</h2></div>
-		<form method="post">
+		<form action="/paul/facilities/${facilityName}" method="post">
 			<div class="row-fluid">
 				<c:set var="isohwm">
 					<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
@@ -350,7 +372,7 @@
 				<button type="submit" name="setLWM">Change the LWM</button>
 			</div>
 			<div class="row-fluid">
-				<button type="submit" name="analyse">Reanalyse with
+				<button type="submit" name="reanalyse">Reanalyse with
 					proposed LWM / HWM</button>
 			</div>
 		</form>

@@ -57,7 +57,7 @@ import au.edu.uq.cmm.paul.watcher.UncPathnameMapper;
  */
 public class Analyser extends AbstractFileGrabber {
     
-    private static Logger LOG = LoggerFactory.getLogger(AbstractFileGrabber.class);
+    private static Logger LOG = LoggerFactory.getLogger(Analyser.class);
     
     public static class Statistics {
         private final int datasetsInFolder;
@@ -306,8 +306,8 @@ public class Analyser extends AbstractFileGrabber {
             new Comparator<DatasetMetadata>() {
                 @Override
                 public int compare(DatasetMetadata o1, DatasetMetadata o2) {
-                    int res = o1.getFacilityFilePathnameBase().compareTo(
-                            o2.getFacilityFilePathnameBase());
+                    int res = o1.getSourceFilePathnameBase().compareTo(
+                            o2.getSourceFilePathnameBase());
                     if (res == 0) {
                         res = Long.compare(
                                 o1.getLastFileTimestamp().getTime(), 
@@ -321,8 +321,8 @@ public class Analyser extends AbstractFileGrabber {
             new Comparator<DatasetMetadata>() {
                 @Override
                 public int compare(DatasetMetadata o1, DatasetMetadata o2) {
-                    int res = o1.getFacilityFilePathnameBase().compareTo(
-                            o2.getFacilityFilePathnameBase());
+                    int res = o1.getSourceFilePathnameBase().compareTo(
+                            o2.getSourceFilePathnameBase());
                     if (res == 0) {
                         res = Long.compare(
                                 o1.getLastFileTimestamp().getTime(), 
@@ -368,8 +368,10 @@ public class Analyser extends AbstractFileGrabber {
         LOG.info("Analysing queues and folders for " + getFacility().getFacilityName());
         SortedSet<DatasetMetadata> inFolder = buildInFolderMetadata();
         SortedSet<DatasetMetadata> inDatabase = buildInDatabaseMetadata();
+        LOG.debug("Got " + inFolder.size() + " in folders and " + inDatabase.size() + " in database");
         LOG.info("Grouping datasets for " + getFacility().getFacilityName());
         grouped = groupDatasets(inFolder, inDatabase);
+        LOG.debug("Got " + grouped.size() + " groups");
         LOG.info("Gathering statistics for " + getFacility().getFacilityName());
         all = gatherStats(grouped, PredicateUtils.truePredicate());
         if (lwmTimestamp == null) {
@@ -438,7 +440,7 @@ public class Analyser extends AbstractFileGrabber {
             }
             for (DatafileMetadata datafile : dataset.getDatafiles()) {
                 try {
-                    LOG.error("stored hash - " + datafile.getDatafileHash());
+                    LOG.debug("stored hash - " + datafile.getDatafileHash());
                     File file = new File(datafile.getCapturedFilePathname());
                     if (!file.exists()) {
                         logProblem(dataset, datafile, ProblemType.FILE_MISSING, problems, 
@@ -452,7 +454,7 @@ public class Analyser extends AbstractFileGrabber {
                         logProblem(dataset, datafile, ProblemType.FILE_HASH, problems,
                                 "Data file hash mismatch between metadata and " + file);
                     } else {
-                        LOG.error("captured hash - " + HashUtils.fileHash(file));
+                        LOG.debug("captured hash - " + HashUtils.fileHash(file));
                     }
                     File source = new File(datafile.getSourceFilePathname());
                     if (source.exists()) {
@@ -465,7 +467,7 @@ public class Analyser extends AbstractFileGrabber {
                             logProblem(dataset, datafile, ProblemType.FILE_HASH_2, problems,
                                     "Data file hash mismatch between metadata and " + source);
                         } else {
-                            LOG.error("source hash - " + HashUtils.fileHash(source));
+                            LOG.debug("source hash - " + HashUtils.fileHash(source));
                         }
                     }
                 } catch (IOException ex) {
@@ -518,42 +520,43 @@ public class Analyser extends AbstractFileGrabber {
             }
         }
         return new Statistics(datasetsInFolder, datasetsInDatabase, 
-                groupsWithDuplicatesInDatabase, datasetsUnmatchedInFolder, groupsUnmatchedInDatabase);
+                groupsWithDuplicatesInDatabase, datasetsUnmatchedInFolder, 
+                groupsUnmatchedInDatabase);
     }
     
     private static boolean matches(DatasetMetadata d1, DatasetMetadata d2) {
-        return d1.getFacilityFilePathnameBase().equals(d2.getFacilityFilePathnameBase()) &&
+        return d1.getSourceFilePathnameBase().equals(d2.getSourceFilePathnameBase()) &&
                 d1.getLastFileTimestamp().getTime() == d2.getLastFileTimestamp().getTime();
     }
     
     private List<Group> groupDatasets(
             Collection<DatasetMetadata> inFolder,
             Collection<DatasetMetadata> inDatabase) {
-        ArrayList<Group> grouped = createGroupsFromDatabase(inDatabase);
-        mergeGroupsFromFolder(grouped, inFolder);
-        return grouped;
+        ArrayList<Group> groups = createGroupsFromDatabase(inDatabase);
+        groups = mergeGroupsFromFolder(groups, inFolder);
+        return groups;
     }
 
     private ArrayList<Group> createGroupsFromDatabase(
             Collection<DatasetMetadata> inDatabase) {
-        ArrayList<Group> grouped = new ArrayList<Group>();
+        ArrayList<Group> groups = new ArrayList<Group>();
         
         Group group = null;
         for (DatasetMetadata dataset : inDatabase) {
-            String pathname = dataset.getFacilityFilePathnameBase();
+            String pathname = dataset.getSourceFilePathnameBase();
             if (group == null || !group.getBasePathname().equals(pathname)) {
                 group = new Group(pathname);
-                grouped.add(group);
+                groups.add(group);
             }
             group.addInDatabase(dataset);
         }
-        return grouped;
+        return groups;
     }
     
-    private ArrayList<Group> mergeGroupsFromFolder(ArrayList<Group> grouped,
+    private ArrayList<Group> mergeGroupsFromFolder(ArrayList<Group> groups,
             Collection<DatasetMetadata> inFolder) {
         ArrayList<Group> res = new ArrayList<Group>();
-        Iterator<Group> git = grouped.iterator();
+        Iterator<Group> git = groups.iterator();
         Iterator<DatasetMetadata> dit = inFolder.iterator();
         Group group = git.hasNext() ? git.next() : null;
         DatasetMetadata dataset = dit.hasNext() ? dit.next() : null;
@@ -562,12 +565,12 @@ public class Analyser extends AbstractFileGrabber {
                 res.add(group);
                 group = git.hasNext() ? git.next() : null;
             } else if (group == null) {
-                Group newGroup = new Group(dataset.getFacilityFilePathnameBase());
+                Group newGroup = new Group(dataset.getSourceFilePathnameBase());
                 newGroup.setInFolder(dataset);
                 res.add(newGroup);
                 dataset = dit.hasNext() ? dit.next() : null;
             } else {
-                int cmp = group.getBasePathname().compareTo(dataset.getFacilityFilePathnameBase());
+                int cmp = group.getBasePathname().compareTo(dataset.getSourceFilePathnameBase());
                 if (cmp == 0) {
                     res.add(group);
                     group.setInFolder(dataset);
@@ -577,7 +580,7 @@ public class Analyser extends AbstractFileGrabber {
                     res.add(group);
                     group = git.hasNext() ? git.next() : null;
                 } else {
-                    Group newGroup = new Group(dataset.getFacilityFilePathnameBase());
+                    Group newGroup = new Group(dataset.getSourceFilePathnameBase());
                     newGroup.setInFolder(dataset);
                     res.add(newGroup);
                     dataset = dit.hasNext() ? dit.next() : null;
@@ -588,7 +591,8 @@ public class Analyser extends AbstractFileGrabber {
     }
 
     private SortedSet<DatasetMetadata> buildInDatabaseMetadata() {
-        TreeSet<DatasetMetadata> inDatabase =  new TreeSet<DatasetMetadata>(ORDER_BY_BASE_PATH_AND_TIME_AND_ID);
+        TreeSet<DatasetMetadata> inDatabase = 
+                new TreeSet<DatasetMetadata>(ORDER_BY_BASE_PATH_AND_TIME_AND_ID);
         EntityManager em = emf.createEntityManager();
         try {
             TypedQuery<DatasetMetadata> query = em.createQuery(

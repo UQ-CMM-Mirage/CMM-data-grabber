@@ -315,11 +315,18 @@ public class WebUIController implements ServletContextAware {
         return "facilitySessions";
     }
     
-    @RequestMapping(value="/queueDiagnostics/{facilityName:.+}")
+    @RequestMapping(value="/queueDiagnostics/{facilityName:.+}",
+            method=RequestMethod.GET)
     public String queueDiagnostics(@PathVariable String facilityName, Model model,
             @RequestParam(required=false) String hwmTimestamp, 
             @RequestParam(required=false) String lwmTimestamp) 
             throws ConfigurationException {
+        return doCollectDiagnostics(facilityName, model, hwmTimestamp,
+                lwmTimestamp);
+    }
+
+    private String doCollectDiagnostics(String facilityName, Model model,
+            String hwmTimestamp, String lwmTimestamp) {
         Facility facility = lookupFacilityByName(facilityName);
         FacilityStatus status = getFacilityStatusManager().getStatus(facility);
         Date catchupTimestamp = getQueueManager().getCatchupTimestamp(facility);
@@ -348,7 +355,17 @@ public class WebUIController implements ServletContextAware {
         return "catchupControl";
     }
     
-    @RequestMapping(value="/facilities/{facilityName:.+}", params={"setHWM"})
+    @RequestMapping(value="/facilities/{facilityName:.+}", params={"reanalyse"},
+            method=RequestMethod.POST)
+    public String reanalyse(@PathVariable String facilityName, Model model,
+            @RequestParam String lwmTimestamp,
+            @RequestParam String hwmTimestamp) 
+            throws ConfigurationException {
+        return doCollectDiagnostics(facilityName, model, hwmTimestamp, lwmTimestamp);
+    }
+    
+    @RequestMapping(value="/facilities/{facilityName:.+}", params={"setHWM"},
+            method=RequestMethod.POST)
     public String setFacilityHWM(@PathVariable String facilityName, Model model,
             @RequestParam String hwmTimestamp) 
             throws ConfigurationException {
@@ -377,7 +394,8 @@ public class WebUIController implements ServletContextAware {
         }
     }
     
-    @RequestMapping(value="/facilities/{facilityName:.+}", params={"setLWM"})
+    @RequestMapping(value="/facilities/{facilityName:.+}", params={"setLWM"},
+            method = RequestMethod.POST)
     public String setFacilityLWM(@PathVariable String facilityName, Model model,
             @RequestParam String lwmTimestamp) 
             throws ConfigurationException {
