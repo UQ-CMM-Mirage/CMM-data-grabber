@@ -1,5 +1,20 @@
 Paul is the "data grabber" application that prepares data and metadata
-files into the CMM MIRAGE repository.  
+files for ingestion into the CMM MIRAGE repository as follows:
+
+  - It receives file create / modify / delete events for files in the directory
+    trees that correspond to the different instruments.
+  - It aggregates these based on filename patterns to work out sets of files
+    that constitute Datasets.
+  - When a Dataset stabilizes, it "grabs" the files by copying them to a separate
+    queue area.
+  - It uses the information recorded by Eccles to figure out who was logged into
+    the facility.  If this is known, the Dataset is tagged with the user and 
+    marked as ready to be ingested.
+  - Ingestible Datasets are then exposed to the downstream system (e.g. MyTardis)
+    via an Atom feed.
+
+Paul also provides a web UI that supports ACLS session control, queue management 
+integrity checking and repair, and configuration of instruments.
 
 Eccles is a proxy for an ACLS service that tracks sessions, and will 
 insulate the ACLS clients from server outages.  Eventually, it may evolve into
