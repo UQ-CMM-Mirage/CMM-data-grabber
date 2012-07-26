@@ -52,7 +52,6 @@ public class QueueManager {
     
     private static final Logger LOG = LoggerFactory.getLogger(QueueManager.class);
     private Paul services;
-    private QueueFeedAdapter queueFeedAdapter;
 
     public QueueManager(Paul services) {
         this.services = services;
@@ -115,17 +114,21 @@ public class QueueManager {
         return res;
     }
 
-    public void addEntry(DatasetMetadata metadata, File metadataFile) 
+    public void addEntry(DatasetMetadata dataset) 
             throws JsonGenerationException, IOException {
-        saveToFileSystem(metadataFile, metadata);
-        saveToDatabase(metadata);
+        saveToFileSystem(new File(dataset.getMetadataFilePathname()), dataset);
+        saveToDatabase(dataset);
     }
 
-    private void saveToDatabase(DatasetMetadata metadata) {
+    private void saveToDatabase(DatasetMetadata dataset) {
         EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
-            em.persist(metadata);
+            if (dataset.getId() == null) {
+                em.persist(dataset);
+            } else {
+                em.merge(dataset);
+            }
             em.getTransaction().commit();
         } finally {
             em.close();
@@ -272,6 +275,21 @@ public class QueueManager {
             LOG.info("File " + pathname + " not deleted from queue area");
         }
     }
+    
+    public DatasetMetadata fetchDataset(long id) {
+        EntityManager entityManager = createEntityManager();
+        try {
+            TypedQuery<DatasetMetadata> query = entityManager.createQuery(
+                    "from DatasetMetadata d where d.id = :id", 
+                    DatasetMetadata.class);
+            query.setParameter("id", id);
+            return query.getSingleResult();
+        } catch (NoResultException ex) {
+            return null;
+        } finally {
+            entityManager.close();
+        }
+    }
 
     public int changeUser(String[] ids, String userName, boolean reassign) 
             throws JsonGenerationException, IOException {
@@ -303,9 +321,5 @@ public class QueueManager {
     
     private EntityManager createEntityManager() {
         return services.getEntityManagerFactory().createEntityManager();
-    }
-
-    public void setQueueFeedAdapter(QueueFeedAdapter qfa) {
-        this.queueFeedAdapter = qfa;
     }
 }

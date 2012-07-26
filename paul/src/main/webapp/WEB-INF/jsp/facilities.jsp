@@ -35,8 +35,9 @@
 								<br>${facility.status.message}
 							</c:if>
 						</td>
-						<td class="form-inline,btn-toolbar">
-							<form action="facilities/${facility.facilityName}" method="post">
+						<td class="btn-toolbar">
+							<form class="well,form-inline"
+								  action="facilities/${facility.facilityName}" method="post">
 								<c:choose>
 									<c:when test="${facility.status.status == 'ON'}">
 										<button class="btn" type="submit" name="stop">Stop</button>
@@ -49,10 +50,16 @@
 												disabled="disabled">Start</button>
 									</c:otherwise>
 								</c:choose>
-								<button class="btn" type="submit" name="sessionLog">Session Log</button>
 								<button class="btn" type="submit" name="copy">Copy</button>
 								<button class="btn" type="submit" name="delete">Delete</button>
-								<button class="btn" type="submit" name="analyse">Analyse Queues</button>
+								<button class="btn" type="button" 
+								        onClick="window.location='sessions/${facility.facilityName}'">
+								        Session Log
+								</button>
+							    <button class="btn" type="button" 
+								        onClick="window.location='queueDiagnostics/${facility.facilityName}'">
+								        Queue Diagnostics
+								</button>
 							</form>
 						</td>
 					</tr>

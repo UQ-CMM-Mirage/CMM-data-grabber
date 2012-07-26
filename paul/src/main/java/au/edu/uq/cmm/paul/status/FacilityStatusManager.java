@@ -76,6 +76,18 @@ public class FacilityStatusManager {
             throw new PaulException("Duplicate facility entries");
         }
     }
+    
+    public FacilitySession getSession(String sessionUUID) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            TypedQuery<FacilitySession> query = em.createQuery(
+                    "from FacilitySession s where s.sessionUuid = :uuid", FacilitySession.class);
+            query.setParameter("uuid", sessionUUID);
+            return query.getSingleResult();
+        } finally {
+            em.close();
+        }
+    }
 
     public List<FacilitySession> sessionsForFacility(String facilityName) {
         EntityManager em = emf.createEntityManager();

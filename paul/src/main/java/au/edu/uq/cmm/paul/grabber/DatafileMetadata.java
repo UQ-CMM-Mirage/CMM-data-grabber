@@ -19,10 +19,8 @@
 
 package au.edu.uq.cmm.paul.grabber;
 
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 
 import javax.persistence.Entity;
@@ -35,8 +33,9 @@ import javax.persistence.UniqueConstraint;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.hibernate.annotations.GenericGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import au.edu.uq.cmm.paul.PaulException;
 
 
 /**
@@ -49,6 +48,8 @@ import au.edu.uq.cmm.paul.PaulException;
 @Table(name = "DATAFILE_METADATA",
         uniqueConstraints=@UniqueConstraint(columnNames={"capturedFilePathname"}))
 public class DatafileMetadata {
+    private static final Logger LOG = LoggerFactory.getLogger(DatafileMetadata.class);
+    
     private String sourceFilePathname;
     private String facilityFilePathname;
     private Date captureTimestamp;
@@ -153,8 +154,8 @@ public class DatafileMetadata {
         return datafileHash;
     }
 
-    public void setDatafileHash(String datafileHash) {
-        this.datafileHash = datafileHash;
+    public void setDatafileHash(String hash) {
+        this.datafileHash = (hash != null && hash.isEmpty()) ? null : hash;
     }
 
     public void checkDatafileHash() throws IncorrectHashException {
@@ -167,26 +168,20 @@ public class DatafileMetadata {
     }
     
     public void updateDatafileHash() {
-        datafileHash = calculateDatafileHash();
+        setDatafileHash(calculateDatafileHash());
     }
 
+    /**
+     * Calculate the hash based on the captured file content.
+     * @return the hash, or null if the captured file is missing.
+     */
     private String calculateDatafileHash() {
         try {
-            try (FileInputStream fis = new FileInputStream(capturedFilePathname)) {
-                MessageDigest md = MessageDigest.getInstance("SHA-512");
-                byte[] data = new byte[8192];
-                int count;
-                while ((count = fis.read(data)) > 0) {
-                    md.update(data, 0, count);
-                }
-                byte[] hash = md.digest();
-                return DatasetMetadata.bytesToHexString(hash);
-            }
+            return HashUtils.fileHash(new File(capturedFilePathname));
         } catch (IOException ex) {
-            throw new PaulException("Problem reading datafile", ex);
-        } catch (NoSuchAlgorithmException ex) {
-            throw new PaulException("Can't find the required secure hash algorithm", ex);
-        }
+            LOG.debug("Problem reading datafile", ex);
+            return null;
+        } 
     }
 
 }
