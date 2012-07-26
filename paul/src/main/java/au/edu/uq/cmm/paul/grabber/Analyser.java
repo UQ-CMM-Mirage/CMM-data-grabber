@@ -352,6 +352,7 @@ public class Analyser extends AbstractFileGrabber {
     private Date lwm;
     private Date hwm;
     private Date qEnd;
+    private boolean checkHashes;
     
     
     public Analyser(Paul services, Facility facility) {
@@ -361,10 +362,12 @@ public class Analyser extends AbstractFileGrabber {
         emf = services.getEntityManagerFactory();
     }
     
-    public Analyser analyse(Date lwmTimestamp, Date hwmTimestamp, Date queueEndTimestamp) {
+    public Analyser analyse(Date lwmTimestamp, Date hwmTimestamp, Date queueEndTimestamp, 
+            boolean checkHashes) {
         this.lwm = lwmTimestamp;
         this.hwm = hwmTimestamp;
         this.qEnd = queueEndTimestamp;
+        this.checkHashes = checkHashes;
         LOG.info("Analysing queues and folders for " + getFacility().getFacilityName());
         SortedSet<DatasetMetadata> inFolder = buildInFolderMetadata();
         SortedSet<DatasetMetadata> inDatabase = buildInDatabaseMetadata();
@@ -440,7 +443,10 @@ public class Analyser extends AbstractFileGrabber {
             }
             for (DatafileMetadata datafile : dataset.getDatafiles()) {
                 try {
-                    LOG.debug("stored hash - " + datafile.getDatafileHash());
+                    String hash = checkHashes ? datafile.getDatafileHash() : null;
+                    if (checkHashes) {
+                        LOG.debug("stored hash - " + hash);
+                    }
                     File file = new File(datafile.getCapturedFilePathname());
                     if (!file.exists()) {
                         logProblem(dataset, datafile, ProblemType.FILE_MISSING, problems, 
@@ -450,8 +456,7 @@ public class Analyser extends AbstractFileGrabber {
                                 "Data file size mismatch: " + file + 
                                 ": admin metadata says " + datafile.getFileSize() + 
                                 " but actual captured file size is " + file.length());
-                    } else if (datafile.getDatafileHash() != null &&
-                               !datafile.getDatafileHash().equals(HashUtils.fileHash(file))) {
+                    } else if (hash != null && !hash.equals(HashUtils.fileHash(file))) {
                         logProblem(dataset, datafile, ProblemType.FILE_HASH, problems,
                                 "Data file hash mismatch between metadata and " + file);
                     } else {
@@ -464,8 +469,7 @@ public class Analyser extends AbstractFileGrabber {
                                     "Data file size mismatch: " + file + 
                                     ": original file size is " + source.length() + 
                                     " but actual captured file size is " + file.length());
-                        } else if (datafile.getDatafileHash() != null &&
-                                !datafile.getDatafileHash().equals(HashUtils.fileHash(source))) {
+                        } else if (hash != null && !hash.equals(HashUtils.fileHash(source))) {
                             logProblem(dataset, datafile, ProblemType.FILE_HASH_2, problems,
                                     "Data file hash mismatch between metadata and " + source);
                         } else {

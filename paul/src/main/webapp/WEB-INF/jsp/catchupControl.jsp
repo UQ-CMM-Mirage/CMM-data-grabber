@@ -355,6 +355,10 @@
 		</div>
 		<div class="row-fluid"><h2>Actions</h2></div>
 		<form action="/paul/facilities/${facilityName}" method="post">
+		    <div class="row-fluid">
+				Check datafile hashes (slow!): 
+				<input type="checkbox" name="checkHashes" value="true" ${checkHashes ? 'checked' : ''}>
+			</div>
 			<div class="row-fluid">
 				<c:set var="isohwm">
 					<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"

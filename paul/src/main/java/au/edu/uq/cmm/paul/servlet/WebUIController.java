@@ -319,14 +319,15 @@ public class WebUIController implements ServletContextAware {
             method=RequestMethod.GET)
     public String queueDiagnostics(@PathVariable String facilityName, Model model,
             @RequestParam(required=false) String hwmTimestamp, 
-            @RequestParam(required=false) String lwmTimestamp) 
+            @RequestParam(required=false) String lwmTimestamp, 
+            @RequestParam(required=false) Boolean checkHashes) 
             throws ConfigurationException {
         return doCollectDiagnostics(facilityName, model, hwmTimestamp,
-                lwmTimestamp);
+                lwmTimestamp, checkHashes != null && checkHashes.booleanValue());
     }
 
     private String doCollectDiagnostics(String facilityName, Model model,
-            String hwmTimestamp, String lwmTimestamp) {
+            String hwmTimestamp, String lwmTimestamp, boolean checkHashes) {
         Facility facility = lookupFacilityByName(facilityName);
         FacilityStatus status = getFacilityStatusManager().getStatus(facility);
         Date catchupTimestamp = getQueueManager().getCatchupTimestamp(facility);
@@ -349,9 +350,10 @@ public class WebUIController implements ServletContextAware {
         model.addAttribute("lwmTimestamp", lwm);
         model.addAttribute("hwmTimestamp", hwm);
         model.addAttribute("intertidal", true);
+        model.addAttribute("checkHashes", checkHashes);
         model.addAttribute("catchupTimestamp", catchupTimestamp);
         model.addAttribute("analysis", 
-                new Analyser(services, facility).analyse(lwm, hwm, catchupTimestamp));
+                new Analyser(services, facility).analyse(lwm, hwm, catchupTimestamp, checkHashes));
         return "catchupControl";
     }
     
@@ -359,9 +361,10 @@ public class WebUIController implements ServletContextAware {
             method=RequestMethod.POST)
     public String reanalyse(@PathVariable String facilityName, Model model,
             @RequestParam String lwmTimestamp,
-            @RequestParam String hwmTimestamp) 
+            @RequestParam String hwmTimestamp,
+            @RequestParam boolean checkHashes) 
             throws ConfigurationException {
-        return doCollectDiagnostics(facilityName, model, hwmTimestamp, lwmTimestamp);
+        return doCollectDiagnostics(facilityName, model, hwmTimestamp, lwmTimestamp, checkHashes);
     }
     
     @RequestMapping(value="/facilities/{facilityName:.+}", params={"setHWM"},
