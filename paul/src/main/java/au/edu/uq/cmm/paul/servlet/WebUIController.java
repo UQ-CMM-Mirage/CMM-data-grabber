@@ -320,10 +320,10 @@ public class WebUIController implements ServletContextAware {
     public String queueDiagnostics(@PathVariable String facilityName, Model model,
             @RequestParam(required=false) String hwmTimestamp, 
             @RequestParam(required=false) String lwmTimestamp, 
-            @RequestParam(required=false) Boolean checkHashes) 
+            @RequestParam(required=false) String checkHashes) 
             throws ConfigurationException {
         return doCollectDiagnostics(facilityName, model, hwmTimestamp,
-                lwmTimestamp, checkHashes != null && checkHashes.booleanValue());
+                lwmTimestamp, toBoolean(checkHashes));
     }
 
     private String doCollectDiagnostics(String facilityName, Model model,
@@ -362,11 +362,16 @@ public class WebUIController implements ServletContextAware {
     public String reanalyse(@PathVariable String facilityName, Model model,
             @RequestParam String lwmTimestamp,
             @RequestParam String hwmTimestamp,
-            @RequestParam boolean checkHashes) 
+            @RequestParam String checkHashes) 
             throws ConfigurationException {
-        return doCollectDiagnostics(facilityName, model, hwmTimestamp, lwmTimestamp, checkHashes);
+        return doCollectDiagnostics(facilityName, model, hwmTimestamp, lwmTimestamp, 
+                toBoolean(checkHashes));
     }
     
+    private boolean toBoolean(String option) {
+        return (option != null && option.equals("true"));
+    }
+
     @RequestMapping(value="/facilities/{facilityName:.+}", params={"setHWM"},
             method=RequestMethod.POST)
     public String setFacilityHWM(@PathVariable String facilityName, Model model,

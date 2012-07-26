@@ -459,7 +459,7 @@ public class Analyser extends AbstractFileGrabber {
                     } else if (hash != null && !hash.equals(HashUtils.fileHash(file))) {
                         logProblem(dataset, datafile, ProblemType.FILE_HASH, problems,
                                 "Data file hash mismatch between metadata and " + file);
-                    } else {
+                    } else if (checkHashes) {
                         LOG.debug("captured hash - " + HashUtils.fileHash(file));
                     }
                     File source = new File(datafile.getSourceFilePathname());
@@ -472,7 +472,7 @@ public class Analyser extends AbstractFileGrabber {
                         } else if (hash != null && !hash.equals(HashUtils.fileHash(source))) {
                             logProblem(dataset, datafile, ProblemType.FILE_HASH_2, problems,
                                     "Data file hash mismatch between metadata and " + source);
-                        } else {
+                        } else if (checkHashes) {
                             LOG.debug("source hash - " + HashUtils.fileHash(source));
                         }
                     }
