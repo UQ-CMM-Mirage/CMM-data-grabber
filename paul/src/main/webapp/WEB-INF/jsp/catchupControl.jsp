@@ -226,7 +226,7 @@
 						<c:forEach var="group" items="${analysis.grouped}">
 							<c:if test="${empty group.allInDatabase}">
 								<tr>
-									<td>${group.inFolder.sourceFilePathnameBase} | 
+									<td>${group.inFolder.facilityFilePathnameBase} | 
 										<fmt:formatDate
 											pattern="yyyy-MM-dd'T'HH:mm:ss"
 											value="${group.inFolder.firstFileTimestamp}" />
@@ -244,7 +244,7 @@
 										<form class="well,form-horizontal" style="margin: 0px 0px 0px"
 											action="/paul/datasets/" method=post>
 											<input type="hidden" name="pathnameBase"
-												value="${group.inFolder.facilityFilePathnameBase}"> <input
+												value="${group.inFolder.sourceFilePathnameBase}"> <input
 												type="hidden" name="facilityName" value="${facilityName}">
 											<input type="hidden" name="returnTo"
 												value="/paul/queueDiagnostics/${facilityName}">
