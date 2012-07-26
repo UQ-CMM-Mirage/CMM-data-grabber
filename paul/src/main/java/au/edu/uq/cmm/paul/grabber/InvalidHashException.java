@@ -16,27 +16,13 @@
 * You should have received a copy of the GNU General Public License
 * along with Paul. If not, see <http://www.gnu.org/licenses/>.
 */
-
 package au.edu.uq.cmm.paul.grabber;
 
 @SuppressWarnings("serial")
-public class IncorrectHashException extends InvalidHashException {
+public class InvalidHashException extends Exception {
 
-    private final String actualHash;
-    private final String expectedHash;
-
-    public IncorrectHashException(String message, String expectedHash, String actualHash) {
+    public InvalidHashException(String message) {
         super(message);
-        this.expectedHash = expectedHash;
-        this.actualHash = actualHash;
-    }
-
-    public String getActualHash() {
-        return actualHash;
-    }
-
-    public String getExpectedHash() {
-        return expectedHash;
     }
 
 }

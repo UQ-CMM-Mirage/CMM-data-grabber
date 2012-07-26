@@ -54,6 +54,8 @@
 			<url-pattern>/control</url-pattern>
 			<url-pattern>/facilities/*</url-pattern>
 			<url-pattern>/sessions</url-pattern>
+			<url-pattern>/sessions/*</url-pattern>
+			<url-pattern>/queueDiagnostics/*</url-pattern>
 			<url-pattern>/queue/ingestible</url-pattern>
 			<url-pattern>/queue/held</url-pattern>
 			<url-pattern>/users</url-pattern>

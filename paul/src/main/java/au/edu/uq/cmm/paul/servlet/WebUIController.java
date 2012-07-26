@@ -73,6 +73,7 @@ import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.grabber.Analyser;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
+import au.edu.uq.cmm.paul.grabber.DatasetGrabber;
 import au.edu.uq.cmm.paul.queue.AtomFeed;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.queue.QueueManager.Slice;
@@ -305,8 +306,7 @@ public class WebUIController implements ServletContextAware {
         return "ok";
     }
     
-    @RequestMapping(value="/facilities/{facilityName:.+}",
-            params={"sessionLog"})
+    @RequestMapping(value="/sessions/{facilityName:.+}")
     public String facilitySessions(@PathVariable String facilityName, Model model) 
             throws ConfigurationException {
         model.addAttribute("sessions", 
@@ -315,12 +315,19 @@ public class WebUIController implements ServletContextAware {
         return "facilitySessions";
     }
     
-    @RequestMapping(value="/facilities/{facilityName:.+}",
-            params={"analyse"})
-    public String facilityAnalyse(@PathVariable String facilityName, Model model,
+    @RequestMapping(value="/queueDiagnostics/{facilityName:.+}",
+            method=RequestMethod.GET)
+    public String queueDiagnostics(@PathVariable String facilityName, Model model,
             @RequestParam(required=false) String hwmTimestamp, 
-            @RequestParam(required=false) String lwmTimestamp) 
+            @RequestParam(required=false) String lwmTimestamp, 
+            @RequestParam(required=false) String checkHashes) 
             throws ConfigurationException {
+        return doCollectDiagnostics(facilityName, model, hwmTimestamp,
+                lwmTimestamp, toBoolean(checkHashes));
+    }
+
+    private String doCollectDiagnostics(String facilityName, Model model,
+            String hwmTimestamp, String lwmTimestamp, boolean checkHashes) {
         Facility facility = lookupFacilityByName(facilityName);
         FacilityStatus status = getFacilityStatusManager().getStatus(facility);
         Date catchupTimestamp = getQueueManager().getCatchupTimestamp(facility);
@@ -343,13 +350,30 @@ public class WebUIController implements ServletContextAware {
         model.addAttribute("lwmTimestamp", lwm);
         model.addAttribute("hwmTimestamp", hwm);
         model.addAttribute("intertidal", true);
+        model.addAttribute("checkHashes", checkHashes);
         model.addAttribute("catchupTimestamp", catchupTimestamp);
         model.addAttribute("analysis", 
-                new Analyser(services, facility).analyse(lwm, hwm, catchupTimestamp));
+                new Analyser(services, facility).analyse(lwm, hwm, catchupTimestamp, checkHashes));
         return "catchupControl";
     }
     
-    @RequestMapping(value="/facilities/{facilityName:.+}", params={"setHWM"})
+    @RequestMapping(value="/facilities/{facilityName:.+}", params={"reanalyse"},
+            method=RequestMethod.POST)
+    public String reanalyse(@PathVariable String facilityName, Model model,
+            @RequestParam String lwmTimestamp,
+            @RequestParam String hwmTimestamp,
+            @RequestParam String checkHashes) 
+            throws ConfigurationException {
+        return doCollectDiagnostics(facilityName, model, hwmTimestamp, lwmTimestamp, 
+                toBoolean(checkHashes));
+    }
+    
+    private boolean toBoolean(String option) {
+        return (option != null && option.equals("true"));
+    }
+
+    @RequestMapping(value="/facilities/{facilityName:.+}", params={"setHWM"},
+            method=RequestMethod.POST)
     public String setFacilityHWM(@PathVariable String facilityName, Model model,
             @RequestParam String hwmTimestamp) 
             throws ConfigurationException {
@@ -378,7 +402,8 @@ public class WebUIController implements ServletContextAware {
         }
     }
     
-    @RequestMapping(value="/facilities/{facilityName:.+}", params={"setLWM"})
+    @RequestMapping(value="/facilities/{facilityName:.+}", params={"setLWM"},
+            method = RequestMethod.POST)
     public String setFacilityLWM(@PathVariable String facilityName, Model model,
             @RequestParam String lwmTimestamp) 
             throws ConfigurationException {
@@ -862,6 +887,118 @@ public class WebUIController implements ServletContextAware {
     public String queueEntry(@PathVariable String entry, Model model, 
             HttpServletRequest request, HttpServletResponse response) 
             throws IOException {
+        DatasetMetadata metadata = findDataset(entry, response);
+        if (metadata != null) {
+            model.addAttribute("entry", metadata);
+            model.addAttribute("returnTo", inferReturnTo(request));
+            return "dataset";
+        } else {
+            return null;
+        }
+    }
+    
+    @RequestMapping(value="/datasets/{entry:.+}", params={"regrab"},
+            method=RequestMethod.GET)
+    public String regrabPrepare(@PathVariable String entry, Model model, 
+            HttpServletRequest request, HttpServletResponse response) 
+            throws IOException {
+        DatasetMetadata dataset = findDataset(entry, response);
+        if (dataset != null) {
+            DatasetMetadata grabbedMetadata = new DatasetGrabber(services, dataset).getCandidateDataset();
+            grabbedMetadata.updateDatasetHash();
+            dataset.updateDatasetHash();
+            model.addAttribute("oldEntry", dataset);
+            model.addAttribute("newEntry", grabbedMetadata);
+            model.addAttribute("returnTo", inferReturnTo(request));
+            return "regrabConfirmation";
+        } else {
+            return null;
+        }
+    }
+    
+    @RequestMapping(value="/datasets/", params={"grab"},
+            method=RequestMethod.POST)
+    public String grab(Model model, 
+            @RequestParam String pathnameBase,
+            @RequestParam String facilityName,
+            HttpServletRequest request, HttpServletResponse response) 
+                    throws IOException, InterruptedException {
+        model.addAttribute("returnTo", inferReturnTo(request));
+        Facility facility = lookupFacilityByName(facilityName);
+        DatasetGrabber dsr = new DatasetGrabber(services, new File(pathnameBase), facility);
+        DatasetMetadata grabbedDataset = dsr.grabDataset();
+        grabbedDataset.updateDatasetHash();
+        model.addAttribute("message", "Dataset grab succeeded");
+        return "ok";
+    }
+
+    @RequestMapping(value="/datasets/{entry:.+}", params={"regrabNew"},
+            method=RequestMethod.POST)
+    public String regrab(@PathVariable String entry, Model model, 
+            @RequestParam String hash,
+            @RequestParam String regrabNew,
+            HttpServletRequest request, HttpServletResponse response) 
+            throws IOException, InterruptedException {
+        DatasetMetadata dataset = findDataset(entry, response);
+        if (dataset != null) {
+            model.addAttribute("returnTo", inferReturnTo(request));
+            DatasetGrabber dsr = new DatasetGrabber(services, dataset);
+            DatasetMetadata grabbedDataset = dsr.regrabDataset(regrabNew.equalsIgnoreCase("yes"));
+            grabbedDataset.updateDatasetHash();
+            if (!hash.equals(grabbedDataset.getCombinedDatafileHash())) {
+                LOG.debug("supplied hash is " + hash);
+                LOG.debug("actual hash is   " + grabbedDataset.getCombinedDatafileHash());
+                model.addAttribute("message", "Dataset files were apparently changed");
+                return "failed";
+            } else {
+                dsr.commitRegrabbedDataset(dataset, grabbedDataset, regrabNew.equalsIgnoreCase("yes"));
+                model.addAttribute("message", "Dataset regrab succeeded");
+                return "ok";
+            }
+        } else {
+            return null;
+        }
+    }
+
+    @RequestMapping(value="/datasets/{entry:.+}", params={"delete"},
+            method=RequestMethod.POST)
+    public String delete(@PathVariable String entry, Model model, 
+            HttpServletRequest request, HttpServletResponse response) 
+            throws IOException, InterruptedException {
+        return doDelete(entry, model, request, response, true);
+    }
+
+    @RequestMapping(value="/datasets/{entry:.+}", params={"archive"},
+            method=RequestMethod.POST)
+    public String archive(@PathVariable String entry, Model model, 
+            HttpServletRequest request, HttpServletResponse response) 
+            throws IOException, InterruptedException {
+        return doDelete(entry, model, request, response, false);
+    }
+
+    private String doDelete(String entry, Model model,
+            HttpServletRequest request, HttpServletResponse response, boolean delete)
+            throws IOException {
+        DatasetMetadata dataset = findDataset(entry, response);
+        if (dataset != null) {
+            model.addAttribute("returnTo", inferReturnTo(request));
+            QueueManager qm = getQueueManager();
+            int nosDeleted = qm.delete(new String[]{entry}, delete);
+            if (nosDeleted == 0) {
+                model.addAttribute("message", "Could not find that dataset");
+                return "failed";
+            } else {
+                model.addAttribute("message", "Dataset #" + entry + 
+                        (delete ? " deleted" : " archived"));
+                return "ok";
+            }
+        } else {
+            return null;
+        }
+    }
+
+    private DatasetMetadata findDataset(String entry,
+            HttpServletResponse response) throws IOException {
         long id;
         try {
             id = Long.parseLong(entry);
@@ -870,15 +1007,13 @@ public class WebUIController implements ServletContextAware {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return null;
         }
-        DatasetMetadata metadata = fetchMetadata(id);
-        if (metadata == null) {
+        DatasetMetadata dataset = getQueueManager().fetchDataset(id);
+        if (dataset == null) {
             LOG.debug("Rejected request for unknown entry");
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return null;
         }
-        model.addAttribute("entry", metadata);
-        model.addAttribute("returnTo", inferReturnTo(request));
-        return "dataset";
+        return dataset;
     }
     
     @RequestMapping(value="/files/{fileName:.+}", method=RequestMethod.GET)
@@ -956,21 +1091,6 @@ public class WebUIController implements ServletContextAware {
                     "from DatafileMetadata d where d.capturedFilePathname = :pathName", 
                     DatafileMetadata.class);
             query.setParameter("pathName", file.getAbsolutePath());
-            return query.getSingleResult();
-        } catch (NoResultException ex) {
-            return null;
-        } finally {
-            entityManager.close();
-        }
-    }
-
-    private DatasetMetadata fetchMetadata(long id) {
-        EntityManager entityManager = createEntityManager();
-        try {
-            TypedQuery<DatasetMetadata> query = entityManager.createQuery(
-                    "from DatasetMetadata d where d.id = :id", 
-                    DatasetMetadata.class);
-            query.setParameter("id", id);
             return query.getSingleResult();
         } catch (NoResultException ex) {
             return null;
