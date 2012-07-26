@@ -450,7 +450,8 @@ public class Analyser extends AbstractFileGrabber {
                                 "Data file size mismatch: " + file + 
                                 ": admin metadata says " + datafile.getFileSize() + 
                                 " but actual captured file size is " + file.length());
-                    } else if (!datafile.getDatafileHash().equals(HashUtils.fileHash(file))) {
+                    } else if (datafile.getDatafileHash() != null &&
+                               !datafile.getDatafileHash().equals(HashUtils.fileHash(file))) {
                         logProblem(dataset, datafile, ProblemType.FILE_HASH, problems,
                                 "Data file hash mismatch between metadata and " + file);
                     } else {
@@ -463,7 +464,8 @@ public class Analyser extends AbstractFileGrabber {
                                     "Data file size mismatch: " + file + 
                                     ": original file size is " + source.length() + 
                                     " but actual captured file size is " + file.length());
-                        } else if (!datafile.getDatafileHash().equals(HashUtils.fileHash(source))) {
+                        } else if (datafile.getDatafileHash() != null &&
+                                !datafile.getDatafileHash().equals(HashUtils.fileHash(source))) {
                             logProblem(dataset, datafile, ProblemType.FILE_HASH_2, problems,
                                     "Data file hash mismatch between metadata and " + source);
                         } else {
@@ -557,7 +559,8 @@ public class Analyser extends AbstractFileGrabber {
     }
     
     private boolean intertidal(Date timestamp) {
-        return (timestamp.getTime() >= lwm.getTime() && timestamp.getTime() < hwm.getTime());
+        return (lwm == null || timestamp.getTime() >= lwm.getTime()) &&
+               (hwm == null || timestamp.getTime() < hwm.getTime());
     }
 
     private ArrayList<Group> mergeGroupsFromFolder(ArrayList<Group> groups,
@@ -600,8 +603,6 @@ public class Analyser extends AbstractFileGrabber {
         }
         return res;
     }
-    
-    
 
     private SortedSet<DatasetMetadata> buildInDatabaseMetadata() {
         TreeSet<DatasetMetadata> inDatabase = 
