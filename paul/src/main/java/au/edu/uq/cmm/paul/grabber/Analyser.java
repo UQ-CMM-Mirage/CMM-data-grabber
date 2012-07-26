@@ -540,9 +540,12 @@ public class Analyser extends AbstractFileGrabber {
     private ArrayList<Group> createGroupsFromDatabase(
             Collection<DatasetMetadata> inDatabase) {
         ArrayList<Group> groups = new ArrayList<Group>();
-        
         Group group = null;
         for (DatasetMetadata dataset : inDatabase) {
+            if (!intertidal(dataset.getCaptureTimestamp()) && 
+                !intertidal(dataset.getLastFileTimestamp())) {
+                continue;
+            }
             String pathname = dataset.getSourceFilePathnameBase();
             if (group == null || !group.getBasePathname().equals(pathname)) {
                 group = new Group(pathname);
@@ -553,6 +556,10 @@ public class Analyser extends AbstractFileGrabber {
         return groups;
     }
     
+    private boolean intertidal(Date timestamp) {
+        return (timestamp.getTime() >= lwm.getTime() && timestamp.getTime() < hwm.getTime());
+    }
+
     private ArrayList<Group> mergeGroupsFromFolder(ArrayList<Group> groups,
             Collection<DatasetMetadata> inFolder) {
         ArrayList<Group> res = new ArrayList<Group>();
@@ -565,9 +572,11 @@ public class Analyser extends AbstractFileGrabber {
                 res.add(group);
                 group = git.hasNext() ? git.next() : null;
             } else if (group == null) {
-                Group newGroup = new Group(dataset.getSourceFilePathnameBase());
-                newGroup.setInFolder(dataset);
-                res.add(newGroup);
+                if (intertidal(dataset.getLastFileTimestamp())) {
+                    Group newGroup = new Group(dataset.getSourceFilePathnameBase());
+                    newGroup.setInFolder(dataset);
+                    res.add(newGroup);
+                }
                 dataset = dit.hasNext() ? dit.next() : null;
             } else {
                 int cmp = group.getBasePathname().compareTo(dataset.getSourceFilePathnameBase());
@@ -580,15 +589,19 @@ public class Analyser extends AbstractFileGrabber {
                     res.add(group);
                     group = git.hasNext() ? git.next() : null;
                 } else {
-                    Group newGroup = new Group(dataset.getSourceFilePathnameBase());
-                    newGroup.setInFolder(dataset);
-                    res.add(newGroup);
+                    if (intertidal(dataset.getLastFileTimestamp())) {
+                        Group newGroup = new Group(dataset.getSourceFilePathnameBase());
+                        newGroup.setInFolder(dataset);
+                        res.add(newGroup);
+                    }
                     dataset = dit.hasNext() ? dit.next() : null;
                 }
             }
         }
         return res;
     }
+    
+    
 
     private SortedSet<DatasetMetadata> buildInDatabaseMetadata() {
         TreeSet<DatasetMetadata> inDatabase = 
