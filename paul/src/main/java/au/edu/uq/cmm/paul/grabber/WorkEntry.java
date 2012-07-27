@@ -204,7 +204,7 @@ class WorkEntry implements Runnable {
             throws InterruptedException, IOException {
         LOG.debug("WorkEntry.grabFiles has " + files.size() + " files to grab");
         // Prepare for grabbing
-        FacilitySession session = statusManager.getLoginDetails(
+        FacilitySession session = statusManager.getSession(
                 facility.getFacilityName(), timestamp.getTime());
         // Optionally lock the files, then grab them.
         // FIXME - note that we may not see all of the files ... see above.

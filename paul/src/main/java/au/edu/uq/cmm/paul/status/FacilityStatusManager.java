@@ -57,6 +57,8 @@ public class FacilityStatusManager {
     private AclsHelper aclsHelper;
     private Map<Long, FacilityStatus> facilityStatuses = 
             new HashMap<Long, FacilityStatus>();
+    private Map<String, FacilitySessionCache> facilitySessionCaches =
+            new HashMap<String, FacilitySessionCache>();
 
     public FacilityStatusManager(Paul services) {
         this.emf = services.getEntityManagerFactory();
@@ -83,7 +85,14 @@ public class FacilityStatusManager {
             TypedQuery<FacilitySession> query = em.createQuery(
                     "from FacilitySession s where s.sessionUuid = :uuid", FacilitySession.class);
             query.setParameter("uuid", sessionUUID);
-            return query.getSingleResult();
+            List<FacilitySession> list = query.getResultList();
+            if (list.isEmpty()) {
+                return null;
+            } else if (list.size() == 1) {
+                return list.get(0);
+            } else {
+                throw new PaulException("Duplicate facility session entries");
+            }
         } finally {
             em.close();
         }
@@ -190,7 +199,25 @@ public class FacilityStatusManager {
         }
     }
 
-    public FacilitySession getLoginDetails(String facilityName, long timestamp) {
+    public FacilitySession getSession(String facilityName, long timestamp) {
+        FacilitySessionCache cache = facilitySessionCaches.get(facilityName);
+        if (cache == null) {
+            cache = new FacilitySessionCache();
+            facilitySessionCaches.put(facilityName, cache);
+        }
+        FacilitySession session = cache.lookup(timestamp);
+        if (session == null) {
+            session = computeSession(facilityName, timestamp);
+            if (session != null && session.getInferredLogoutTime() != null) {
+                cache.add(session);
+            }
+        } else {
+            LOG.debug("Cached session for timestamp " + timestamp + " is " + session);
+        }
+        return session;
+    }
+
+    private FacilitySession computeSession(String facilityName, long timestamp) {
         EntityManager em = emf.createEntityManager();
         try {
             // First, we select the sessions that potentially contain this timestamp.
@@ -228,10 +255,14 @@ public class FacilityStatusManager {
                         LOG.debug("No session on '" + facilityName + 
                                 "' matches timestamp " + timestamp + " (2)");
                         return null;
+                    } else {
+                        session.setInferredLogoutTime(session2.getLoginTime());
                     }
                 }
+            } else {
+                session.setInferredLogoutTime(session.getLogoutTime());
             }
-            LOG.debug("Session for timestamp " + timestamp + " is " + session);
+            LOG.debug("Computed session for timestamp " + timestamp + " is " + session);
             return session;
         } finally {
             em.close();

@@ -360,9 +360,9 @@ public class WebUIController implements ServletContextAware {
     @RequestMapping(value="/facilities/{facilityName:.+}", params={"reanalyse"},
             method=RequestMethod.POST)
     public String reanalyse(@PathVariable String facilityName, Model model,
-            @RequestParam String lwmTimestamp,
-            @RequestParam String hwmTimestamp,
-            @RequestParam String checkHashes) 
+            @RequestParam(required=false) String lwmTimestamp,
+            @RequestParam(required=false) String hwmTimestamp,
+            @RequestParam(required=false) String checkHashes) 
             throws ConfigurationException {
         return doCollectDiagnostics(facilityName, model, hwmTimestamp, lwmTimestamp, 
                 toBoolean(checkHashes));
@@ -532,7 +532,7 @@ public class WebUIController implements ServletContextAware {
         }
         String userName = principal.getName();
         FacilityStatusManager fsm = getFacilityStatusManager();
-        FacilitySession session = fsm.getLoginDetails(facilityName, System.currentTimeMillis());
+        FacilitySession session = fsm.getSession(facilityName, System.currentTimeMillis());
         if (session == null || !session.getUserName().equals(userName)) {
             model.addAttribute("message", "You are not logged in on '" + facilityName + "'");
             return "failed";

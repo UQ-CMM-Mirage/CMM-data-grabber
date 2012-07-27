@@ -48,6 +48,7 @@ public class SessionLookupTest {
         EMF = Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul");
         EntityManager em = EMF.createEntityManager();
         try {
+            em.getTransaction().begin();
             for (FacilitySession session :
                 em.createQuery("From FacilitySession", FacilitySession.class).getResultList()) {
                 em.remove(session);
@@ -58,6 +59,7 @@ public class SessionLookupTest {
                     "jim", "ac1", "this", "jim@nowhere", "2012-01-01T02:00:00", "2012-01-01T03:00:00");
             em.persist(FS1);
             em.persist(FS2);
+            em.getTransaction().commit();
         } finally {
             em.close();
         }
@@ -82,7 +84,19 @@ public class SessionLookupTest {
 
     @Test
     public void testConstructor() {
+        new FacilityStatusManager(buildMockServices());
+    }
+    
+    @Test
+    public void testGetFacilitySession() {
         FacilityStatusManager fsm = new FacilityStatusManager(buildMockServices());
+        assertEquals(FS1.getSessionUuid(), fsm.getSession(FS1.getSessionUuid()).getSessionUuid());
+    }
+    
+    @Test
+    public void testGetFacilitySessionUnknown() {
+        FacilityStatusManager fsm = new FacilityStatusManager(buildMockServices());
+        assertEquals(null, fsm.getSession(UUID.randomUUID().toString()));
     }
 
     private Paul buildMockServices() {
