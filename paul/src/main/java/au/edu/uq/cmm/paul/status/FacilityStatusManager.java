@@ -256,7 +256,8 @@ public class FacilityStatusManager {
                                 "' matches timestamp " + timestamp + " (2)");
                         return null;
                     } else {
-                        session.setInferredLogoutTime(session2.getLoginTime());
+                        session.setInferredLogoutTime(
+                                new Date(session2.getLoginTime().getTime() - 1L));
                     }
                 }
             } else {
