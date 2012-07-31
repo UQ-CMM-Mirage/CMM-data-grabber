@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 
 import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.paul.Paul;
+import au.edu.uq.cmm.paul.queue.QueueManager.DateRange;
 import au.edu.uq.cmm.paul.status.Facility;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
 import au.edu.uq.cmm.paul.watcher.UncPathnameMapper;
@@ -348,9 +349,12 @@ public class Analyser extends AbstractFileGrabber {
     private Problems problems;
     private Statistics beforeQEnd;
     private Statistics afterQEnd;
+    private Statistics beforeQStart;
+    private Statistics afterQStart;
 
     private Date lwm;
     private Date hwm;
+    private Date qStart;
     private Date qEnd;
     private boolean checkHashes;
     
@@ -362,11 +366,17 @@ public class Analyser extends AbstractFileGrabber {
         emf = services.getEntityManagerFactory();
     }
     
-    public Analyser analyse(Date lwmTimestamp, Date hwmTimestamp, Date queueEndTimestamp, 
+    public Analyser analyse(Date lwmTimestamp, Date hwmTimestamp, DateRange range, 
             boolean checkHashes) {
         this.lwm = lwmTimestamp;
         this.hwm = hwmTimestamp;
-        this.qEnd = queueEndTimestamp;
+        if (range == null) {
+            this.qStart = null;
+            this.qEnd = null;
+        } else {
+            this.qStart = range.getFromDate();
+            this.qEnd = range.getToDate();
+        }
         this.checkHashes = checkHashes;
         LOG.info("Analysing queues and folders for " + getFacility().getFacilityName());
         SortedSet<DatasetMetadata> inFolder = buildInFolderMetadata();
@@ -409,11 +419,24 @@ public class Analyser extends AbstractFileGrabber {
                 }
             });
         }
-        if (queueEndTimestamp == null) {
+        if (range == null) {
             beforeQEnd = null;
             afterQEnd = null;
+            beforeQStart = null;
+            afterQStart = null;
         } else {
-            final long qEnd = queueEndTimestamp.getTime();
+            final long qStart = this.qStart.getTime();
+            beforeQStart = gatherStats(grouped, new Predicate() {
+                public boolean evaluate(Object metadata) {
+                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() <= qStart;
+                }
+            });
+            afterQStart = gatherStats(grouped, new Predicate() {
+                public boolean evaluate(Object metadata) {
+                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() > qStart;
+                }
+            });
+            final long qEnd = this.qEnd.getTime();
             beforeQEnd = gatherStats(grouped, new Predicate() {
                 public boolean evaluate(Object metadata) {
                     return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() <= qEnd;
@@ -673,6 +696,14 @@ public class Analyser extends AbstractFileGrabber {
 
     public final Statistics getAfterHWM() {
         return afterHWM;
+    }
+
+    public final Statistics getBeforeQStart() {
+        return beforeQStart;
+    }
+
+    public final Statistics getAfterQStart() {
+        return afterQStart;
     }
 
     public final Statistics getBeforeQEnd() {

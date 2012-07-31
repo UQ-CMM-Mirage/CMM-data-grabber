@@ -76,6 +76,7 @@ import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetGrabber;
 import au.edu.uq.cmm.paul.queue.AtomFeed;
 import au.edu.uq.cmm.paul.queue.QueueManager;
+import au.edu.uq.cmm.paul.queue.QueueManager.DateRange;
 import au.edu.uq.cmm.paul.queue.QueueManager.Slice;
 import au.edu.uq.cmm.paul.status.Facility;
 import au.edu.uq.cmm.paul.status.FacilityStatus;
@@ -330,7 +331,7 @@ public class WebUIController implements ServletContextAware {
             String hwmTimestamp, String lwmTimestamp, boolean checkHashes) {
         Facility facility = lookupFacilityByName(facilityName);
         FacilityStatus status = getFacilityStatusManager().getStatus(facility);
-        Date catchupTimestamp = getQueueManager().getCatchupTimestamp(facility);
+        DateRange range = getQueueManager().getQueueDateRange(facility);
         model.addAttribute("facilityName", facilityName);
         model.addAttribute("status", status);
         Date hwm = status.getGrabberHWMTimestamp();
@@ -351,9 +352,9 @@ public class WebUIController implements ServletContextAware {
         model.addAttribute("hwmTimestamp", hwm);
         model.addAttribute("intertidal", true);
         model.addAttribute("checkHashes", checkHashes);
-        model.addAttribute("catchupTimestamp", catchupTimestamp);
+        model.addAttribute("range", range);
         model.addAttribute("analysis", 
-                new Analyser(services, facility).analyse(lwm, hwm, catchupTimestamp, checkHashes));
+                new Analyser(services, facility).analyse(lwm, hwm, range, checkHashes));
         return "catchupControl";
     }
     
