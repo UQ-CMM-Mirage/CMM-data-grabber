@@ -20,9 +20,18 @@
 			Grabber HWM timestamp : 
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
 						value="${status.grabberHWMTimestamp}"/> <br>
+			Timestamp of first queued Dataset : 
+				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+						value="${analysis.qStart}"/> <br>
 			Timestamp of last queued Dataset : 
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-						value="${catchupTimestamp}"/> <br>
+						value="${analysis.qEnd}"/> <br>
+			Timestamp of first folder Dataset : 
+				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+						value="${analysis.fStart}"/> <br>
+			Timestamp of last folder Dataset : 
+				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+						value="${analysis.fEnd}"/> <br>
 			LWM / HWM used in analysis : 
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
 						value="${lwmTimestamp}"/> / 
@@ -88,6 +97,26 @@
 						<td>${analysis.afterHWM.datasetsInDatabase}</td>
 						<td>${analysis.afterHWM.groupsWithDuplicatesInDatabase}</td>
 						<td>${analysis.afterHWM.groupsUnmatchedInDatabase}</td>
+					</tr>
+				</c:if>
+				<c:if test="${!empty analysis.beforeQStart}">
+					<tr>
+						<td>&#x2264; current Queue Start</td>
+						<td>${analysis.beforeQStart.datasetsInFolder}</td>
+						<td>${analysis.beforeQStart.datasetsUnmatchedInFolder}</td>
+						<td>${analysis.beforeQStart.datasetsInDatabase}</td>
+						<td>${analysis.beforeQStart.groupsWithDuplicatesInDatabase}</td>
+						<td>${analysis.beforeQStart.groupsUnmatchedInDatabase}</td>
+					</tr>
+				</c:if>
+				<c:if test="${!empty analysis.afterQStart}">
+					<tr>
+						<td>&gt; current Queue Start</td>
+						<td>${analysis.afterQStart.datasetsInFolder}</td>
+						<td>${analysis.afterQStart.datasetsUnmatchedInFolder}</td>
+						<td>${analysis.afterQStart.datasetsInDatabase}</td>
+						<td>${analysis.afterQStart.groupsWithDuplicatesInDatabase}</td>
+						<td>${analysis.afterQStart.groupsUnmatchedInDatabase}</td>
 					</tr>
 				</c:if>
 				<c:if test="${!empty analysis.beforeQEnd}">
@@ -355,6 +384,7 @@
 		</div>
 		<div class="row-fluid"><h2>Actions</h2></div>
 		<form action="/paul/facilities/${facilityName}" method="post">
+			<input type="hidden" name="returnTo" value="/paul/queueDiagnostics/${facilityName}">
 		    <div class="row-fluid">
 				Check datafile hashes (slow!): 
 				<input type="checkbox" name="checkHashes" value="true" ${checkHashes ? 'checked' : ''}>

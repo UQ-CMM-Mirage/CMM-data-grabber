@@ -35,6 +35,7 @@ import au.edu.uq.cmm.aclslib.service.SimpleService;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.queue.QueueManager;
+import au.edu.uq.cmm.paul.queue.QueueManager.DateRange;
 import au.edu.uq.cmm.paul.status.Facility;
 import au.edu.uq.cmm.paul.status.FacilityStatus;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
@@ -110,14 +111,14 @@ public class FileGrabber extends AbstractFileGrabber implements SimpleService {
     public void startup() {
         setShuttingDown(false);
         FacilityStatus status = statusManager.getStatus(getFacility());
-        Date catchupFrom = queueManager.getCatchupTimestamp(getFacility());
+        DateRange range = queueManager.getQueueDateRange(getFacility());
         Date lwm = status.getGrabberLWMTimestamp();
         Date hwm = status.getGrabberHWMTimestamp();
-        LOG.debug("Catchup from = " + catchupFrom + ", lwm = " + lwm + ", hwm = " + hwm);
+        LOG.debug("Catchup from = " + range + ", lwm = " + lwm + ", hwm = " + hwm);
         if (hwm == null) {
             hwm = lwm;
         }
-        if (hwm != null && (catchupFrom == null || hwm.getTime() <= catchupFrom.getTime())) {
+        if (hwm != null && (range == null || hwm.getTime() <= range.getToDate().getTime())) {
             executor = new ThreadPoolExecutor(0, 1, 999, TimeUnit.SECONDS, work);
             // We do "catchup" event generation with the executor paused, so that the worker
             // thread doesn't jump the gun and start processing work entries before all events
@@ -126,7 +127,7 @@ public class FileGrabber extends AbstractFileGrabber implements SimpleService {
             // irrespective of the file timestamps.  This is the best we can do in the circumstances.
             work.pause();
             long start = Math.max(hwm.getTime(), 
-                    catchupFrom == null ? Long.MIN_VALUE : catchupFrom.getTime());
+                    range == null ? Long.MIN_VALUE : range.getToDate().getTime());
             LOG.info("Commencing catchup treewalk for " + status.getLocalDirectory());
             int count = analyseTree(status.getLocalDirectory(), start, Long.MAX_VALUE);
             LOG.info("Catchup treewalk found " + count + " files");

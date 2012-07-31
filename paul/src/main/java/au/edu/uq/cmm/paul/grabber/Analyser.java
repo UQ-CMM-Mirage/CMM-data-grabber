@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 
 import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.paul.Paul;
+import au.edu.uq.cmm.paul.queue.QueueManager.DateRange;
 import au.edu.uq.cmm.paul.status.Facility;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
 import au.edu.uq.cmm.paul.watcher.UncPathnameMapper;
@@ -348,10 +349,15 @@ public class Analyser extends AbstractFileGrabber {
     private Problems problems;
     private Statistics beforeQEnd;
     private Statistics afterQEnd;
+    private Statistics beforeQStart;
+    private Statistics afterQStart;
 
     private Date lwm;
     private Date hwm;
+    private Date qStart;
     private Date qEnd;
+    private Date fStart;
+    private Date fEnd;
     private boolean checkHashes;
     
     
@@ -362,11 +368,17 @@ public class Analyser extends AbstractFileGrabber {
         emf = services.getEntityManagerFactory();
     }
     
-    public Analyser analyse(Date lwmTimestamp, Date hwmTimestamp, Date queueEndTimestamp, 
+    public Analyser analyse(Date lwmTimestamp, Date hwmTimestamp, DateRange range, 
             boolean checkHashes) {
         this.lwm = lwmTimestamp;
         this.hwm = hwmTimestamp;
-        this.qEnd = queueEndTimestamp;
+        if (range == null) {
+            this.qStart = null;
+            this.qEnd = null;
+        } else {
+            this.qStart = range.getFromDate();
+            this.qEnd = range.getToDate();
+        }
         this.checkHashes = checkHashes;
         LOG.info("Analysing queues and folders for " + getFacility().getFacilityName());
         SortedSet<DatasetMetadata> inFolder = buildInFolderMetadata();
@@ -376,6 +388,7 @@ public class Analyser extends AbstractFileGrabber {
         grouped = groupDatasets(inFolder, inDatabase);
         LOG.debug("Got " + grouped.size() + " groups");
         LOG.info("Gathering statistics for " + getFacility().getFacilityName());
+        determineFolderRange(inFolder);
         all = gatherStats(grouped, PredicateUtils.truePredicate());
         if (lwmTimestamp == null) {
             beforeLWM = null;
@@ -409,11 +422,24 @@ public class Analyser extends AbstractFileGrabber {
                 }
             });
         }
-        if (queueEndTimestamp == null) {
+        if (range == null) {
             beforeQEnd = null;
             afterQEnd = null;
+            beforeQStart = null;
+            afterQStart = null;
         } else {
-            final long qEnd = queueEndTimestamp.getTime();
+            final long qStart = this.qStart.getTime();
+            beforeQStart = gatherStats(grouped, new Predicate() {
+                public boolean evaluate(Object metadata) {
+                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() <= qStart;
+                }
+            });
+            afterQStart = gatherStats(grouped, new Predicate() {
+                public boolean evaluate(Object metadata) {
+                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() > qStart;
+                }
+            });
+            final long qEnd = this.qEnd.getTime();
             beforeQEnd = gatherStats(grouped, new Predicate() {
                 public boolean evaluate(Object metadata) {
                     return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() <= qEnd;
@@ -430,6 +456,26 @@ public class Analyser extends AbstractFileGrabber {
         return this;
     }
     
+    private void determineFolderRange(SortedSet<DatasetMetadata> inFolder) {
+        if (inFolder.isEmpty()) {
+            fStart = null;
+            fEnd = null;
+        } else {
+            Iterator<DatasetMetadata> it = inFolder.iterator();
+            DatasetMetadata ds = it.next();
+            fStart = fEnd = ds.getLastFileTimestamp();
+            while (it.hasNext()) {
+                ds = it.next();
+                Date ts = ds.getLastFileTimestamp();
+                if (ts.getTime() < fStart.getTime()) {
+                    fStart = ts;
+                } else if (ts.getTime() > fEnd.getTime()) {
+                    fEnd = ts;
+                }
+            }
+        }
+    }
+
     private Problems integrityCheck(SortedSet<DatasetMetadata> inDatabase) {
         List<Problem> problems = new ArrayList<Problem>();
         for (DatasetMetadata dataset : inDatabase) {
@@ -638,7 +684,7 @@ public class Analyser extends AbstractFileGrabber {
         analyseTree(localDir, Long.MIN_VALUE, Long.MAX_VALUE);
         for (Runnable runnable : queue) {
             WorkEntry entry = (WorkEntry) runnable;
-            FacilitySession session = fsm.getLoginDetails(
+            FacilitySession session = fsm.getSession(
                     getFacility().getFacilityName(), entry.getTimestamp().getTime());
             entry.pretendToGrabFiles();
             inFolder.add(entry.assembleDatasetMetadata(null, session, new File("")));
@@ -675,6 +721,14 @@ public class Analyser extends AbstractFileGrabber {
         return afterHWM;
     }
 
+    public final Statistics getBeforeQStart() {
+        return beforeQStart;
+    }
+
+    public final Statistics getAfterQStart() {
+        return afterQStart;
+    }
+
     public final Statistics getBeforeQEnd() {
         return beforeQEnd;
     }
@@ -695,8 +749,20 @@ public class Analyser extends AbstractFileGrabber {
         return hwm;
     }
 
-    public final Date getQEnd() {
+    public final Date getqStart() {
+        return qStart;
+    }
+
+    public final Date getqEnd() {
         return qEnd;
+    }
+
+    public final Date getfStart() {
+        return fStart;
+    }
+
+    public final Date getfEnd() {
+        return fEnd;
     }
 
     public final void setProblems(Problems problems) {
