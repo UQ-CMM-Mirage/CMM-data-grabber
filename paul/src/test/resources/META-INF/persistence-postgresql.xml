@@ -1,0 +1,20 @@
+<persistence
+	xmlns="http://java.sun.com/xml/ns/persistence"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd"
+	version="2.0">
+	<persistence-unit name="au.edu.uq.cmm.paul">
+		<description>Persistent Facility Status</description>
+		<class>au.edu.uq.cmm.eccles.UserDetails</class>
+		<class>au.edu.uq.cmm.eccles.FacilitySession</class>
+		<properties>
+		    <property name="hibernate.dialect" value="org.hibernate.dialect.HSQLDialect"/>
+			<property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver" />
+			<property name="javax.persistence.jdbc.url" value="jdbc:postgresql://localhost:5432/unittest" />
+			<property name="javax.persistence.jdbc.user" value="postgres" />
+			<property name="javax.persistence.jdbc.password" value="" />
+			<property name="hibernate.show_sql" value="true" />
+			<property name="hibernate.hbm2ddl.auto" value="create" />
+		</properties>
+	</persistence-unit>
+</persistence>

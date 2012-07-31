@@ -76,6 +76,7 @@ import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetGrabber;
 import au.edu.uq.cmm.paul.queue.AtomFeed;
 import au.edu.uq.cmm.paul.queue.QueueManager;
+import au.edu.uq.cmm.paul.queue.QueueManager.DateRange;
 import au.edu.uq.cmm.paul.queue.QueueManager.Slice;
 import au.edu.uq.cmm.paul.status.Facility;
 import au.edu.uq.cmm.paul.status.FacilityStatus;
@@ -107,6 +108,7 @@ public class WebUIController implements ServletContextAware {
     @Autowired(required=true)
     Paul services;
 
+    
     @Override
     public void setServletContext(ServletContext servletContext) {
         LOG.debug("Setting the timezone (" + TimeZone.getDefault().getID() + 
@@ -330,7 +332,7 @@ public class WebUIController implements ServletContextAware {
             String hwmTimestamp, String lwmTimestamp, boolean checkHashes) {
         Facility facility = lookupFacilityByName(facilityName);
         FacilityStatus status = getFacilityStatusManager().getStatus(facility);
-        Date catchupTimestamp = getQueueManager().getCatchupTimestamp(facility);
+        DateRange range = getQueueManager().getQueueDateRange(facility);
         model.addAttribute("facilityName", facilityName);
         model.addAttribute("status", status);
         Date hwm = status.getGrabberHWMTimestamp();
@@ -351,18 +353,17 @@ public class WebUIController implements ServletContextAware {
         model.addAttribute("hwmTimestamp", hwm);
         model.addAttribute("intertidal", true);
         model.addAttribute("checkHashes", checkHashes);
-        model.addAttribute("catchupTimestamp", catchupTimestamp);
         model.addAttribute("analysis", 
-                new Analyser(services, facility).analyse(lwm, hwm, catchupTimestamp, checkHashes));
+                new Analyser(services, facility).analyse(lwm, hwm, range, checkHashes));
         return "catchupControl";
     }
     
     @RequestMapping(value="/facilities/{facilityName:.+}", params={"reanalyse"},
             method=RequestMethod.POST)
     public String reanalyse(@PathVariable String facilityName, Model model,
-            @RequestParam String lwmTimestamp,
-            @RequestParam String hwmTimestamp,
-            @RequestParam String checkHashes) 
+            @RequestParam(required=false) String lwmTimestamp,
+            @RequestParam(required=false) String hwmTimestamp,
+            @RequestParam(required=false) String checkHashes) 
             throws ConfigurationException {
         return doCollectDiagnostics(facilityName, model, hwmTimestamp, lwmTimestamp, 
                 toBoolean(checkHashes));
@@ -375,8 +376,9 @@ public class WebUIController implements ServletContextAware {
     @RequestMapping(value="/facilities/{facilityName:.+}", params={"setHWM"},
             method=RequestMethod.POST)
     public String setFacilityHWM(@PathVariable String facilityName, Model model,
-            @RequestParam String hwmTimestamp) 
+            HttpServletRequest request, @RequestParam String hwmTimestamp) 
             throws ConfigurationException {
+        model.addAttribute("returnTo", inferReturnTo(request, "/facilities"));
         Facility facility = lookupFacilityByName(facilityName);
         FacilityStatus status = getFacilityStatusManager().getStatus(facility);
         if (status.getStatus() == FacilityStatusManager.Status.ON) {
@@ -385,7 +387,8 @@ public class WebUIController implements ServletContextAware {
         }
         Date oldHwm = status.getGrabberHWMTimestamp();
         Date hwm = null;
-        if (!tidy(hwmTimestamp).isEmpty()) {
+        hwmTimestamp = tidy(hwmTimestamp);
+        if (!hwmTimestamp.isEmpty()) {
             DateTime tmp = parseTimestamp(hwmTimestamp);
             if (tmp != null) {
                 hwm = tmp.toDate();
@@ -405,8 +408,9 @@ public class WebUIController implements ServletContextAware {
     @RequestMapping(value="/facilities/{facilityName:.+}", params={"setLWM"},
             method = RequestMethod.POST)
     public String setFacilityLWM(@PathVariable String facilityName, Model model,
-            @RequestParam String lwmTimestamp) 
+            HttpServletRequest request, @RequestParam String lwmTimestamp) 
             throws ConfigurationException {
+        model.addAttribute("returnTo", inferReturnTo(request, "/facilities"));
         Facility facility = lookupFacilityByName(facilityName);
         FacilityStatus status = getFacilityStatusManager().getStatus(facility);
         if (status.getStatus() == FacilityStatusManager.Status.ON) {
@@ -415,7 +419,8 @@ public class WebUIController implements ServletContextAware {
         }
         Date oldLwm = status.getGrabberLWMTimestamp();
         Date lwm = null;
-        if (!tidy(lwmTimestamp).isEmpty()) {
+        lwmTimestamp = tidy(lwmTimestamp);
+        if (!lwmTimestamp.isEmpty()) {
             DateTime tmp = parseTimestamp(lwmTimestamp);
             if (tmp != null) {
                 lwm = tmp.toDate();
@@ -532,7 +537,7 @@ public class WebUIController implements ServletContextAware {
         }
         String userName = principal.getName();
         FacilityStatusManager fsm = getFacilityStatusManager();
-        FacilitySession session = fsm.getLoginDetails(facilityName, System.currentTimeMillis());
+        FacilitySession session = fsm.getSession(facilityName, System.currentTimeMillis());
         if (session == null || !session.getUserName().equals(userName)) {
             model.addAttribute("message", "You are not logged in on '" + facilityName + "'");
             return "failed";

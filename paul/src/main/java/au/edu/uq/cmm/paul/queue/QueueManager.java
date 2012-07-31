@@ -46,6 +46,32 @@ import au.edu.uq.cmm.paul.status.Facility;
  * @author scrawley
  */
 public class QueueManager {
+    public static class DateRange {
+        private final Date fromDate;
+        private final Date toDate;
+        
+        
+        public DateRange(Date fromDate, Date toDate) {
+            super();
+            this.fromDate = fromDate;
+            this.toDate = toDate;
+        }
+
+        public final Date getFromDate() {
+            return fromDate;
+        }
+        
+        public final Date getToDate() {
+            return toDate;
+        }
+
+        @Override
+        public String toString() {
+            return "DateRange [fromDate=" + fromDate + ", toDate=" + toDate
+                    + "]";
+        }
+    }
+    
     public static enum Slice {
         HELD, INGESTIBLE, ALL;
     }
@@ -95,22 +121,30 @@ public class QueueManager {
         return getSnapshot(slice, null);
     }
 
-    public Date getCatchupTimestamp(Facility facility) {
+    public DateRange getQueueDateRange(Facility facility) {
         EntityManager em = createEntityManager();
-        Date res;
+        Date fromDate, toDate;
+        DateRange res;
         try {
             TypedQuery<Date> query = em.createQuery(
+                    "SELECT MIN(d.captureTimestamp) FROM DatasetMetadata d " +
+                            "GROUP BY d.facilityId HAVING d.facilityId = :id", 
+                            Date.class);
+            query.setParameter("id", facility.getId());
+            fromDate = query.getSingleResult();
+            query = em.createQuery(
                     "SELECT MAX(d.captureTimestamp) FROM DatasetMetadata d " +
                             "GROUP BY d.facilityId HAVING d.facilityId = :id", 
                             Date.class);
             query.setParameter("id", facility.getId());
-            res = query.getSingleResult();
+            toDate = query.getSingleResult();
+            res = new DateRange(fromDate, toDate);
         } catch (NoResultException ex) {
             res = null;
         } finally {
             em.close();
         }
-        LOG.info("determineCatchupTime(" + facility.getFacilityName() + ") -> " + res);
+        LOG.info("getQueueDateRange(" + facility.getFacilityName() + ") -> " + res);
         return res;
     }
 

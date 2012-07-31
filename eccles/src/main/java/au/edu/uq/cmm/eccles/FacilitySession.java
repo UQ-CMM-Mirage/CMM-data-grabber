@@ -28,6 +28,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 
 import org.hibernate.annotations.GenericGenerator;
@@ -51,6 +52,8 @@ public class FacilitySession {
     private Long id;
     private String sessionUuid;
     private String emailAddress;
+
+    private Date inferredLogoutTime;
     
     public FacilitySession() {
         super();
@@ -147,6 +150,15 @@ public class FacilitySession {
 
     public void setFacilityName(String facilityName) {
         this.facilityName = facilityName;
+    }
+
+    @Transient
+    public Date getInferredLogoutTime() {
+        return inferredLogoutTime;
+    }
+    
+    public void setInferredLogoutTime(Date inferredLogoutTime) {
+        this.inferredLogoutTime = inferredLogoutTime;
     }
 
     public static FacilitySession makeDummySession(String facilityName, Date now) {
