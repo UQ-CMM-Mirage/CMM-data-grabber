@@ -384,6 +384,7 @@
 		</div>
 		<div class="row-fluid"><h2>Actions</h2></div>
 		<form action="/paul/facilities/${facilityName}" method="post">
+			<input type="hidden" name="returnTo" value="/paul/queueDiagnostics/${facilityName}">
 		    <div class="row-fluid">
 				Check datafile hashes (slow!): 
 				<input type="checkbox" name="checkHashes" value="true" ${checkHashes ? 'checked' : ''}>

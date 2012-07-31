@@ -108,6 +108,7 @@ public class WebUIController implements ServletContextAware {
     @Autowired(required=true)
     Paul services;
 
+    
     @Override
     public void setServletContext(ServletContext servletContext) {
         LOG.debug("Setting the timezone (" + TimeZone.getDefault().getID() + 
@@ -375,8 +376,9 @@ public class WebUIController implements ServletContextAware {
     @RequestMapping(value="/facilities/{facilityName:.+}", params={"setHWM"},
             method=RequestMethod.POST)
     public String setFacilityHWM(@PathVariable String facilityName, Model model,
-            @RequestParam String hwmTimestamp) 
+            HttpServletRequest request, @RequestParam String hwmTimestamp) 
             throws ConfigurationException {
+        model.addAttribute("returnTo", inferReturnTo(request, "/facilities"));
         Facility facility = lookupFacilityByName(facilityName);
         FacilityStatus status = getFacilityStatusManager().getStatus(facility);
         if (status.getStatus() == FacilityStatusManager.Status.ON) {
@@ -406,8 +408,9 @@ public class WebUIController implements ServletContextAware {
     @RequestMapping(value="/facilities/{facilityName:.+}", params={"setLWM"},
             method = RequestMethod.POST)
     public String setFacilityLWM(@PathVariable String facilityName, Model model,
-            @RequestParam String lwmTimestamp) 
+            HttpServletRequest request, @RequestParam String lwmTimestamp) 
             throws ConfigurationException {
+        model.addAttribute("returnTo", inferReturnTo(request, "/facilities"));
         Facility facility = lookupFacilityByName(facilityName);
         FacilityStatus status = getFacilityStatusManager().getStatus(facility);
         if (status.getStatus() == FacilityStatusManager.Status.ON) {
