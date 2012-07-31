@@ -385,7 +385,8 @@ public class WebUIController implements ServletContextAware {
         }
         Date oldHwm = status.getGrabberHWMTimestamp();
         Date hwm = null;
-        if (!tidy(hwmTimestamp).isEmpty()) {
+        hwmTimestamp = tidy(hwmTimestamp);
+        if (!hwmTimestamp.isEmpty()) {
             DateTime tmp = parseTimestamp(hwmTimestamp);
             if (tmp != null) {
                 hwm = tmp.toDate();
@@ -415,7 +416,8 @@ public class WebUIController implements ServletContextAware {
         }
         Date oldLwm = status.getGrabberLWMTimestamp();
         Date lwm = null;
-        if (!tidy(lwmTimestamp).isEmpty()) {
+        lwmTimestamp = tidy(lwmTimestamp);
+        if (!lwmTimestamp.isEmpty()) {
             DateTime tmp = parseTimestamp(lwmTimestamp);
             if (tmp != null) {
                 lwm = tmp.toDate();
