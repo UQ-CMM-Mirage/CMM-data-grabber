@@ -352,7 +352,6 @@ public class WebUIController implements ServletContextAware {
         model.addAttribute("hwmTimestamp", hwm);
         model.addAttribute("intertidal", true);
         model.addAttribute("checkHashes", checkHashes);
-        model.addAttribute("range", range);
         model.addAttribute("analysis", 
                 new Analyser(services, facility).analyse(lwm, hwm, range, checkHashes));
         return "catchupControl";

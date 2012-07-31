@@ -22,10 +22,16 @@
 						value="${status.grabberHWMTimestamp}"/> <br>
 			Timestamp of first queued Dataset : 
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-						value="${empty range ? '' : range.fromDate}"/> <br>
+						value="${analysis.qStart}"/> <br>
 			Timestamp of last queued Dataset : 
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-						value="${empty range ? '' : range.toDate}"/> <br>
+						value="${analysis.qEnd}"/> <br>
+			Timestamp of first folder Dataset : 
+				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+						value="${analysis.fStart}"/> <br>
+			Timestamp of last folder Dataset : 
+				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+						value="${analysis.fEnd}"/> <br>
 			LWM / HWM used in analysis : 
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
 						value="${lwmTimestamp}"/> / 

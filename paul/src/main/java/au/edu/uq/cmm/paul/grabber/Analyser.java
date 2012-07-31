@@ -356,6 +356,8 @@ public class Analyser extends AbstractFileGrabber {
     private Date hwm;
     private Date qStart;
     private Date qEnd;
+    private Date fStart;
+    private Date fEnd;
     private boolean checkHashes;
     
     
@@ -386,6 +388,7 @@ public class Analyser extends AbstractFileGrabber {
         grouped = groupDatasets(inFolder, inDatabase);
         LOG.debug("Got " + grouped.size() + " groups");
         LOG.info("Gathering statistics for " + getFacility().getFacilityName());
+        determineFolderRange(inFolder);
         all = gatherStats(grouped, PredicateUtils.truePredicate());
         if (lwmTimestamp == null) {
             beforeLWM = null;
@@ -453,6 +456,26 @@ public class Analyser extends AbstractFileGrabber {
         return this;
     }
     
+    private void determineFolderRange(SortedSet<DatasetMetadata> inFolder) {
+        if (inFolder.isEmpty()) {
+            fStart = null;
+            fEnd = null;
+        } else {
+            Iterator<DatasetMetadata> it = inFolder.iterator();
+            DatasetMetadata ds = it.next();
+            fStart = fEnd = ds.getLastFileTimestamp();
+            while (it.hasNext()) {
+                ds = it.next();
+                Date ts = ds.getLastFileTimestamp();
+                if (ts.getTime() < fStart.getTime()) {
+                    fStart = ts;
+                } else if (ts.getTime() > fEnd.getTime()) {
+                    fEnd = ts;
+                }
+            }
+        }
+    }
+
     private Problems integrityCheck(SortedSet<DatasetMetadata> inDatabase) {
         List<Problem> problems = new ArrayList<Problem>();
         for (DatasetMetadata dataset : inDatabase) {
@@ -726,8 +749,20 @@ public class Analyser extends AbstractFileGrabber {
         return hwm;
     }
 
-    public final Date getQEnd() {
+    public final Date getqStart() {
+        return qStart;
+    }
+
+    public final Date getqEnd() {
         return qEnd;
+    }
+
+    public final Date getfStart() {
+        return fStart;
+    }
+
+    public final Date getfEnd() {
+        return fEnd;
     }
 
     public final void setProblems(Problems problems) {
