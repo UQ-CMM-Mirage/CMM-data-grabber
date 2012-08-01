@@ -12,39 +12,41 @@
 	<div class="container-fluid">
 		<div class="row-fluid"><h1>Queue Diagnostics for ${facilityName}</h1></div>
 		<div class="row-fluid">
-			Grabber status : ${status.status} <br> 
-			Grabber message : ${status.message} <br> 
-			Grabber LWM timestamp : 
+			<table class="table table-bordered">
+				<tr><td class="span2">Grabber status : </td><td class="span10">${status.status}</td></tr> 
+			<tr><td class="span2">Grabber message : </td><td class="span10">${status.message}</td></tr> 
+			<tr><td class="span2">Grabber LWM timestamp :</td><td class="span10"> 
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-						value="${status.grabberLWMTimestamp}"/> <br>
-			Grabber HWM timestamp : 
+						value="${status.grabberLWMTimestamp}"/></td></tr> 
+			<tr><td class="span2">Grabber HWM timestamp : </td><td class="span10">
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-						value="${status.grabberHWMTimestamp}"/> <br>
-			Timestamp of first queued Dataset : 
+						value="${status.grabberHWMTimestamp}"/></td></tr> 
+			<tr><td class="span2">Timestamp of first queued Dataset : </td><td class="span10">
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-						value="${analysis.qStart}"/> <br>
-			Timestamp of last queued Dataset : 
+						value="${analysis.qStart}"/></td></tr> 
+			<tr><td class="span2">Timestamp of last queued Dataset : </td><td class="span10">
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-						value="${analysis.qEnd}"/> <br>
-			Timestamp of first folder Dataset : 
+						value="${analysis.qEnd}"/></td></tr> 
+			<tr><td class="span2">Timestamp of first folder Dataset : </td><td class="span10">
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-						value="${analysis.fStart}"/> <br>
-			Timestamp of last folder Dataset : 
+						value="${analysis.fStart}"/></td></tr> 
+			<tr><td class="span2">Timestamp of last folder Dataset : </td><td class="span10">
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-						value="${analysis.fEnd}"/> <br>
-			LWM / HWM used in analysis : 
+						value="${analysis.fEnd}"/></td></tr> 
+			<tr><td class="span2">LWM / HWM used in analysis : </td><td class="span10">
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
 						value="${lwmTimestamp}"/> / 
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-						value="${hwmTimestamp}"/>
+						value="${hwmTimestamp}"/></td></tr> 
+			</table>
 		</div>
 		<div class="row-fluid"><h2>Statistics</h2></div>
 		<div class="row-fluid">
 		<table class="table table-striped table-condensed">
 			<thead>
 				<tr><th class="span2">Timespan</th>
-					<th class="span2">All Datasets in "instrument data"</th>
-					<th class="span2">Unmatched Datasets on "instrument data"</th>
+					<th class="span2">All Datasets in folder</th>
+					<th class="span2">Unmatched Datasets in folder</th>
 					<th class="span2">All Datasets in queues</th>
 					<th class="span2">Dataset groups with multiples in queues</th>
 					<th class="span2">Unmatched Dataset groups in queues</th>
