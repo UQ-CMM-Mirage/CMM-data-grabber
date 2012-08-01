@@ -103,7 +103,7 @@ public class Group implements Comparable<Group> {
             DatasetMetadata latest = it.next();
             while (it.hasNext()) {
                 DatasetMetadata dataset = it.next();
-                if (dataset.getUpdateTimestamp().after(latest.getUpdateTimestamp())) {
+                if (dataset.getUpdateTimestamp().getTime() > latest.getUpdateTimestamp().getTime()) {
                     latest = dataset;
                 }
             }
@@ -111,5 +111,11 @@ public class Group implements Comparable<Group> {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public String toString() {
+        return "Group [basePathname=" + basePathname + ", inFolder=" + inFolder
+                + ", allInDatabase=" + allInDatabase + "]";
     }
 }

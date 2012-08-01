@@ -357,6 +357,9 @@ public class Analyser extends AbstractFileGrabber {
             Collection<DatasetMetadata> inDatabase) {
         ArrayList<Group> groups = createGroupsFromDatabase(inDatabase);
         groups = mergeGroupsFromFolder(groups, inFolder);
+//        for (Group group : groups) {
+//            LOG.debug(group.toString());
+//        }
         return groups;
     }
 
@@ -381,7 +384,7 @@ public class Analyser extends AbstractFileGrabber {
     
     private boolean intertidal(Date timestamp) {
         return (lwm == null || timestamp.getTime() >= lwm.getTime()) &&
-               (hwm == null || timestamp.getTime() < hwm.getTime());
+               (hwm == null || timestamp.getTime() <= hwm.getTime());
     }
 
     private ArrayList<Group> mergeGroupsFromFolder(ArrayList<Group> groups,
