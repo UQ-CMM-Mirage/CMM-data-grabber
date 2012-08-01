@@ -60,247 +60,10 @@ public class Analyser extends AbstractFileGrabber {
     
     private static Logger LOG = LoggerFactory.getLogger(Analyser.class);
     
-    public static class Statistics {
-        private final int datasetsInFolder;
-        private final int datasetsInDatabase;
-        private int groupsWithDuplicatesInDatabase;
-        private int datasetsUnmatchedInFolder;
-        private int groupsUnmatchedInDatabase;
-
-        public Statistics(int datasetsInFolder, int datasetsInDatabase, 
-                int groupsWithDuplicatesInDatabase, int datasetsUnmatchedInFolder, 
-                int groupsUnmatchedInDatabase) {
-            super();
-            this.datasetsInFolder = datasetsInFolder;
-            this.datasetsInDatabase = datasetsInDatabase;
-            this.groupsWithDuplicatesInDatabase = groupsWithDuplicatesInDatabase;
-            this.datasetsUnmatchedInFolder = datasetsUnmatchedInFolder;
-            this.groupsUnmatchedInDatabase = groupsUnmatchedInDatabase;
-        }
-
-        public final int getDatasetsInFolder() {
-            return datasetsInFolder;
-        }
-
-        public final int getDatasetsInDatabase() {
-            return datasetsInDatabase;
-        }
-
-        public final int getGroupsWithDuplicatesInDatabase() {
-            return groupsWithDuplicatesInDatabase;
-        }
-
-        public final int getDatasetsUnmatchedInFolder() {
-            return datasetsUnmatchedInFolder;
-        }
-
-        public final int getGroupsUnmatchedInDatabase() {
-            return groupsUnmatchedInDatabase;
-        }
-    }
-    
     public enum ProblemType {
         METADATA_MISSING, METADATA_SIZE,
         FILE_MISSING, FILE_SIZE, FILE_SIZE_2,
         FILE_HASH, FILE_HASH_2, IO_ERROR;
-    }
-    
-    public static class Problem {
-        private final DatasetMetadata dataset;
-        private final DatafileMetadata datafile;
-        private final String details;
-        private final ProblemType type;
-        
-        public Problem(DatasetMetadata dataset, DatafileMetadata datafile, 
-                ProblemType type, String details) {
-            super();
-            this.dataset = dataset;
-            this.datafile = datafile;
-            this.details = details;
-            this.type = type;
-        }
-        
-        public final DatasetMetadata getDataset() {
-            return dataset;
-        }
-        
-        public final DatafileMetadata getDatafile() {
-            return datafile;
-        }
-        
-        public final String getDetails() {
-            return details;
-        }
-
-        public final ProblemType getType() {
-            return type;
-        }
-    }
-    
-    public static class Problems {
-        private final List<Problem> problems;
-
-        public Problems(List<Problem> problem) {
-            this.problems = problem;
-        }
-
-        public int getNosProblems() {
-            return problems.size();
-        }
-
-        public final int getIoError() {
-            return count(ProblemType.IO_ERROR);
-        }
-
-        public final int getFileSize2() {
-            return count(ProblemType.FILE_SIZE_2);
-        }
-
-        public final int getFileSize() {
-            return count(ProblemType.FILE_SIZE);
-        }
-
-        public final int getFileHash2() {
-            return count(ProblemType.FILE_HASH_2);
-        }
-
-        public final int getFileHash() {
-            return count(ProblemType.FILE_HASH);
-        }
-
-        public final int getFileMissing() {
-            return count(ProblemType.FILE_MISSING);
-        }
-
-        public final int getMetadataSize() {
-            return count(ProblemType.METADATA_SIZE);
-        }
-
-        public final int getMetadataMissing() {
-            return count(ProblemType.METADATA_MISSING);
-        }
-
-        private int count(ProblemType type) {
-            int count = 0;
-            for (Problem problem : problems) {
-                if (problem.getType() == type) {
-                    count++;
-                }
-            }
-            return count;
-        }
-
-        public final List<Problem> getProblems() {
-            return problems;
-        }
-    }
-    
-    public static class Group implements Comparable<Group> {
-        private final String basePathname;
-        private DatasetMetadata inFolder;
-        private List<DatasetMetadata> allInDatabase = new ArrayList<DatasetMetadata>();
-        
-        public Group(String basePathname) {
-            super();
-            this.basePathname = basePathname;
-        }
-
-        public final String getBasePathname() {
-            return basePathname;
-        }
-
-        public final DatasetMetadata getInFolder() {
-            return inFolder;
-        }
-
-        public final List<DatasetMetadata> getAllInDatabase() {
-            return allInDatabase;
-        }
-        
-        public final List<DecoratedDatasetMetadata> getAllDecorated() {
-            List<DecoratedDatasetMetadata> res = 
-                    new ArrayList<DecoratedDatasetMetadata>(allInDatabase.size() + 1);
-            if (inFolder != null) {
-                res.add(new DecoratedDatasetMetadata(inFolder, inFolder));
-            }
-            for (DatasetMetadata dataset : allInDatabase) {
-                res.add(new DecoratedDatasetMetadata(dataset, inFolder));
-            }
-            return res;
-        }
-        
-        public final boolean isUnmatchedInDatabase() {
-            if (inFolder == null) {
-                return true;
-            }
-            for (DatasetMetadata dataset : allInDatabase) {
-                if (!matches(dataset, inFolder)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public final boolean isDuplicatesInDatabase() {
-            if (inFolder == null) {
-                return false;
-            }
-            int count = 0;
-            for (DatasetMetadata dataset : allInDatabase) {
-                if (matches(dataset, inFolder)) {
-                    count++;
-                }
-            }
-            return count > 1;
-        }
-        
-        public final void setInFolder(DatasetMetadata inFolder) {
-            this.inFolder = inFolder;
-        }
-        
-        public final void addInDatabase(DatasetMetadata inDatabase) {
-            this.allInDatabase.add(inDatabase);
-        }
-
-        @Override
-        public int compareTo(Group o) {
-            return basePathname.compareTo(o.getBasePathname());
-        }
-    }
-    
-    public static class DecoratedDatasetMetadata extends DatasetMetadata {
-        private final DatasetMetadata inFolder;
-        private final boolean isInFolder;
-
-        public DecoratedDatasetMetadata(DatasetMetadata dataset, DatasetMetadata inFolder) {
-            super(dataset.getSourceFilePathnameBase(), 
-                    dataset.getFacilityFilePathnameBase(), 
-                    dataset.getMetadataFilePathname(),
-                    dataset.getUserName(), 
-                    dataset.getFacilityName(), 
-                    dataset.getFacilityId(), 
-                    dataset.getAccountName(), 
-                    dataset.getEmailAddress(),
-                    dataset.getCaptureTimestamp(), 
-                    dataset.getSessionUuid(), 
-                    dataset.getSessionStartTimestamp(), 
-                    dataset.getDatafiles());
-            this.inFolder = inFolder;
-            this.isInFolder = dataset == inFolder;
-            this.setId(dataset.getId());
-        }
-        
-        public boolean isInFolder() {
-            return isInFolder;
-        }
-        
-        public boolean isMatched() {
-            return inFolder != null && matches(inFolder, this);
-        }
-        
-        public boolean isUnmatched() {
-            return inFolder == null || !matches(inFolder, this);
-        }
     }
     
     private static final Comparator<DatasetMetadata> ORDER_BY_BASE_PATH_AND_TIME =
@@ -452,7 +215,7 @@ public class Analyser extends AbstractFileGrabber {
             });
         }
         LOG.info("Performing queue entry integrity checks for " + getFacility().getFacilityName());
-        problems = integrityCheck(inDatabase);
+        problems = integrityCheck(grouped);
         return this;
     }
     
@@ -476,9 +239,17 @@ public class Analyser extends AbstractFileGrabber {
         }
     }
 
-    private Problems integrityCheck(SortedSet<DatasetMetadata> inDatabase) {
+    private Problems integrityCheck(List<Group> grouped) {
         List<Problem> problems = new ArrayList<Problem>();
-        for (DatasetMetadata dataset : inDatabase) {
+        for (Group group : grouped) {
+            // Check only the latest queue entry.  Older ones are not really 
+            // relevant, and besides they typically have the "problem" that 
+            // one or more captured component datafiles no longer matches the
+            // in-folder dataset. (Which has typically been recaptured.)
+            DatasetMetadata dataset = group.getLatestInDatabase();
+            if (dataset == null) {
+                continue;
+            }
             File adminFile = new File(dataset.getMetadataFilePathname());
             if (!adminFile.exists()) {
                 logProblem(dataset, null, ProblemType.METADATA_MISSING, problems, 
@@ -576,7 +347,7 @@ public class Analyser extends AbstractFileGrabber {
                 groupsUnmatchedInDatabase);
     }
     
-    private static boolean matches(DatasetMetadata d1, DatasetMetadata d2) {
+    static boolean matches(DatasetMetadata d1, DatasetMetadata d2) {
         return d1.getSourceFilePathnameBase().equals(d2.getSourceFilePathnameBase()) &&
                 d1.getLastFileTimestamp().getTime() == d2.getLastFileTimestamp().getTime();
     }
