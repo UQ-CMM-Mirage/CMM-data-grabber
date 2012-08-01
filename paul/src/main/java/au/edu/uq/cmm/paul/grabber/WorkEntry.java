@@ -80,6 +80,9 @@ class WorkEntry implements Runnable {
     private final boolean catchup;
     private final File safeDirectory;
     
+    private Thread grabberThread;
+    private boolean grabAborted;
+    
     
     public WorkEntry(Paul services, FileWatcherEvent event, File baseFile) {
         this.facility = (Facility) event.getFacility();
@@ -118,11 +121,12 @@ class WorkEntry implements Runnable {
 
     public void addEvent(FileWatcherEvent event) {
         events.add(event);
-        // FIXME - events that arrive too late possibly won't be grabbed
-        // because they aren't guaranteed to be in the set that the
-        // grabFiles method is iterating.
         File file = event.getFile();
         LOG.debug("Processing event for file " + file);
+        if (grabberThread != null) {
+            LOG.warn("A late file event arrived for file " + file + ": interrupting the grabber");
+            grabberThread.interrupt();
+        }
         boolean matched = false;
         List<DatafileTemplate> templates = facility.getDatafileTemplates();
         if (templates.isEmpty()) {
@@ -187,15 +191,21 @@ class WorkEntry implements Runnable {
             if (!datasetCompleted()) {
                 return;
             }
+            grabAborted = false;
+            grabberThread = Thread.currentThread();
             grabFiles(false);
             statusManager.updateHWMTimestamp(facility, timestamp);
         } catch (InterruptedException ex) {
-            LOG.debug("interrupted");
+            LOG.debug("Handling interrupt on workEntry thread", ex);
+            // FIXME - clean up any files that we captured ...
+            grabAborted = true;
         } catch (Throwable ex) {
             LOG.error("unexpected exception", ex);
             return;
         } finally {
-            fileGrabber.remove(baseFile);
+            if (!grabAborted) {
+                fileGrabber.remove(baseFile);
+            }
         }
         LOG.debug("Finished processing workEntry for " + baseFile);
     }
@@ -207,8 +217,10 @@ class WorkEntry implements Runnable {
         FacilitySession session = statusManager.getSession(
                 facility.getFacilityName(), timestamp.getTime());
         // Optionally lock the files, then grab them.
-        // FIXME - note that we may not see all of the files ... see above.
         for (GrabbedFile file : files.values()) {
+            if (Thread.interrupted()) {
+                throw new InterruptedException("Interrupted in grabFiles()");
+            }
             try (FileInputStream is = new FileInputStream(file.getFile())) {
                 if (facility.isUseFileLocks()) {
                     LOG.debug("acquiring lock on " + file);
@@ -225,6 +237,9 @@ class WorkEntry implements Runnable {
             }
         }
         try {
+            if (Thread.interrupted()) {
+                throw new InterruptedException("Interrupted in grabFiles()");
+            }
             return saveMetadata(timestamp, session, regrabbing);
         } catch (JsonGenerationException ex) {
             throw new PaulException(ex);

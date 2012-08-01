@@ -357,9 +357,6 @@ public class Analyser extends AbstractFileGrabber {
             Collection<DatasetMetadata> inDatabase) {
         ArrayList<Group> groups = createGroupsFromDatabase(inDatabase);
         groups = mergeGroupsFromFolder(groups, inFolder);
-//        for (Group group : groups) {
-//            LOG.debug(group.toString());
-//        }
         return groups;
     }
 
