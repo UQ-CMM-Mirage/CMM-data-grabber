@@ -21,6 +21,7 @@ package au.edu.uq.cmm.paul.grabber;
 
 import java.io.File;
 import java.util.Date;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -99,11 +100,13 @@ public class FileGrabber extends AbstractFileGrabber implements SimpleService {
     @Override
     public void shutdown() throws InterruptedException {
         setShuttingDown(true);
-        executor.shutdown();
-        if (executor.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS)) {
-            LOG.info("FileGrabber's executor shut down");
-        } else {
-            LOG.warn("FileGrabber's executor didn't shut down cleanly");
+        if (executor != null) {
+            executor.shutdown();
+            if (executor.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS)) {
+                LOG.info("FileGrabber's executor shut down");
+            } else {
+                LOG.warn("FileGrabber's executor didn't shut down cleanly");
+            }
         }
     }
 
@@ -149,7 +152,15 @@ public class FileGrabber extends AbstractFileGrabber implements SimpleService {
         if (executor == null) {
             LOG.info("Dropping work entry as there is currently no executor.");
         } else {
-            executor.execute(entry);
+            try {
+                executor.execute(entry);
+            } catch (RejectedExecutionException ex) {
+                if (executor.isShutdown()) {
+                    LOG.info("Dropping work entry as the executor is shut down");
+                } else {
+                    throw ex;
+                }
+            }
         }
     }
 
