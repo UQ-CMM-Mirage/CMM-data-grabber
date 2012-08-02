@@ -58,6 +58,7 @@ public abstract class AbstractFileGrabber implements FileWatcherEventListener {
     }
 
     public final synchronized void remove(File file) {
+        LOG.debug("Removing workMap entry for " + file);
         workMap.remove(file);
     }
 

@@ -30,10 +30,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -69,11 +66,11 @@ class WorkEntry implements Runnable {
     private final FileGrabber fileGrabber;
     private final QueueManager queueManager;
     private final FacilityStatusManager statusManager;
-    private final BlockingDeque<FileWatcherEvent> events;
     private final File baseFile;
     private final String instrumentBasePath;
     private final Map<File, GrabbedFile> files;
     private final Facility facility;
+    private int settling;
     private Date timestamp;
     private long latestFileTimestamp = 0L;
     private final boolean holdDatasetsWithNoUser;
@@ -94,7 +91,6 @@ class WorkEntry implements Runnable {
         this.baseFile = baseFile;
         this.instrumentBasePath = mapToInstrumentPath(facility, baseFile);
         this.files = new ConcurrentHashMap<File, GrabbedFile>();
-        this.events = new LinkedBlockingDeque<FileWatcherEvent>();
         this.holdDatasetsWithNoUser = 
                 services.getConfiguration().isHoldDatasetsWithNoUser();
         long timeout = services.getConfiguration().getGrabberTimeout();
@@ -102,6 +98,10 @@ class WorkEntry implements Runnable {
         this.catchup = event.isCatchup();
         this.safeDirectory = new File(
                 services.getConfiguration().getCaptureDirectory());
+        settling = facility.getFileSettlingTime();
+        if (settling <= 0) {
+            settling = FileGrabber.DEFAULT_FILE_SETTLING_TIME;
+        }
         addEvent(event);
     }
     
@@ -121,43 +121,44 @@ class WorkEntry implements Runnable {
     }
 
     public void addEvent(FileWatcherEvent event) {
-        events.add(event);
         File file = event.getFile();
         LOG.debug("Processing event for file " + file);
-        if (grabberThread != null) {
-            LOG.warn("A late file event arrived for file " + file + ": interrupting the grabber");
-            grabberThread.interrupt();
-        }
-        boolean matched = false;
-        List<DatafileTemplate> templates = facility.getDatafileTemplates();
-        if (templates.isEmpty()) {
-            if (!files.containsKey(file)) {
-                files.put(file, new GrabbedFile(file, file, null));
-                LOG.debug("Added file " + file + " to map for grabbing");
-            } else {
-                LOG.debug("File " + file + " already in map for grabbing");
+        synchronized (this) {
+            if (grabberThread != null) {
+                LOG.warn("A late file event arrived for file " + file + ": interrupting the grabber");
+                grabberThread.interrupt();
             }
-            updateLatestFileTimestamp(file);
-        } else {
-            for (DatafileTemplate template : templates) {
-                Pattern pattern = template.getCompiledFilePattern(
-                        facility.isCaseInsensitive());
-                Matcher matcher = pattern.matcher(file.getAbsolutePath());
-                if (matcher.matches()) {
-                    if (!files.containsKey(file)) {
-                        files.put(file, new GrabbedFile(
-                                new File(matcher.group(1)), file, template));
-                        LOG.debug("Added file " + file + " to map for grabbing");
-                    } else {
-                        LOG.debug("File " + file + " already in map for grabbing");
-                    }
-                    updateLatestFileTimestamp(file);
-                    matched = true;
-                    break;
+            boolean matched = false;
+            List<DatafileTemplate> templates = facility.getDatafileTemplates();
+            if (templates.isEmpty()) {
+                if (!files.containsKey(file)) {
+                    files.put(file, new GrabbedFile(file, file, null));
+                    LOG.debug("Added file " + file + " to map for grabbing");
+                } else {
+                    LOG.debug("File " + file + " already in map for grabbing");
                 }
-            }
-            if (!matched) {
-                LOG.debug("File " + file + " didn't match any template - ignoring");
+                updateLatestFileTimestamp(file);
+            } else {
+                for (DatafileTemplate template : templates) {
+                    Pattern pattern = template.getCompiledFilePattern(
+                            facility.isCaseInsensitive());
+                    Matcher matcher = pattern.matcher(file.getAbsolutePath());
+                    if (matcher.matches()) {
+                        if (!files.containsKey(file)) {
+                            files.put(file, new GrabbedFile(
+                                    new File(matcher.group(1)), file, template));
+                            LOG.debug("Added file " + file + " to map for grabbing");
+                        } else {
+                            LOG.debug("File " + file + " already in map for grabbing");
+                        }
+                        updateLatestFileTimestamp(file);
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched) {
+                    LOG.debug("File " + file + " didn't match any template - ignoring");
+                }
             }
         }
     }
@@ -300,15 +301,20 @@ class WorkEntry implements Runnable {
             System.currentTimeMillis() + grabberTimeout;
         do {
             if (!catchup) {
-                int settling = facility.getFileSettlingTime();
-                if (settling <= 0) {
-                    settling = FileGrabber.DEFAULT_FILE_SETTLING_TIME;
-                }
-                // Wait for the file modification events stop arriving ... plus
+                // Wait for the file modification interrupts stop arriving ... plus
                 // the settling time.
-                while (events.poll(settling, TimeUnit.MILLISECONDS) != null) {
-                    LOG.debug("poll");
+                while (true) {
+                    try {
+                        Thread.sleep(settling);
+                        break;
+                    } catch (InterruptedException ex) {
+                        if (fileGrabber.isShutDown()) {
+                            throw ex;
+                        }
+                    }
                 }
+                // We don't need to abort the grab because we haven't started yet.
+                grabAborted = false;
             }
             // Check that the dataset's non-optional files are all present,
             // and that they meet the minimum size requirements.

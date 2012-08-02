@@ -20,7 +20,6 @@
 package au.edu.uq.cmm.paul.grabber;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
@@ -172,12 +171,12 @@ public class GrabberEventTest {
         EasyMock.expectLastCall().times(1);
         EasyMock.replay(qm);
         FileGrabber fg = new FileGrabber(buildMockServices(CONFIG, qm), FACILITY, true);
+        long now = System.currentTimeMillis();
         try {
             File one = new File("/tmp/one.txt");
             stringToFile("123456789012345678901234567890", one);
             fg.startup();
-            fg.eventOccurred(new FileWatcherEvent(
-                    FACILITY, one, true, new Date().getTime(), false));
+            fg.eventOccurred(new FileWatcherEvent(FACILITY, one, true, now, false));
         } finally {
             fg.shutdown();
         }
@@ -186,9 +185,52 @@ public class GrabberEventTest {
         assertEquals("fred", dataset.getUserName());
         assertEquals("count", dataset.getAccountName());
         assertEquals(1, dataset.getDatafiles().size());
-        File file = new File(dataset.getDatafiles().get(0).getCapturedFilePathname());
+        DatafileMetadata datafile = dataset.getDatafiles().get(0);
+        File file = new File(datafile.getCapturedFilePathname());
         assertTrue(file.exists());
         assertEquals(30, file.length());
+        assertEquals("eba392e2f2094d7ffe55a23dffc29c412abd47057a0823c6c149c9c759423afd" +
+        		     "e56f0eef73ade8f79bc1d16a99cbc5e4995afd8c14adb49410ecd957aecc8d02", 
+        		     datafile.getDatafileHash().toLowerCase());
+        assertEquals(new Date(now), dataset.getCaptureTimestamp());
+    }
+    
+    @Test
+    public void testMultipleFeedEventTextFile() throws InterruptedException, JsonGenerationException, IOException {
+        Capture<DatasetMetadata> capture = new Capture<DatasetMetadata>();
+        QueueManager qm = EasyMock.createMock(QueueManager.class);
+        qm.addEntry(EasyMock.capture(capture));
+        EasyMock.expectLastCall().times(1);
+        EasyMock.replay(qm);
+        FACILITY.setFileSettlingTime(1000);
+        FileGrabber fg = new FileGrabber(buildMockServices(CONFIG, qm), FACILITY, true);
+        long now = System.currentTimeMillis();
+        try {
+            File one = new File("/tmp/one.txt");
+            stringToFile("123456789012345678901234567890", one);
+            fg.startup();
+            long tmp = now;
+            for (int i = 0; i < 10; i++) {
+                fg.eventOccurred(new FileWatcherEvent(FACILITY, one, true, tmp, false));
+                tmp = System.currentTimeMillis();
+                Thread.sleep(100);
+            }
+        } finally {
+            fg.shutdown();
+        }
+        EasyMock.verify(qm);
+        DatasetMetadata dataset = capture.getValue();
+        assertEquals("fred", dataset.getUserName());
+        assertEquals("count", dataset.getAccountName());
+        assertEquals(1, dataset.getDatafiles().size());
+        DatafileMetadata datafile = dataset.getDatafiles().get(0);
+        File file = new File(datafile.getCapturedFilePathname());
+        assertTrue(file.exists());
+        assertEquals(30, file.length());
+        assertEquals("eba392e2f2094d7ffe55a23dffc29c412abd47057a0823c6c149c9c759423afd" +
+                     "e56f0eef73ade8f79bc1d16a99cbc5e4995afd8c14adb49410ecd957aecc8d02", 
+                     datafile.getDatafileHash().toLowerCase());
+        assertEquals(new Date(now), dataset.getCaptureTimestamp());
     }
 
     private void stringToFile(String str, File file) throws IOException {
