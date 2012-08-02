@@ -82,6 +82,7 @@ class WorkEntry implements Runnable {
     
     private Thread grabberThread;
     private boolean grabAborted;
+    private boolean pretending;
     
     
     public WorkEntry(Paul services, FileWatcherEvent event, File baseFile) {
@@ -188,23 +189,35 @@ class WorkEntry implements Runnable {
     public void run() {
         LOG.debug("Processing workEntry for " + baseFile);
         try {
-            if (!datasetCompleted()) {
+            boolean alreadyRunning = false;
+            synchronized (this) {
+                if (grabberThread == null) {
+                    grabAborted = false;
+                    grabberThread = Thread.currentThread();
+                } else {
+                    alreadyRunning = true;
+                }
+            }
+            if (alreadyRunning || !datasetCompleted()) {
                 return;
             }
-            grabAborted = false;
-            grabberThread = Thread.currentThread();
             grabFiles(false);
             statusManager.updateHWMTimestamp(facility, timestamp);
         } catch (InterruptedException ex) {
             LOG.debug("Handling interrupt on workEntry thread", ex);
-            // FIXME - clean up any files that we captured ...
             grabAborted = true;
+            deleteGrabbedFiles();
         } catch (Throwable ex) {
             LOG.error("unexpected exception", ex);
             return;
         } finally {
-            if (!grabAborted) {
-                fileGrabber.remove(baseFile);
+            synchronized (this) {
+                if (grabAborted) {
+                    fileGrabber.enqueueWorkEntry(this);
+                } else {
+                    fileGrabber.remove(baseFile);
+                }
+                grabberThread = null;
             }
         }
         LOG.debug("Finished processing workEntry for " + baseFile);
@@ -252,12 +265,31 @@ class WorkEntry implements Runnable {
      * passable metadata record for it.
      */
     public void pretendToGrabFiles() {
+        pretending = true;
         for (GrabbedFile file : files.values()) {
             Date now = new Date();
             Date fileTimestamp = new Date(file.getFile().lastModified());
             file.setCopiedFile(file.getFile());
             file.setFileTimestamp(fileTimestamp);
             file.setCopyTimestamp(now);
+        }
+    }
+    
+    /**
+     * This method is called on an interrupt to tidy up any data files that were
+     * captured or being captured.  If we are 'pretending', don't do anything because
+     * the "pretend copied" files are actually the precious original files!
+     */
+    private void deleteGrabbedFiles() {
+        if (!pretending) {
+            for (GrabbedFile file : files.values()) {
+                File copied = file.getCopiedFile();
+                if (copied != null) {
+                    boolean ok = copied.delete();
+                    LOG.debug("Deletion of grabbed file " + copied + " " +
+                            (ok ? "succeeded" : "failed"));
+                }
+            }
         }
     }
 

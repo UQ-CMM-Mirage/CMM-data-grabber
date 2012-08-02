@@ -72,9 +72,15 @@ public class FileGrabber extends AbstractFileGrabber implements SimpleService {
     private ThreadPoolExecutor executor;
     private final EntityManagerFactory entityManagerFactory;
     private final QueueManager queueManager;
+    private final boolean testMode;
     
     public FileGrabber(Paul services, Facility facility) {
+        this(services, facility, false);
+    }
+
+    public FileGrabber(Paul services, Facility facility, boolean testMode) {
         super(services, facility);
+        this.testMode = testMode;
         statusManager = services.getFacilityStatusManager();
         queueManager = services.getQueueManager();
         FacilityStatus status = statusManager.getStatus(facility);
@@ -99,7 +105,6 @@ public class FileGrabber extends AbstractFileGrabber implements SimpleService {
     
     @Override
     public void shutdown() throws InterruptedException {
-        setShuttingDown(true);
         if (executor != null) {
             executor.shutdown();
             if (executor.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS)) {
@@ -107,12 +112,18 @@ public class FileGrabber extends AbstractFileGrabber implements SimpleService {
             } else {
                 LOG.warn("FileGrabber's executor didn't shut down cleanly");
             }
+            executor = null;
         }
     }
 
     @Override
     public void startup() {
-        setShuttingDown(false);
+        if (testMode) {
+            // In the unit tests we just want to start the executor and ignore
+            // the niceties of the HWM and catchup processing.
+            createExecutor();
+            return;
+        }
         FacilityStatus status = statusManager.getStatus(getFacility());
         DateRange range = queueManager.getQueueDateRange(getFacility());
         Date lwm = status.getGrabberLWMTimestamp();
@@ -122,7 +133,7 @@ public class FileGrabber extends AbstractFileGrabber implements SimpleService {
             hwm = lwm;
         }
         if (hwm != null && (range == null || hwm.getTime() <= range.getToDate().getTime())) {
-            executor = new ThreadPoolExecutor(0, 1, 999, TimeUnit.SECONDS, work);
+            createExecutor();
             // We do "catchup" event generation with the executor paused, so that the worker
             // thread doesn't jump the gun and start processing work entries before all events
             // have been accumulated.
@@ -145,6 +156,15 @@ public class FileGrabber extends AbstractFileGrabber implements SimpleService {
             status.setMessage("Grabber LWM / HWM need attention");
             throw new ServiceException(status.getMessage());
         }
+    }
+
+    private void createExecutor() {
+        executor = new ThreadPoolExecutor(0, 1, 999, TimeUnit.SECONDS, work);
+    }
+
+    @Override
+    protected boolean isShutDown() {
+        return executor == null;
     }
 
     @Override

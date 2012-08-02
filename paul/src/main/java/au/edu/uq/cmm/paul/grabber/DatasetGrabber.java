@@ -101,4 +101,9 @@ public class DatasetGrabber extends AbstractFileGrabber {
             entry.commitRegrabbedDataset(grabbedDataset);
         }
     }
+
+    @Override
+    protected boolean isShutDown() {
+        return false;
+    }
 }

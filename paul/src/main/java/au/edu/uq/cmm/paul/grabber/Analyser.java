@@ -539,5 +539,9 @@ public class Analyser extends AbstractFileGrabber {
     public final void setProblems(Problems problems) {
         this.problems = problems;
     }
-    
+
+    @Override
+    protected boolean isShutDown() {
+        return false;
+    }
 }
