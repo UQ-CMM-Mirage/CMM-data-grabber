@@ -48,6 +48,7 @@ import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.queue.CopyingQueueFileManager;
 import au.edu.uq.cmm.paul.queue.QueueFileException;
+import au.edu.uq.cmm.paul.queue.QueueFileManager;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.status.DatafileTemplate;
 import au.edu.uq.cmm.paul.status.Facility;
@@ -238,6 +239,49 @@ public class GrabberEventTest {
                      datafile.getDatafileHash().toLowerCase());
         assertEquals(new Date(now), dataset.getCaptureTimestamp());
     }
+    
+
+    
+    @Test
+    public void testSlowGrabbing() 
+            throws InterruptedException, JsonGenerationException, IOException, QueueFileException {
+        Capture<DatasetMetadata> capture = new Capture<DatasetMetadata>();
+        QueueFileManager fm = new SlowCopyingQueueFileManager(CONFIG);
+        QueueManager qm = EasyMock.createMock(QueueManager.class);
+        qm.addEntry(EasyMock.capture(capture));
+        EasyMock.expectLastCall().times(1);
+        EasyMock.expect(qm.getFileManager()).andReturn(fm).times(1);
+        EasyMock.replay(qm);
+        FACILITY.setFileSettlingTime(1000);
+        FileGrabber fg = new FileGrabber(buildMockServices(CONFIG, qm), FACILITY, true);
+        long now = System.currentTimeMillis();
+        try {
+            File one = new File("/tmp/one.txt");
+            stringToFile("123456789012345678901234567890", one);
+            fg.startup();
+            long tmp = now;
+            for (int i = 0; i < 10; i++) {
+                fg.eventOccurred(new FileWatcherEvent(FACILITY, one, true, tmp, false));
+                tmp = System.currentTimeMillis();
+                Thread.sleep(100);
+            }
+        } finally {
+            fg.shutdown();
+        }
+        EasyMock.verify(qm);
+        DatasetMetadata dataset = capture.getValue();
+        assertEquals("fred", dataset.getUserName());
+        assertEquals("count", dataset.getAccountName());
+        assertEquals(1, dataset.getDatafiles().size());
+        DatafileMetadata datafile = dataset.getDatafiles().get(0);
+        File file = new File(datafile.getCapturedFilePathname());
+        assertTrue(file.exists());
+        assertEquals(30, file.length());
+        assertEquals("eba392e2f2094d7ffe55a23dffc29c412abd47057a0823c6c149c9c759423afd" +
+                     "e56f0eef73ade8f79bc1d16a99cbc5e4995afd8c14adb49410ecd957aecc8d02", 
+                     datafile.getDatafileHash().toLowerCase());
+        assertEquals(new Date(now), dataset.getCaptureTimestamp());
+    }
 
     private void stringToFile(String str, File file) throws IOException {
         try (Writer w = new FileWriter(file)) {
@@ -257,5 +301,18 @@ public class GrabberEventTest {
         EasyMock.expect(services.getConfiguration()).andReturn(config).anyTimes();
         EasyMock.replay(services);
         return services;
+    }
+    
+    public static class SlowCopyingQueueFileManager extends CopyingQueueFileManager {
+        public SlowCopyingQueueFileManager(PaulConfiguration config) {
+            super(config);
+        }
+
+        @Override
+        public File enqueueFile(File source, String suffix, boolean regrabbing)
+                throws QueueFileException, InterruptedException {
+            Thread.sleep(1000);
+            return super.enqueueFile(source, suffix, regrabbing);
+        }
     }
 }

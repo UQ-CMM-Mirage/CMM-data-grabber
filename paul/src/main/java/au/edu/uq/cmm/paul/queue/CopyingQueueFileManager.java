@@ -46,7 +46,7 @@ public class CopyingQueueFileManager implements QueueFileManager {
     
     @Override
     public File enqueueFile(File source, String suffix, boolean regrabbing) 
-                throws QueueFileException {
+                throws QueueFileException, InterruptedException {
         // TODO - if the time taken to copy files is a problem, we could 
         // potentially improve this by using NIO or memory mapped files.
         File target = generateUniqueFile(suffix, regrabbing);

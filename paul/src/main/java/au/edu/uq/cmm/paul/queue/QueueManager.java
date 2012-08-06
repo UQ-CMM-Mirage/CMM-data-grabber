@@ -150,7 +150,7 @@ public class QueueManager {
     }
 
     public void addEntry(DatasetMetadata dataset) 
-            throws JsonGenerationException, IOException, QueueFileException {
+            throws JsonGenerationException, IOException, QueueFileException, InterruptedException {
         saveToFileSystem(new File(dataset.getMetadataFilePathname()), dataset);
         saveToDatabase(dataset);
     }
@@ -171,14 +171,15 @@ public class QueueManager {
     }
 
     private void saveToFileSystem(File metadataFile, DatasetMetadata metadata)
-            throws IOException, JsonGenerationException, QueueFileException {
+            throws IOException, JsonGenerationException, QueueFileException, InterruptedException {
         StringWriter sw = new StringWriter();
         metadata.serialize(sw);
         fileManager.enqueueFile(sw.toString(), metadataFile);
         LOG.info("Saved admin metadata to " + metadataFile);
     }
 
-    public int expireAll(boolean discard, String facilityName, Slice slice, Date olderThan) {
+    public int expireAll(boolean discard, String facilityName, Slice slice, Date olderThan) 
+            throws InterruptedException {
         EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
@@ -213,7 +214,7 @@ public class QueueManager {
         }
     }
 
-    public int deleteAll(boolean discard, String facilityName, Slice slice) {
+    public int deleteAll(boolean discard, String facilityName, Slice slice) throws InterruptedException {
         EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
@@ -249,7 +250,7 @@ public class QueueManager {
         }
     }
     
-    public int delete(String[] ids, boolean discard) {
+    public int delete(String[] ids, boolean discard) throws InterruptedException {
         int count = 0;
         EntityManager em = createEntityManager();
         try {
@@ -274,7 +275,7 @@ public class QueueManager {
     }
 
     private void doDelete(boolean discard, EntityManager entityManager,
-            DatasetMetadata dataset) {
+            DatasetMetadata dataset) throws InterruptedException {
         // FIXME - should we do the file removal after committing the
         // database update?
         for (DatafileMetadata datafile : dataset.getDatafiles()) {
@@ -284,7 +285,7 @@ public class QueueManager {
         entityManager.remove(dataset);
     }
 
-    private void disposeOfFile(String pathname, boolean discard) {
+    private void disposeOfFile(String pathname, boolean discard) throws InterruptedException {
         File file = new File(pathname);
         try {
             if (discard) {
@@ -313,7 +314,7 @@ public class QueueManager {
     }
 
     public int changeUser(String[] ids, String userName, boolean reassign) 
-            throws JsonGenerationException, IOException, QueueFileException {
+            throws JsonGenerationException, IOException, QueueFileException, InterruptedException {
         EntityManager em = createEntityManager();
         int nosChanged = 0;
         try {

@@ -97,7 +97,7 @@ public class DatasetGrabber extends AbstractFileGrabber {
     
     public void commitRegrabbedDataset(DatasetMetadata dataset, 
             DatasetMetadata grabbedDataset, boolean newDataset) 
-    throws IOException, QueueFileException {
+    throws IOException, QueueFileException, InterruptedException {
         LOG.debug("Committing regrabbed dataset for " + dataset.getSourceFilePathnameBase());
         if (!newDataset) {
             grabbedDataset.setId(dataset.getId());

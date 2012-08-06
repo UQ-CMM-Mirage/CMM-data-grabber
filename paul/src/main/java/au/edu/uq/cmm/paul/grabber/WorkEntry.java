@@ -205,7 +205,11 @@ class WorkEntry implements Runnable {
         } catch (InterruptedException ex) {
             LOG.debug("Handling interrupt on workEntry thread", ex);
             grabAborted = true;
-            deleteGrabbedFiles();
+            try {
+                deleteGrabbedFiles();
+            } catch (InterruptedException ex2) {
+                LOG.info("Interrupted while tidying up grabbed files");
+            }
         } catch (Throwable ex) {
             LOG.error("unexpected exception", ex);
             return;
@@ -278,8 +282,9 @@ class WorkEntry implements Runnable {
      * This method is called on an interrupt to tidy up any data files that were
      * captured or being captured.  If we are 'pretending', don't do anything because
      * the "pretend copied" files are actually the precious original files!
+     * @throws InterruptedException 
      */
-    private void deleteGrabbedFiles() {
+    private void deleteGrabbedFiles() throws InterruptedException {
         if (!pretending) {
             for (GrabbedFile file : files.values()) {
                 File copied = file.getCopiedFile();
@@ -385,7 +390,7 @@ class WorkEntry implements Runnable {
     }
 
     private DatasetMetadata saveMetadata(Date now, FacilitySession session, boolean regrabbing)
-            throws IOException, JsonGenerationException, QueueFileException {
+            throws IOException, JsonGenerationException, QueueFileException, InterruptedException {
         File metadataFile = fileManager.generateUniqueFile(".admin", regrabbing);
         DatasetMetadata dataset = assembleDatasetMetadata(now, session, metadataFile);
         for (DatafileMetadata d : dataset.getDatafiles()) {
@@ -429,7 +434,7 @@ class WorkEntry implements Runnable {
     }
 
     public void commitRegrabbedDataset(DatasetMetadata dataset) 
-            throws IOException, QueueFileException {
+            throws IOException, QueueFileException, InterruptedException {
         DatasetMetadata originalDataset = queueManager.fetchDataset(dataset.getId());
         dataset.setMetadataFilePathname(originalDataset.getMetadataFilePathname());
         // Delete the original dataset's captured files

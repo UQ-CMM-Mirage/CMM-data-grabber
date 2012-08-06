@@ -716,7 +716,7 @@ public class WebUIController implements ServletContextAware {
             HttpServletRequest request, HttpServletResponse response,
             @RequestParam(required=false) String[] ids,
             @RequestParam String facilityName) 
-    throws IOException, QueueFileException {
+    throws IOException, QueueFileException, InterruptedException {
         GenericPrincipal principal = (GenericPrincipal) request.getUserPrincipal();
         if (principal == null) {
             LOG.error("No principal ... can't proceed");
@@ -788,7 +788,7 @@ public class WebUIController implements ServletContextAware {
             @RequestParam(required=false) String confirmed,
             @RequestParam String action,
             @RequestParam(required=false) String facilityName) 
-    throws IOException, QueueFileException {
+    throws IOException, QueueFileException, InterruptedException {
         GenericPrincipal principal = (GenericPrincipal) request.getUserPrincipal();
         if (principal == null) {
             LOG.error("No principal ... can't proceed");
@@ -859,7 +859,8 @@ public class WebUIController implements ServletContextAware {
     }
 
     private String deleteAll(Model model, HttpServletRequest request, 
-            Slice slice, String facilityName, boolean discard, String confirmed) {
+            Slice slice, String facilityName, boolean discard, String confirmed) 
+                    throws InterruptedException {
         if (confirmed == null) {
             model.addAttribute("discard", discard);
             return "queueDeleteConfirmation";
@@ -872,7 +873,7 @@ public class WebUIController implements ServletContextAware {
     }
     
     private String expire(Model model, HttpServletRequest request, 
-            Slice slice, String facilityName, String confirmed) {
+            Slice slice, String facilityName, String confirmed) throws InterruptedException {
         String mode = request.getParameter("mode");
         String olderThan = request.getParameter("olderThan");
         String age = request.getParameter("age");
@@ -984,7 +985,7 @@ public class WebUIController implements ServletContextAware {
 
     private String doDelete(String entry, Model model,
             HttpServletRequest request, HttpServletResponse response, boolean delete)
-            throws IOException {
+            throws IOException, InterruptedException {
         DatasetMetadata dataset = findDataset(entry, response);
         if (dataset != null) {
             model.addAttribute("returnTo", inferReturnTo(request));

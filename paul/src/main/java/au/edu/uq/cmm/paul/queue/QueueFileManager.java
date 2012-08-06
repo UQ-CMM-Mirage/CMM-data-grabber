@@ -23,13 +23,17 @@ import java.io.File;
 
 public interface QueueFileManager {
 
-    File enqueueFile(File source, String suffix, boolean regrabbing) throws QueueFileException;
+    File enqueueFile(File source, String suffix, boolean regrabbing) 
+            throws QueueFileException, InterruptedException;
     
-    void enqueueFile(String contents, File target) throws QueueFileException;
+    void enqueueFile(String contents, File target) 
+            throws QueueFileException, InterruptedException;
     
-    File archiveFile(File queueFile) throws QueueFileException;
+    File archiveFile(File queueFile) 
+            throws QueueFileException, InterruptedException;
     
-    void removeFile(File file) throws QueueFileException;
+    void removeFile(File file) 
+            throws QueueFileException, InterruptedException;
     
     boolean isCopiedFile(File file);
     
@@ -37,7 +41,9 @@ public interface QueueFileManager {
     
     boolean isArchivedFile(File file);
 
-    File generateUniqueFile(String string, boolean regrabbing) throws QueueFileException;
+    File generateUniqueFile(String string, boolean regrabbing) 
+            throws QueueFileException, InterruptedException;
 
-    File renameGrabbedDatafile(File file) throws QueueFileException;
+    File renameGrabbedDatafile(File file) 
+            throws QueueFileException, InterruptedException;
 }
