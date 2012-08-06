@@ -20,8 +20,8 @@
 package au.edu.uq.cmm.paul.grabber;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -35,7 +35,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 
-
 import org.codehaus.jackson.JsonGenerationException;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -47,6 +46,8 @@ import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.PaulException;
+import au.edu.uq.cmm.paul.queue.CopyingQueueFileManager;
+import au.edu.uq.cmm.paul.queue.QueueFileException;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.status.DatafileTemplate;
 import au.edu.uq.cmm.paul.status.Facility;
@@ -72,7 +73,8 @@ public class GrabberEventTest {
         }
         FACILITY = buildFacility();
         CONFIG = new PaulConfiguration();
-        CONFIG.setCaptureDirectory(prepareCaptureDirectory().toString());
+        CONFIG.setCaptureDirectory(prepareDirectory("/tmp/testSafe").toString());
+        CONFIG.setArchiveDirectory(prepareDirectory("/tmp/testArchive").toString());
         FSM = buildMockFacilityStatusManager();
     }
     
@@ -99,11 +101,11 @@ public class GrabberEventTest {
         // TODO Auto-generated method stub
     }
 
-    private static File prepareCaptureDirectory() {
-        File res = new File("/tmp/testSafe");
+    private static File prepareDirectory(String pathname) {
+        File res = new File(pathname);
         if (!res.mkdir()) {
             if (!res.isDirectory()) {
-                throw new RuntimeException("Can't create the test capture directory!");
+                throw new RuntimeException("Can't create the test directory " + pathname + "!");
             }
             // clean it
         }
@@ -164,11 +166,13 @@ public class GrabberEventTest {
     }
     
     @Test
-    public void testSingleFeedEventTextFile() throws InterruptedException, JsonGenerationException, IOException {
-        Capture<DatasetMetadata> capture = new Capture<DatasetMetadata>();
+    public void testSingleFeedEventTextFile() 
+            throws InterruptedException, JsonGenerationException, IOException, QueueFileException {
+        Capture<DatasetMetadata> capture = new Capture<DatasetMetadata>(); 
         QueueManager qm = EasyMock.createMock(QueueManager.class);
         qm.addEntry(EasyMock.capture(capture));
         EasyMock.expectLastCall().times(1);
+        EasyMock.expect(qm.getFileManager()).andReturn(new CopyingQueueFileManager(CONFIG)).times(1);
         EasyMock.replay(qm);
         FileGrabber fg = new FileGrabber(buildMockServices(CONFIG, qm), FACILITY, true);
         long now = System.currentTimeMillis();
@@ -196,11 +200,13 @@ public class GrabberEventTest {
     }
     
     @Test
-    public void testMultipleFeedEventTextFile() throws InterruptedException, JsonGenerationException, IOException {
+    public void testMultipleFeedEventTextFile() 
+            throws InterruptedException, JsonGenerationException, IOException, QueueFileException {
         Capture<DatasetMetadata> capture = new Capture<DatasetMetadata>();
         QueueManager qm = EasyMock.createMock(QueueManager.class);
         qm.addEntry(EasyMock.capture(capture));
         EasyMock.expectLastCall().times(1);
+        EasyMock.expect(qm.getFileManager()).andReturn(new CopyingQueueFileManager(CONFIG)).times(1);
         EasyMock.replay(qm);
         FACILITY.setFileSettlingTime(1000);
         FileGrabber fg = new FileGrabber(buildMockServices(CONFIG, qm), FACILITY, true);

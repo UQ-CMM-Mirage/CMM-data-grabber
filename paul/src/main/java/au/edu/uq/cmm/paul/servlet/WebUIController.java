@@ -72,9 +72,10 @@ import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.grabber.Analyser;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
-import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetGrabber;
+import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 import au.edu.uq.cmm.paul.queue.AtomFeed;
+import au.edu.uq.cmm.paul.queue.QueueFileException;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.queue.QueueManager.DateRange;
 import au.edu.uq.cmm.paul.queue.QueueManager.Slice;
@@ -715,7 +716,7 @@ public class WebUIController implements ServletContextAware {
             HttpServletRequest request, HttpServletResponse response,
             @RequestParam(required=false) String[] ids,
             @RequestParam String facilityName) 
-    throws IOException {
+    throws IOException, QueueFileException {
         GenericPrincipal principal = (GenericPrincipal) request.getUserPrincipal();
         if (principal == null) {
             LOG.error("No principal ... can't proceed");
@@ -787,7 +788,7 @@ public class WebUIController implements ServletContextAware {
             @RequestParam(required=false) String confirmed,
             @RequestParam String action,
             @RequestParam(required=false) String facilityName) 
-    throws IOException {
+    throws IOException, QueueFileException {
         GenericPrincipal principal = (GenericPrincipal) request.getUserPrincipal();
         if (principal == null) {
             LOG.error("No principal ... can't proceed");
@@ -927,7 +928,7 @@ public class WebUIController implements ServletContextAware {
             @RequestParam String pathnameBase,
             @RequestParam String facilityName,
             HttpServletRequest request, HttpServletResponse response) 
-                    throws IOException, InterruptedException {
+                    throws IOException, InterruptedException, QueueFileException {
         model.addAttribute("returnTo", inferReturnTo(request));
         Facility facility = lookupFacilityByName(facilityName);
         DatasetGrabber dsr = new DatasetGrabber(services, new File(pathnameBase), facility);
@@ -943,7 +944,7 @@ public class WebUIController implements ServletContextAware {
             @RequestParam String hash,
             @RequestParam String regrabNew,
             HttpServletRequest request, HttpServletResponse response) 
-            throws IOException, InterruptedException {
+            throws IOException, InterruptedException, QueueFileException {
         DatasetMetadata dataset = findDataset(entry, response);
         if (dataset != null) {
             model.addAttribute("returnTo", inferReturnTo(request));

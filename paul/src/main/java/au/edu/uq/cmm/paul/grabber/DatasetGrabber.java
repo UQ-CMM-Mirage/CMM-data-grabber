@@ -25,6 +25,7 @@ import java.util.Date;
 
 import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.paul.Paul;
+import au.edu.uq.cmm.paul.queue.QueueFileException;
 import au.edu.uq.cmm.paul.status.Facility;
 
 /**
@@ -71,7 +72,7 @@ public class DatasetGrabber extends AbstractFileGrabber {
         analyseTree(dir, Long.MIN_VALUE, Long.MAX_VALUE);
     }
     
-    public DatasetMetadata grabDataset() throws InterruptedException, IOException {
+    public DatasetMetadata grabDataset() throws InterruptedException, IOException, QueueFileException {
         captureWorkEntry();
         LOG.debug("Grabbing dataset for " + datasetFile);
         return entry.grabFiles(false);
@@ -86,7 +87,8 @@ public class DatasetGrabber extends AbstractFileGrabber {
         return metadata;
     }
 
-    public DatasetMetadata regrabDataset(boolean newDataset) throws InterruptedException, IOException {
+    public DatasetMetadata regrabDataset(boolean newDataset) 
+    throws InterruptedException, IOException, QueueFileException {
         captureWorkEntry();
         LOG.debug("Regrabbing dataset for " + datasetFile);
         entry.setTimestamp(new Date());
@@ -94,7 +96,8 @@ public class DatasetGrabber extends AbstractFileGrabber {
     }
     
     public void commitRegrabbedDataset(DatasetMetadata dataset, 
-            DatasetMetadata grabbedDataset, boolean newDataset) throws IOException {
+            DatasetMetadata grabbedDataset, boolean newDataset) 
+    throws IOException, QueueFileException {
         LOG.debug("Committing regrabbed dataset for " + dataset.getSourceFilePathnameBase());
         if (!newDataset) {
             grabbedDataset.setId(dataset.getId());

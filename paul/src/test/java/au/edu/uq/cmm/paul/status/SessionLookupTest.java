@@ -29,7 +29,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 
-
 import org.easymock.EasyMock;
 import org.joda.time.format.ISODateTimeFormat;
 import org.junit.BeforeClass;
