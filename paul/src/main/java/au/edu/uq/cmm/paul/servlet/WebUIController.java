@@ -912,12 +912,17 @@ public class WebUIController implements ServletContextAware {
         DatasetMetadata dataset = findDataset(entry, response);
         if (dataset != null) {
             DatasetMetadata grabbedMetadata = new DatasetGrabber(services, dataset).getCandidateDataset();
-            grabbedMetadata.updateDatasetHash();
-            dataset.updateDatasetHash();
-            model.addAttribute("oldEntry", dataset);
-            model.addAttribute("newEntry", grabbedMetadata);
             model.addAttribute("returnTo", inferReturnTo(request));
-            return "regrabConfirmation";
+            if (grabbedMetadata != null) {
+                grabbedMetadata.updateDatasetHash();
+                dataset.updateDatasetHash();
+                model.addAttribute("oldEntry", dataset);
+                model.addAttribute("newEntry", grabbedMetadata);
+                return "regrabConfirmation";
+            } else {
+                model.addAttribute("message", "None of the original dataset files still exist");
+                return "failed";
+            }
         } else {
             return null;
         }

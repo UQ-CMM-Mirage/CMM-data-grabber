@@ -80,19 +80,29 @@ public class DatasetGrabber extends AbstractFileGrabber {
 
     public DatasetMetadata getCandidateDataset() {
         captureWorkEntry();
-        entry.pretendToGrabFiles();
-        FacilitySession session = getServices().getFacilityStatusManager().getSession(dataset.getSessionUuid());
-        DatasetMetadata metadata = entry.assembleDatasetMetadata(
-                new Date(), session, new File(dataset.getMetadataFilePathname()));
-        return metadata;
+        if (entry == null) {
+            LOG.debug("Couldn't find any files for " + datasetFile);
+            return null;
+        } else {
+            entry.pretendToGrabFiles();
+            FacilitySession session = getServices().getFacilityStatusManager().getSession(dataset.getSessionUuid());
+            DatasetMetadata metadata = entry.assembleDatasetMetadata(
+                    new Date(), session, new File(dataset.getMetadataFilePathname()));
+            return metadata;
+        }
     }
 
     public DatasetMetadata regrabDataset(boolean newDataset) 
     throws InterruptedException, IOException, QueueFileException {
         captureWorkEntry();
-        LOG.debug("Regrabbing dataset for " + datasetFile);
-        entry.setTimestamp(new Date());
-        return entry.grabFiles(!newDataset);
+        if (entry == null) {
+            LOG.debug("Couldn't find any files for " + datasetFile);
+            return null;
+        } else {
+            LOG.debug("Regrabbing dataset for " + datasetFile);
+            entry.setTimestamp(new Date());
+            return entry.grabFiles(!newDataset);
+        }
     }
     
     public void commitRegrabbedDataset(DatasetMetadata dataset, 
