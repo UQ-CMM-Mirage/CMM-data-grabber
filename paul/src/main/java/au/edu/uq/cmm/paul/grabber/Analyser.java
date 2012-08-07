@@ -281,11 +281,11 @@ public class Analyser extends AbstractFileGrabber {
                     }
                     File source = new File(datafile.getSourceFilePathname());
                     if (source.exists()) {
-                        if (source.length() != file.length()) {
+                        if (source.length() != datafile.getFileSize()) {
                             logProblem(dataset, datafile, ProblemType.FILE_SIZE_2, problems, 
                                     "Data file size mismatch: " + file + 
                                     ": original file size is " + source.length() + 
-                                    " but actual captured file size is " + file.length());
+                                    " but admin metadata says " + datafile.getFileSize());
                         } else if (hash != null && !hash.equals(HashUtils.fileHash(source))) {
                             logProblem(dataset, datafile, ProblemType.FILE_HASH_2, problems,
                                     "Data file hash mismatch between metadata and " + source);
@@ -335,11 +335,16 @@ public class Analyser extends AbstractFileGrabber {
             if (inDatabase > 1) {
                 groupsWithDuplicatesInDatabase++;
             }
+            boolean matched = false;
             for (DatasetMetadata dataset : group.getAllInDatabase()) {
                 if (predicate.evaluate(dataset)) {
-                    if (group.inFolder == null || !matches(group.inFolder, dataset))
-                    groupsUnmatchedInDatabase++;
+                    if (group.inFolder != null && matches(group.inFolder, dataset)) {
+                        matched = true;
+                    }
                 }
+            }
+            if (!matched) {
+                groupsUnmatchedInDatabase++;
             }
         }
         return new Statistics(datasetsInFolder, datasetsInDatabase, 
