@@ -318,6 +318,7 @@ public class Analyser extends AbstractFileGrabber {
         int datasetsUnmatchedInFolder = 0;
         int groupsUnmatchedInDatabase = 0;
         int groupsWithDuplicatesInDatabase = 0;
+        int groupsInDatabase = 0;
         for (Group group : grouped) {
             if (group.getInFolder() != null && predicate.evaluate(group.getInFolder())) {
                 datasetsInFolder++;
@@ -326,28 +327,27 @@ public class Analyser extends AbstractFileGrabber {
                 }
             }
             int inDatabase = 0;
-            for (DatasetMetadata dataset : group.getAllInDatabase()) {
-                if (predicate.evaluate(dataset)) {
-                    inDatabase++;
-                }
-            }
-            datasetsInDatabase += inDatabase;
-            if (inDatabase > 1) {
-                groupsWithDuplicatesInDatabase++;
-            }
             boolean matched = false;
             for (DatasetMetadata dataset : group.getAllInDatabase()) {
                 if (predicate.evaluate(dataset)) {
+                    inDatabase++;
                     if (group.inFolder != null && matches(group.inFolder, dataset)) {
                         matched = true;
                     }
                 }
             }
-            if (!matched) {
+            datasetsInDatabase += inDatabase;
+            if (!matched && group.inFolder != null) {
                 groupsUnmatchedInDatabase++;
             }
-        }
-        return new Statistics(datasetsInFolder, datasetsInDatabase, 
+            if (inDatabase > 1) {
+                groupsWithDuplicatesInDatabase++;
+            }
+            if (inDatabase > 0) {
+                groupsInDatabase++;
+            }
+        } 
+        return new Statistics(datasetsInFolder, datasetsInDatabase, groupsInDatabase,
                 groupsWithDuplicatesInDatabase, datasetsUnmatchedInFolder, 
                 groupsUnmatchedInDatabase);
     }

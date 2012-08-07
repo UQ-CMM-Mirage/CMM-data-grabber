@@ -21,11 +21,12 @@ package au.edu.uq.cmm.paul.grabber;
 public class Statistics {
     private final int datasetsInFolder;
     private final int datasetsInDatabase;
-    private int groupsWithDuplicatesInDatabase;
-    private int datasetsUnmatchedInFolder;
-    private int groupsUnmatchedInDatabase;
+    private final int groupsWithDuplicatesInDatabase;
+    private final int datasetsUnmatchedInFolder;
+    private final int groupsUnmatchedInDatabase;
+    private final int groupsInDatabase;
 
-    public Statistics(int datasetsInFolder, int datasetsInDatabase, 
+    public Statistics(int datasetsInFolder, int datasetsInDatabase, int groupsInDatabase,
             int groupsWithDuplicatesInDatabase, int datasetsUnmatchedInFolder, 
             int groupsUnmatchedInDatabase) {
         super();
@@ -34,6 +35,7 @@ public class Statistics {
         this.groupsWithDuplicatesInDatabase = groupsWithDuplicatesInDatabase;
         this.datasetsUnmatchedInFolder = datasetsUnmatchedInFolder;
         this.groupsUnmatchedInDatabase = groupsUnmatchedInDatabase;
+        this.groupsInDatabase = groupsInDatabase;
     }
 
     public final int getDatasetsInFolder() {
@@ -54,5 +56,9 @@ public class Statistics {
 
     public final int getGroupsUnmatchedInDatabase() {
         return groupsUnmatchedInDatabase;
+    }
+
+    public final int getGroupsInDatabase() {
+        return groupsInDatabase;
     }
 }
