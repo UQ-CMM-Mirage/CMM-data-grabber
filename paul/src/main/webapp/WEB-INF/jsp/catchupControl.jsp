@@ -71,7 +71,7 @@
 						<td>${analysis.beforeLWM.groupsUnmatchedInDatabase}</td>
 					</tr>
 					<tr>
-						<td>between LWM & HWM</td>
+						<td>between LWM &amp; HWM</td>
 						<td>${analysis.intertidal.datasetsInFolder}</td>
 						<td>${analysis.intertidal.datasetsUnmatchedInFolder}</td>
 						<td>${analysis.intertidal.datasetsInDatabase}</td>
