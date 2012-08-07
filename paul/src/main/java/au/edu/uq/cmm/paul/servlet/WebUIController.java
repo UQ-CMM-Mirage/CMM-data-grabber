@@ -447,13 +447,7 @@ public class WebUIController implements ServletContextAware {
         if (facility != null) {
             getFileWatcher().startFileWatching(facility);
         }
-        String returnTo = request.getParameter("returnTo");
-        if (returnTo == null || returnTo.isEmpty()) {
-            returnTo = request.getContextPath() + "/facilities";
-        } else if (returnTo.startsWith("/")) {
-            returnTo = request.getContextPath() + returnTo;
-        }
-        response.sendRedirect(returnTo);
+        response.sendRedirect(inferReturnTo(request, "/facilities"));
         return null;
     }
     
@@ -466,13 +460,7 @@ public class WebUIController implements ServletContextAware {
         if (facility != null) {
             getFileWatcher().stopFileWatching(facility);
         }
-        String returnTo = request.getParameter("returnTo");
-        if (returnTo == null || returnTo.isEmpty()) {
-            returnTo = request.getContextPath() + "/facilities";
-        } else if (returnTo.startsWith("/")) {
-            returnTo = request.getContextPath() + returnTo;
-        }
-        response.sendRedirect(returnTo);
+        response.sendRedirect(inferReturnTo(request, "/facilities"));
         return null;
     }
     
@@ -1091,6 +1079,8 @@ public class WebUIController implements ServletContextAware {
         }
         if (param.startsWith(request.getContextPath())) {
             return param;
+        } else if (param.startsWith("/")) {
+            return request.getContextPath() + param;
         } else {
             return request.getContextPath() + "/" + param;
         }
