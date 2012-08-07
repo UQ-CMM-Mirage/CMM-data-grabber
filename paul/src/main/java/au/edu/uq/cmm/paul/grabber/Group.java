@@ -63,7 +63,7 @@ public class Group implements Comparable<Group> {
     public final DatasetMetadata getMatchedDataset() {
         if (inFolder != null) {
             for (DatasetMetadata dataset : allInDatabase) {
-                if (!Analyser.matches(dataset, inFolder)) {
+                if (Analyser.matches(dataset, inFolder)) {
                     return dataset;
                 }
             }
