@@ -106,14 +106,12 @@ public class Analyser extends AbstractFileGrabber {
     private List<Group> grouped;
     private Statistics all;
     private Statistics beforeLWM;
-    private Statistics afterLWM;
-    private Statistics beforeHWM;
+    private Statistics intertidal;
     private Statistics afterHWM;
     private Problems problems;
-    private Statistics beforeQEnd;
-    private Statistics afterQEnd;
     private Statistics beforeQStart;
-    private Statistics afterQStart;
+    private Statistics inQueue;
+    private Statistics afterQEnd;
 
     private Date lwm;
     private Date hwm;
@@ -153,64 +151,51 @@ public class Analyser extends AbstractFileGrabber {
         LOG.info("Gathering statistics for " + getFacility().getFacilityName());
         determineFolderRange(inFolder);
         all = gatherStats(grouped, PredicateUtils.truePredicate());
-        if (lwmTimestamp == null) {
+        if (hwmTimestamp == null || lwmTimestamp == null) {
             beforeLWM = null;
-            afterLWM = null;
+            afterHWM = null;
+            intertidal = null;
         } else {
             final long lwm = lwmTimestamp.getTime();
             beforeLWM = gatherStats(grouped, new Predicate() {
                 public boolean evaluate(Object metadata) {
-                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() <= lwm;
+                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() < lwm;
                 }
             });
-            afterLWM = gatherStats(grouped, new Predicate() {
-                public boolean evaluate(Object metadata) {
-                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() > lwm;
-                }
-            });
-        }
-        if (hwmTimestamp == null) {
-            beforeHWM = null;
-            afterHWM = null;
-        } else {
             final long hwm = hwmTimestamp.getTime();
-            beforeHWM = gatherStats(grouped, new Predicate() {
-                public boolean evaluate(Object metadata) {
-                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() <= hwm;
-                }
-            });
             afterHWM = gatherStats(grouped, new Predicate() {
                 public boolean evaluate(Object metadata) {
                     return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() > hwm;
                 }
             });
+            intertidal = gatherStats(grouped, new Predicate() {
+                public boolean evaluate(Object metadata) {
+                    long ts = ((DatasetMetadata) metadata).getLastFileTimestamp().getTime();
+                    return ts >= lwm && ts <= hwm;
+                }
+            });
         }
         if (range == null) {
-            beforeQEnd = null;
             afterQEnd = null;
             beforeQStart = null;
-            afterQStart = null;
+            inQueue = null;
         } else {
             final long qStart = this.qStart.getTime();
             beforeQStart = gatherStats(grouped, new Predicate() {
                 public boolean evaluate(Object metadata) {
-                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() <= qStart;
-                }
-            });
-            afterQStart = gatherStats(grouped, new Predicate() {
-                public boolean evaluate(Object metadata) {
-                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() > qStart;
+                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() < qStart;
                 }
             });
             final long qEnd = this.qEnd.getTime();
-            beforeQEnd = gatherStats(grouped, new Predicate() {
-                public boolean evaluate(Object metadata) {
-                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() <= qEnd;
-                }
-            });
             afterQEnd = gatherStats(grouped, new Predicate() {
                 public boolean evaluate(Object metadata) {
                     return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() > qEnd;
+                }
+            });
+            inQueue = gatherStats(grouped, new Predicate() {
+                public boolean evaluate(Object metadata) {
+                    long ts = ((DatasetMetadata) metadata).getLastFileTimestamp().getTime();
+                    return ts >= qStart && ts <= qEnd;
                 }
             });
         }
@@ -485,12 +470,8 @@ public class Analyser extends AbstractFileGrabber {
         return beforeLWM;
     }
 
-    public final Statistics getAfterLWM() {
-        return afterLWM;
-    }
-
-    public final Statistics getBeforeHWM() {
-        return beforeHWM;
+    public final Statistics getIntertidal() {
+        return intertidal;
     }
 
     public final Statistics getAfterHWM() {
@@ -501,12 +482,8 @@ public class Analyser extends AbstractFileGrabber {
         return beforeQStart;
     }
 
-    public final Statistics getAfterQStart() {
-        return afterQStart;
-    }
-
-    public final Statistics getBeforeQEnd() {
-        return beforeQEnd;
+    public final Statistics getInQueue() {
+        return inQueue;
     }
 
     public final Statistics getAfterQEnd() {

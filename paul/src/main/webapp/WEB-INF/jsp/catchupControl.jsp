@@ -63,35 +63,21 @@
 				</tr>
 				<c:if test="${!empty analysis.beforeLWM}">
 					<tr>
-						<td>&#x2264; LWM</td>
+						<td>&lt; LWM</td>
 						<td>${analysis.beforeLWM.datasetsInFolder}</td>
 						<td>${analysis.beforeLWM.datasetsUnmatchedInFolder}</td>
 						<td>${analysis.beforeLWM.datasetsInDatabase}</td>
 						<td>${analysis.beforeLWM.groupsWithDuplicatesInDatabase}</td>
 						<td>${analysis.beforeLWM.groupsUnmatchedInDatabase}</td>
 					</tr>
-				</c:if>
-				<c:if test="${!empty analysis.afterLWM}">
 					<tr>
-						<td>&gt; LWM</td>
-						<td>${analysis.afterLWM.datasetsInFolder}</td>
-						<td>${analysis.afterLWM.datasetsUnmatchedInFolder}</td>
-						<td>${analysis.afterLWM.datasetsInDatabase}</td>
-						<td>${analysis.afterLWM.groupsWithDuplicatesInDatabase}</td>
-						<td>${analysis.afterLWM.groupsUnmatchedInDatabase}</td>
+						<td>between LWM & HWM</td>
+						<td>${analysis.intertidal.datasetsInFolder}</td>
+						<td>${analysis.intertidal.datasetsUnmatchedInFolder}</td>
+						<td>${analysis.intertidal.datasetsInDatabase}</td>
+						<td>${analysis.intertidal.groupsWithDuplicatesInDatabase}</td>
+						<td>${analysis.intertidal.groupsUnmatchedInDatabase}</td>
 					</tr>
-				</c:if>
-				<c:if test="${!empty analysis.beforeHWM}">
-					<tr>
-						<td>&#x2264; HWM</td>
-						<td>${analysis.beforeHWM.datasetsInFolder}</td>
-						<td>${analysis.beforeHWM.datasetsUnmatchedInFolder}</td>
-						<td>${analysis.beforeHWM.datasetsInDatabase}</td>
-						<td>${analysis.beforeHWM.groupsWithDuplicatesInDatabase}</td>
-						<td>${analysis.beforeHWM.groupsUnmatchedInDatabase}</td>
-					</tr>
-				</c:if>
-				<c:if test="${!empty analysis.afterHWM}">
 					<tr>
 						<td>&gt; HWM</td>
 						<td>${analysis.afterHWM.datasetsInFolder}</td>
@@ -103,37 +89,23 @@
 				</c:if>
 				<c:if test="${!empty analysis.beforeQStart}">
 					<tr>
-						<td>&#x2264; current Queue Start</td>
+						<td>&lt; queue start</td>
 						<td>${analysis.beforeQStart.datasetsInFolder}</td>
 						<td>${analysis.beforeQStart.datasetsUnmatchedInFolder}</td>
 						<td>${analysis.beforeQStart.datasetsInDatabase}</td>
 						<td>${analysis.beforeQStart.groupsWithDuplicatesInDatabase}</td>
 						<td>${analysis.beforeQStart.groupsUnmatchedInDatabase}</td>
 					</tr>
-				</c:if>
-				<c:if test="${!empty analysis.afterQStart}">
 					<tr>
-						<td>&gt; current Queue Start</td>
-						<td>${analysis.afterQStart.datasetsInFolder}</td>
-						<td>${analysis.afterQStart.datasetsUnmatchedInFolder}</td>
-						<td>${analysis.afterQStart.datasetsInDatabase}</td>
-						<td>${analysis.afterQStart.groupsWithDuplicatesInDatabase}</td>
-						<td>${analysis.afterQStart.groupsUnmatchedInDatabase}</td>
+						<td>in queue time-range</td>
+						<td>${analysis.inQueue.datasetsInFolder}</td>
+						<td>${analysis.inQueue.datasetsUnmatchedInFolder}</td>
+						<td>${analysis.inQueue.datasetsInDatabase}</td>
+						<td>${analysis.inQueue.groupsWithDuplicatesInDatabase}</td>
+						<td>${analysis.inQueue.groupsUnmatchedInDatabase}</td>
 					</tr>
-				</c:if>
-				<c:if test="${!empty analysis.beforeQEnd}">
 					<tr>
-						<td>&#x2264; current Queue End</td>
-						<td>${analysis.beforeQEnd.datasetsInFolder}</td>
-						<td>${analysis.beforeQEnd.datasetsUnmatchedInFolder}</td>
-						<td>${analysis.beforeQEnd.datasetsInDatabase}</td>
-						<td>${analysis.beforeQEnd.groupsWithDuplicatesInDatabase}</td>
-						<td>${analysis.beforeQEnd.groupsUnmatchedInDatabase}</td>
-					</tr>
-				</c:if>
-				<c:if test="${!empty analysis.afterQEnd}">
-					<tr>
-						<td>&gt; current Queue End</td>
+						<td>&gt; queue end</td>
 						<td>${analysis.afterQEnd.datasetsInFolder}</td>
 						<td>${analysis.afterQEnd.datasetsUnmatchedInFolder}</td>
 						<td>${analysis.afterQEnd.datasetsInDatabase}</td>
