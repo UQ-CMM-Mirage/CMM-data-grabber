@@ -905,7 +905,7 @@ public class WebUIController implements ServletContextAware {
     }
     
     @RequestMapping(value="/datasets/{entry:.+}", params={"regrab"},
-            method=RequestMethod.GET)
+            method=RequestMethod.POST)
     public String regrabPrepare(@PathVariable String entry, Model model, 
             HttpServletRequest request, HttpServletResponse response) 
             throws IOException {

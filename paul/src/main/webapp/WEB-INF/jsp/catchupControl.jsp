@@ -218,7 +218,7 @@
 									    <c:when test="${empty prevId || prevId != problem.dataset.id}">
 									    	<td>
 												<form class="well,form-horizontal"
-													  style="margin: 0px 0px 0px"
+													  style="margin: 0px 0px 0px" method="post"
 												      action="/paul/datasets/${problem.dataset.id}">
 													<input type="hidden" name="returnTo" 
 												   		   value="/paul/queueDiagnostics/${facilityName}">
