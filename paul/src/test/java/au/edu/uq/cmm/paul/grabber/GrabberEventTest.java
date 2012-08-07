@@ -178,7 +178,7 @@ public class GrabberEventTest {
             throws InterruptedException, JsonGenerationException, IOException, QueueFileException {
         Capture<DatasetMetadata> capture = new Capture<DatasetMetadata>(); 
         QueueManager qm = EasyMock.createMock(QueueManager.class);
-        qm.addEntry(EasyMock.capture(capture));
+        qm.addEntry(EasyMock.capture(capture), EasyMock.anyBoolean());
         EasyMock.expectLastCall().times(1);
         EasyMock.expect(qm.getFileManager()).andReturn(new CopyingQueueFileManager(CONFIG)).times(1);
         EasyMock.replay(qm);
@@ -212,7 +212,7 @@ public class GrabberEventTest {
             throws InterruptedException, JsonGenerationException, IOException, QueueFileException {
         Capture<DatasetMetadata> capture = new Capture<DatasetMetadata>();
         QueueManager qm = EasyMock.createMock(QueueManager.class);
-        qm.addEntry(EasyMock.capture(capture));
+        qm.addEntry(EasyMock.capture(capture), EasyMock.anyBoolean());
         EasyMock.expectLastCall().times(1);
         EasyMock.expect(qm.getFileManager()).andReturn(new CopyingQueueFileManager(CONFIG)).times(1);
         EasyMock.replay(qm);
@@ -253,7 +253,7 @@ public class GrabberEventTest {
         Capture<DatasetMetadata> capture = new Capture<DatasetMetadata>();
         SlowCopyingQueueFileManager fm = new SlowCopyingQueueFileManager(CONFIG);
         QueueManager qm = EasyMock.createMock(QueueManager.class);
-        qm.addEntry(EasyMock.capture(capture));
+        qm.addEntry(EasyMock.capture(capture), EasyMock.anyBoolean());
         EasyMock.expectLastCall().times(1);
         EasyMock.expect(qm.getFileManager()).andReturn(fm).times(1);
         EasyMock.replay(qm);

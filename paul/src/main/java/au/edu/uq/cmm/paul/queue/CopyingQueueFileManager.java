@@ -78,9 +78,9 @@ public class CopyingQueueFileManager implements QueueFileManager {
     }
     
     @Override
-    public void enqueueFile(String contents, File target)
+    public void enqueueFile(String contents, File target, boolean mayExist)
             throws QueueFileException {
-        if (target.exists()) {
+        if (!mayExist && target.exists()) {
             throw new QueueFileException("File " + target + " already exists");
         }
         try (Writer w = new FileWriter(target)) {

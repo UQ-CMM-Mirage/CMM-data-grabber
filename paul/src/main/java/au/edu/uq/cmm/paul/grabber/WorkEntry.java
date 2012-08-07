@@ -398,7 +398,7 @@ class WorkEntry implements Runnable {
         }
         dataset.updateDatasetHash();
         if (!regrabbing) {
-            queueManager.addEntry(dataset);
+            queueManager.addEntry(dataset, false);
         }
         return dataset;
     }
@@ -447,7 +447,7 @@ class WorkEntry implements Runnable {
             f.setCapturedFilePathname(file.toString());
         }
         // This will save the updated dataset metadata to the database and file system.
-        queueManager.addEntry(dataset);
+        queueManager.addEntry(dataset, true);
     }
     
     

@@ -26,7 +26,7 @@ public interface QueueFileManager {
     File enqueueFile(File source, String suffix, boolean regrabbing) 
             throws QueueFileException, InterruptedException;
     
-    void enqueueFile(String contents, File target) 
+    void enqueueFile(String contents, File target, boolean mayExist) 
             throws QueueFileException, InterruptedException;
     
     File archiveFile(File queueFile) 

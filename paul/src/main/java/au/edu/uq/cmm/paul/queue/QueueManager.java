@@ -149,9 +149,9 @@ public class QueueManager {
         return res;
     }
 
-    public void addEntry(DatasetMetadata dataset) 
+    public void addEntry(DatasetMetadata dataset, boolean mayExist) 
             throws JsonGenerationException, IOException, QueueFileException, InterruptedException {
-        saveToFileSystem(new File(dataset.getMetadataFilePathname()), dataset);
+        saveToFileSystem(new File(dataset.getMetadataFilePathname()), dataset, mayExist);
         saveToDatabase(dataset);
     }
 
@@ -170,11 +170,11 @@ public class QueueManager {
         }
     }
 
-    private void saveToFileSystem(File metadataFile, DatasetMetadata metadata)
+    private void saveToFileSystem(File metadataFile, DatasetMetadata metadata, boolean mayExist)
             throws IOException, JsonGenerationException, QueueFileException, InterruptedException {
         StringWriter sw = new StringWriter();
         metadata.serialize(sw);
-        fileManager.enqueueFile(sw.toString(), metadataFile);
+        fileManager.enqueueFile(sw.toString(), metadataFile, mayExist);
         LOG.info("Saved admin metadata to " + metadataFile);
     }
 
@@ -328,7 +328,7 @@ public class QueueManager {
                 if (reassign || dataset.getUserName() == null) {
                     dataset.setUserName(userName.isEmpty() ? null : userName);
                     dataset.setUpdateTimestamp(new Date());
-                    saveToFileSystem(new File(dataset.getMetadataFilePathname()), dataset);
+                    saveToFileSystem(new File(dataset.getMetadataFilePathname()), dataset, true);
                     nosChanged++;
                 }
             }
