@@ -19,10 +19,9 @@
 
 package au.edu.uq.cmm.paul.queue;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.Date;
 import java.util.List;
 
@@ -77,10 +76,12 @@ public class QueueManager {
     }
     
     private static final Logger LOG = LoggerFactory.getLogger(QueueManager.class);
-    private Paul services;
+    private final Paul services;
+    private final QueueFileManager fileManager;
 
     public QueueManager(Paul services) {
         this.services = services;
+        this.fileManager = new CopyingQueueFileManager(services.getConfiguration());
     }
 
     public List<DatasetMetadata> getSnapshot(Slice slice, String facilityName) {
@@ -148,9 +149,9 @@ public class QueueManager {
         return res;
     }
 
-    public void addEntry(DatasetMetadata dataset) 
-            throws JsonGenerationException, IOException {
-        saveToFileSystem(new File(dataset.getMetadataFilePathname()), dataset);
+    public void addEntry(DatasetMetadata dataset, boolean mayExist) 
+            throws JsonGenerationException, IOException, QueueFileException, InterruptedException {
+        saveToFileSystem(new File(dataset.getMetadataFilePathname()), dataset, mayExist);
         saveToDatabase(dataset);
     }
 
@@ -169,15 +170,16 @@ public class QueueManager {
         }
     }
 
-    private void saveToFileSystem(File metadataFile, DatasetMetadata metadata)
-            throws IOException, JsonGenerationException {
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(metadataFile))) {
-            metadata.serialize(bw);
-            LOG.info("Saved admin metadata to " + metadataFile);
-        }
+    private void saveToFileSystem(File metadataFile, DatasetMetadata metadata, boolean mayExist)
+            throws IOException, JsonGenerationException, QueueFileException, InterruptedException {
+        StringWriter sw = new StringWriter();
+        metadata.serialize(sw);
+        fileManager.enqueueFile(sw.toString(), metadataFile, mayExist);
+        LOG.info("Saved admin metadata to " + metadataFile);
     }
 
-    public int expireAll(boolean discard, String facilityName, Slice slice, Date olderThan) {
+    public int expireAll(boolean discard, String facilityName, Slice slice, Date olderThan) 
+            throws InterruptedException {
         EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
@@ -212,7 +214,7 @@ public class QueueManager {
         }
     }
 
-    public int deleteAll(boolean discard, String facilityName, Slice slice) {
+    public int deleteAll(boolean discard, String facilityName, Slice slice) throws InterruptedException {
         EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
@@ -248,7 +250,7 @@ public class QueueManager {
         }
     }
     
-    public int delete(String[] ids, boolean discard) {
+    public int delete(String[] ids, boolean discard) throws InterruptedException {
         int count = 0;
         EntityManager em = createEntityManager();
         try {
@@ -273,7 +275,7 @@ public class QueueManager {
     }
 
     private void doDelete(boolean discard, EntityManager entityManager,
-            DatasetMetadata dataset) {
+            DatasetMetadata dataset) throws InterruptedException {
         // FIXME - should we do the file removal after committing the
         // database update?
         for (DatafileMetadata datafile : dataset.getDatafiles()) {
@@ -283,30 +285,16 @@ public class QueueManager {
         entityManager.remove(dataset);
     }
 
-    private void disposeOfFile(String pathname, boolean discard) {
+    private void disposeOfFile(String pathname, boolean discard) throws InterruptedException {
         File file = new File(pathname);
-        if (!file.exists()) {
-            LOG.info("File " + pathname + " no longer exists");
-            return;
-        }
-        if (!discard) {
-            File dest = new File("/tmp/archive", file.getName());
-            if (dest.exists()) {
-                LOG.info("Archived file " + dest + " already exists");
+        try {
+            if (discard) {
+                fileManager.removeFile(file);
             } else {
-                if (file.renameTo(dest)) {
-                    LOG.info("File " + file + " archived as " + dest);
-                } else {
-                    LOG.info("File " + file + " count not be archived - " +
-                    		"it remains in the queue area");
-                }
-                return;
+                fileManager.archiveFile(file);
             }
-        }
-        if (file.delete()) {
-            LOG.info("File " + pathname + " deleted from queue area");
-        } else {
-            LOG.info("File " + pathname + " not deleted from queue area");
+        } catch (QueueFileException ex) {
+            LOG.warn("Problem disposing of file", ex);
         }
     }
     
@@ -326,7 +314,7 @@ public class QueueManager {
     }
 
     public int changeUser(String[] ids, String userName, boolean reassign) 
-            throws JsonGenerationException, IOException {
+            throws JsonGenerationException, IOException, QueueFileException, InterruptedException {
         EntityManager em = createEntityManager();
         int nosChanged = 0;
         try {
@@ -340,7 +328,7 @@ public class QueueManager {
                 if (reassign || dataset.getUserName() == null) {
                     dataset.setUserName(userName.isEmpty() ? null : userName);
                     dataset.setUpdateTimestamp(new Date());
-                    saveToFileSystem(new File(dataset.getMetadataFilePathname()), dataset);
+                    saveToFileSystem(new File(dataset.getMetadataFilePathname()), dataset, true);
                     nosChanged++;
                 }
             }
@@ -355,5 +343,9 @@ public class QueueManager {
     
     private EntityManager createEntityManager() {
         return services.getEntityManagerFactory().createEntityManager();
+    }
+
+    public QueueFileManager getFileManager() {
+        return fileManager;
     }
 }

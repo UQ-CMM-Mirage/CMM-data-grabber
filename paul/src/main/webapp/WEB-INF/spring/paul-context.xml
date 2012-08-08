@@ -39,8 +39,7 @@
 		<constructor-arg index="0" ref="staticConfig" />
 		<constructor-arg index="1" ref="staticFacilities" />
 		<constructor-arg index="2" ref="entityManagerFactory" />
-		<constructor-arg index="3" ref="feedSwitch" />
-		<constructor-arg index="4" >
+		<constructor-arg index="3" >
 			<bean class="au.edu.uq.cmm.paul.watcher.SambaUncPathnameMapper" />
 		</constructor-arg>
 	</bean>

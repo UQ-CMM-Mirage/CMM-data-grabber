@@ -16,17 +16,23 @@
 * You should have received a copy of the GNU General Public License
 * along with Paul. If not, see <http://www.gnu.org/licenses/>.
 */
-package au.edu.uq.cmm.paul.queue;
+package au.edu.uq.cmm.paul.servlet;
 
-public class FeedSwitch {
+import au.edu.uq.cmm.aclslib.service.Service.State;
 
-    private boolean feedEnabled = true;
+public enum Status {
+    ON, OFF, TRANSITIONAL;
 
-    public boolean isFeedEnabled() {
-        return feedEnabled;
-    }
-
-    public void setFeedEnabled(boolean feedEnabled) {
-        this.feedEnabled = feedEnabled;
+    public static Status forState(State state) {
+        switch (state) {
+        case STARTED:
+           return Status.ON;
+        case FAILED:
+        case STOPPED:
+        case INITIAL:
+            return Status.OFF;
+        default:
+            return Status.TRANSITIONAL;
+        }
     }
 }

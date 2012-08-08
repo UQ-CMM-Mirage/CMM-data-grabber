@@ -69,7 +69,8 @@ public class QueueExpirer extends MonitoredThreadServiceBase {
         }
     }
 
-    private void doExpiry(long expiryTime, boolean expireByDeleting) {
+    private void doExpiry(long expiryTime, boolean expireByDeleting) 
+            throws InterruptedException {
         QueueManager queueManager = services.getQueueManager();
         long millis = System.currentTimeMillis() - expiryTime * 60 * 1000;
         Date cutoff = new Date(millis);

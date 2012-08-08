@@ -97,10 +97,6 @@
 					<td>${config.expireByDeleting}</td>
 				</tr>
 				<tr>
-					<td colspan="2">Data Grabber restart policy</td>
-					<td>${config.dataGrabberRestartPolicy}</td>
-				</tr>
-				<tr>
 					<td colspan="2">Hold datasets with no user information</td>
 					<td>${config.holdDatasetsWithNoUser}</td>
 				</tr>

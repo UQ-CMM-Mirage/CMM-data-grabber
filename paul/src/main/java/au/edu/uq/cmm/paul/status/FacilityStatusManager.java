@@ -147,33 +147,58 @@ public class FacilityStatusManager {
         facility.setStatus(status);
     }
 
-    public void updateHWMTimestamp(Facility facility, Date timestamp) {
+    /**
+     * Set a Facility's intertidal timestamps on the in-memory FacilityStatus object 
+     * and in the database.
+     * 
+     * @param facility The facility
+     * @param lwm The LWM timestamp
+     * @param hwm The HWM timestamp which should be not before the LWM
+     */
+    public void updateIntertidalTimestamp(Facility facility, Date lwm, Date hwm) {
         FacilityStatus status = getStatus(facility);
-        status.setGrabberHWMTimestamp(timestamp);
-        EntityManager em = emf.createEntityManager();
-        try {
-            em.getTransaction().begin();
-            FacilityStatus pstatus = em.getReference(
-                    FacilityStatus.class, status.getFacilityId());
-            pstatus.setGrabberHWMTimestamp(timestamp);
-            em.getTransaction().commit();
-        } finally {
-            em.close();
+        doUpdateIntertidalTimestamps(lwm, hwm, status);
+    }
+
+    /**
+     * Advance the Facility's HWM timestamp.  If the LWM or HWM are currently unset,
+     * this sets them both to the HWM.
+     * 
+     * @param facility The facility
+     * @param hwm The HWM timestamp which should be not before the current HWM (if set)
+     */
+    public void advanceHWMTimestamp(Facility facility, Date hwm) {
+        FacilityStatus status = getStatus(facility);
+        synchronized (status) {
+            if (status.getGrabberLWMTimestamp() == null || status.getGrabberHWMTimestamp() == null) {
+                doUpdateIntertidalTimestamps(hwm, hwm, status);
+            } else if (hwm.before(status.getGrabberHWMTimestamp())) {
+                throw new PaulException("inconsistent timestamps");
+            } else {
+                doUpdateIntertidalTimestamps(status.getGrabberLWMTimestamp(), hwm, status);
+            }
         }
     }
 
-    public void updateLWMTimestamp(Facility facility, Date timestamp) {
-        FacilityStatus status = getStatus(facility);
-        status.setGrabberLWMTimestamp(timestamp);
-        EntityManager em = emf.createEntityManager();
-        try {
-            em.getTransaction().begin();
-            FacilityStatus pstatus = em.getReference(
-                    FacilityStatus.class, status.getFacilityId());
-            pstatus.setGrabberLWMTimestamp(timestamp);
-            em.getTransaction().commit();
-        } finally {
-            em.close();
+    private void doUpdateIntertidalTimestamps(Date lwm, Date hwm,
+            FacilityStatus status) {
+        if (lwm.after(hwm)) {
+            throw new PaulException("inconsistent timestamps");
+        }
+        synchronized (status) {
+            status.setGrabberLWMTimestamp(lwm);
+            status.setGrabberHWMTimestamp(hwm);
+            EntityManager em = emf.createEntityManager();
+            try {
+                em.getTransaction().begin();
+                FacilityStatus pstatus = em.getReference(
+                        FacilityStatus.class, status.getFacilityId());
+                pstatus.setGrabberLWMTimestamp(lwm);
+                pstatus.setGrabberHWMTimestamp(hwm);
+                em.getTransaction().commit();
+            } finally {
+                em.close();
+            }
         }
     }
 
