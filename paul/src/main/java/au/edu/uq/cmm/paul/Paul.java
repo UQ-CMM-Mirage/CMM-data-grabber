@@ -34,7 +34,6 @@ import au.edu.uq.cmm.aclslib.service.ServiceBase;
 import au.edu.uq.cmm.aclslib.service.ServiceException;
 import au.edu.uq.cmm.eccles.UserDetailsManager;
 import au.edu.uq.cmm.paul.queue.AtomFeed;
-import au.edu.uq.cmm.paul.queue.FeedSwitch;
 import au.edu.uq.cmm.paul.queue.QueueExpirer;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.servlet.ConfigurationManager;
@@ -71,17 +70,15 @@ public class Paul extends ServiceBase implements Lifecycle {
     
     public Paul(StaticPaulConfiguration staticConfig,
             StaticPaulFacilities staticFacilities,
-            EntityManagerFactory entityManagerFactory,
-            FeedSwitch feedSwitch)
+            EntityManagerFactory entityManagerFactory)
     throws IOException {
         this(staticConfig, staticFacilities,
-                entityManagerFactory, feedSwitch, new SambaUncPathnameMapper());
+                entityManagerFactory, new SambaUncPathnameMapper());
     }
     
     public Paul(StaticPaulConfiguration staticConfig,
             StaticPaulFacilities staticFacilities,
             EntityManagerFactory entityManagerFactory,
-            FeedSwitch feedSwitch,
             UncPathnameMapper uncNameMapper)
     throws IOException {
         this.entityManagerFactory = entityManagerFactory;
@@ -102,8 +99,8 @@ public class Paul extends ServiceBase implements Lifecycle {
         this.queueManager = new QueueManager(this);
         this.queueExpirer = new QueueExpirer(this);
         this.userDetailsManager = new UserDetailsManager(entityManagerFactory);
-        this.atomFeed = new AtomFeed(feedSwitch);
         this.control = PaulControl.load(entityManagerFactory);
+        this.atomFeed = new AtomFeed(control);
     }
     
     @Override

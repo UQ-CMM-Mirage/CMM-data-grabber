@@ -50,27 +50,27 @@ public class PaulControl {
         id = new Long(ID);
     }
     
-    public final boolean isDoCatchupOnRestart() {
+    public boolean isDoCatchupOnRestart() {
         return doCatchupOnRestart;
     }
     
-    public final void setDoCatchupOnRestart(boolean doCatchupOnRestart) {
+    public void setDoCatchupOnRestart(boolean doCatchupOnRestart) {
         this.doCatchupOnRestart = doCatchupOnRestart;
     }
     
-    public final boolean isFileWatcherEnabled() {
+    public boolean isFileWatcherEnabled() {
         return fileWatcherEnabled;
     }
     
-    public final void setFileWatcherEnabled(boolean fileWatcherEnabled) {
+    public void setFileWatcherEnabled(boolean fileWatcherEnabled) {
         this.fileWatcherEnabled = fileWatcherEnabled;
     }
     
-    public final boolean isAtomFeedEnabled() {
+    public boolean isAtomFeedEnabled() {
         return atomFeedEnabled;
     }
     
-    public final void setAtomFeedEnabled(boolean atomFeedEnabled) {
+    public void setAtomFeedEnabled(boolean atomFeedEnabled) {
         this.atomFeedEnabled = atomFeedEnabled;
     }
     
@@ -83,20 +83,24 @@ public class PaulControl {
         this.id = id;
     }
     
+    private static PaulControl loaded;
+    
     public static PaulControl load(EntityManagerFactory emf) {
-        EntityManager em = emf.createEntityManager();
-        try {
-            TypedQuery<PaulControl> query = em.createQuery("from PaulControl", PaulControl.class);
-            return query.getSingleResult();
-        } catch (NoResultException ex) {
-            PaulControl res = new PaulControl();
-            em.getTransaction().begin();
-            em.persist(res);
-            em.getTransaction().commit();
-            return res;
-        } finally {
-            emf.close();
+        if (loaded == null) {
+            EntityManager em = emf.createEntityManager();
+            try {
+                TypedQuery<PaulControl> query = em.createQuery("from PaulControl", PaulControl.class);
+                loaded = query.getSingleResult();
+            } catch (NoResultException ex) {
+                loaded = new PaulControl();
+                em.getTransaction().begin();
+                em.persist(loaded);
+                em.getTransaction().commit();
+            } finally {
+                emf.close();
+            }
         }
+        return loaded;
     }
     
     public static void save(PaulControl control, EntityManagerFactory emf) {
