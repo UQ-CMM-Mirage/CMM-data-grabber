@@ -62,7 +62,6 @@ import au.edu.uq.cmm.aclslib.config.ConfigurationException;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.proxy.AclsAuthenticationException;
 import au.edu.uq.cmm.aclslib.proxy.AclsInUseException;
-import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.aclslib.service.Service.State;
 import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.eccles.UnknownUserException;
@@ -92,10 +91,6 @@ import au.edu.uq.cmm.paul.watcher.FileWatcher;
  */
 @Controller
 public class WebUIController implements ServletContextAware {
-    public enum Status {
-        ON, OFF, TRANSITIONAL
-    }
-    
     private static final Logger LOG = 
             LoggerFactory.getLogger(WebUIController.class);
 
@@ -126,50 +121,26 @@ public class WebUIController implements ServletContextAware {
 
     @RequestMapping(value="/control", method=RequestMethod.POST)
     public String controlAction(Model model, HttpServletRequest request) {
-        processStatusChange(getFileWatcher(), request.getParameter("watcher"));
-        processStatusChange(getAtomFeed(), request.getParameter("atomFeed"));
+        processStatusChange("watcher", request.getParameter("watcher"));
+        processStatusChange("atomFeed", request.getParameter("atomFeed"));
         addStateAndStatus(model);
         return "control";
     }
     
-    private void processStatusChange(Service service, String param) {
-        Service.State current = service.getState();
-        if (param == null) {
-            return;
-        }
-        Status target = Status.valueOf(param);
-        if (target == stateToStatus(current) || 
-                stateToStatus(current) == Status.TRANSITIONAL) {
-            return;
-        }
-        if (target == Status.ON) {
-            service.startStartup();
-        } else {
-            service.startShutdown();
+    private void processStatusChange(String serviceName, String param) {
+        if (param != null) {
+            services.processStatusChange(serviceName, param);
         }
     }
     
     private void addStateAndStatus(Model model) {
         State ws = getFileWatcher().getState();
         model.addAttribute("watcherState", ws);
-        model.addAttribute("watcherStatus", stateToStatus(ws));
+        model.addAttribute("watcherStatus", Status.forState(ws));
         State as = getAtomFeed().getState();
         model.addAttribute("atomFeedState", as);
-        model.addAttribute("atomFeedStatus", stateToStatus(as));
+        model.addAttribute("atomFeedStatus", Status.forState(as));
         model.addAttribute("resetRequired", getLatestConfig() != getConfig());
-    }
-    
-    private Status stateToStatus(State state) {
-        switch (state) {
-        case STARTED:
-           return Status.ON;
-        case FAILED:
-        case STOPPED:
-        case INITIAL:
-            return Status.OFF;
-        default:
-            return Status.TRANSITIONAL;
-        }
     }
     
     @RequestMapping(value="/sessions", method=RequestMethod.GET)

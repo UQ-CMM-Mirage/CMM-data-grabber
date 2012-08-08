@@ -29,20 +29,28 @@ import org.springframework.context.Lifecycle;
 
 import au.edu.uq.cmm.aclslib.message.AclsClient;
 import au.edu.uq.cmm.aclslib.proxy.AclsHelper;
+import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.aclslib.service.ServiceBase;
 import au.edu.uq.cmm.aclslib.service.ServiceException;
 import au.edu.uq.cmm.eccles.UserDetailsManager;
-import au.edu.uq.cmm.paul.GrabberConfiguration.DataGrabberRestartPolicy;
 import au.edu.uq.cmm.paul.queue.AtomFeed;
 import au.edu.uq.cmm.paul.queue.FeedSwitch;
 import au.edu.uq.cmm.paul.queue.QueueExpirer;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.servlet.ConfigurationManager;
+import au.edu.uq.cmm.paul.servlet.Status;
 import au.edu.uq.cmm.paul.status.FacilityStatusManager;
 import au.edu.uq.cmm.paul.watcher.FileWatcher;
 import au.edu.uq.cmm.paul.watcher.SambaUncPathnameMapper;
 import au.edu.uq.cmm.paul.watcher.UncPathnameMapper;
 
+/**
+ * This class represents the Paul application as a whole, with getters that 
+ * allow the different components to access each other.  The class also
+ * implements the ACSLib "Service" API.
+ * 
+ * @author scrawley
+ */
 public class Paul extends ServiceBase implements Lifecycle {
     // FIXME - need to do something to hook this class into the servlet lifecycle 
     // so that it gets told when the servlet is being shutdown.
@@ -58,6 +66,7 @@ public class Paul extends ServiceBase implements Lifecycle {
     private final PaulFacilityMapper facilityMapper;
     private final AclsHelper aclsHelper;
     private final AtomFeed atomFeed;
+    private final PaulControl control;
     
     
     public Paul(StaticPaulConfiguration staticConfig,
@@ -94,6 +103,7 @@ public class Paul extends ServiceBase implements Lifecycle {
         this.queueExpirer = new QueueExpirer(this);
         this.userDetailsManager = new UserDetailsManager(entityManagerFactory);
         this.atomFeed = new AtomFeed(feedSwitch);
+        this.control = PaulControl.load(entityManagerFactory);
     }
     
     @Override
@@ -107,8 +117,7 @@ public class Paul extends ServiceBase implements Lifecycle {
     @Override
     protected void doStartup() throws ServiceException {
         LOG.info("Startup started");
-        if (getConfiguration().getDataGrabberRestartPolicy() !=
-                DataGrabberRestartPolicy.NO_AUTO_START) {
+        if (control.isFileWatcherEnabled()) {
             fileWatcher.startup();
         }
         queueExpirer.startup();
@@ -159,6 +168,10 @@ public class Paul extends ServiceBase implements Lifecycle {
         return atomFeed;
     }
 
+    public final PaulControl getControl() {
+        return control;
+    }
+
     @Override
     public void start() {
         startup();
@@ -176,5 +189,43 @@ public class Paul extends ServiceBase implements Lifecycle {
     @Override
     public boolean isRunning() {
         return getState() == State.STARTED;
+    }
+
+    public void processStatusChange(String serviceName, String param) {
+        Service service;
+        switch (serviceName) {
+        case "atomFeed": 
+            service = atomFeed;
+            break;
+        case "watcher":
+            service = fileWatcher;
+            break;
+        default:
+            throw new PaulException("unknown service: " + serviceName);
+        }
+        
+        Service.State current = service.getState();
+        if (param == null) {
+            return;
+        }
+        Status target = Status.valueOf(param);
+        if (target == Status.forState(current) || 
+                Status.forState(current) == Status.TRANSITIONAL) {
+            return;
+        }
+        if (target == Status.ON) {
+            service.startStartup();
+        } else {
+            service.startShutdown();
+        }
+        switch (serviceName) {
+        case "atomFeed":
+            control.setAtomFeedEnabled(target == Status.ON);
+            break;
+        case "watcher":
+            control.setFileWatcherEnabled(target == Status.ON);
+            break;
+        }
+        PaulControl.save(control, entityManagerFactory);
     }
 }

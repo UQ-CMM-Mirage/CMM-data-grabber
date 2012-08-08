@@ -64,8 +64,6 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
     private long queueExpiryTime;
     private long queueExpiryInterval;
     private boolean expireByDeleting;
-    private DataGrabberRestartPolicy dataGrabberRestartPolicy = 
-            DataGrabberRestartPolicy.NO_AUTO_START;
     private boolean holdDatasetsWithNoUser = true;
     private String primaryRepositoryUrl;
     private String aclsUrl;
@@ -212,15 +210,6 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
 
     public void setExpireByDeleting(boolean expireByDeleting) {
         this.expireByDeleting = expireByDeleting;
-    }
-
-    public DataGrabberRestartPolicy getDataGrabberRestartPolicy() {
-        return dataGrabberRestartPolicy;
-    }
-
-    public void setDataGrabberRestartPolicy(
-            DataGrabberRestartPolicy dataGrabberRestartPolicy) {
-        this.dataGrabberRestartPolicy = dataGrabberRestartPolicy;
     }
 
     public String getPrimaryRepositoryUrl() {
