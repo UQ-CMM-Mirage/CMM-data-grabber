@@ -201,7 +201,7 @@ class WorkEntry implements Runnable {
                 return;
             }
             grabFiles(false);
-            statusManager.updateHWMTimestamp(facility, timestamp);
+            statusManager.advanceHWMTimestamp(facility, timestamp);
         } catch (InterruptedException ex) {
             LOG.debug("Handling interrupt on workEntry thread", ex);
             grabAborted = true;

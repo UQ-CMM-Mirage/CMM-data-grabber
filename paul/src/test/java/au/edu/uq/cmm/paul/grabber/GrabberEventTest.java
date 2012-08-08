@@ -130,7 +130,7 @@ public class GrabberEventTest {
         status.setLocalDirectory(new File("/tmp"));
         EasyMock.expect(fsm.getStatus(FACILITY)).andReturn(status).anyTimes();
         EasyMock.expect(fsm.getSession(EasyMock.eq("test"), EasyMock.anyLong())).andReturn(session).anyTimes();
-        fsm.updateHWMTimestamp(EasyMock.eq(FACILITY), EasyMock.anyObject(Date.class));
+        fsm.advanceHWMTimestamp(EasyMock.eq(FACILITY), EasyMock.anyObject(Date.class));
         EasyMock.expectLastCall().anyTimes();
         EasyMock.replay(fsm);
         return fsm;

@@ -364,24 +364,23 @@
 				<input type="checkbox" name="checkHashes" value="true" ${checkHashes ? 'checked' : ''}>
 			</div>
 			<div class="row-fluid">
-				<c:set var="isohwm">
-					<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-						value="${hwmTimestamp}" />
-				</c:set>
-				New HWM: <input type="text" name="hwmTimestamp" value="${isohwm}">
-				<button type="submit" name="setHWM">Change the HWM</button>
-			</div>
-			<div class="row-fluid">
 				<c:set var="isolwm">
 					<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
 						value="${lwmTimestamp}" />
 				</c:set>
-				New LWM: <input type="text" name="lwmTimestamp" value="${isolwm}">
-				<button type="submit" name="setLWM">Change the LWM</button>
+				New / proposed LWM: <input type="text" name="lwmTimestamp" value="${isolwm}">
+			</div>
+			<div class="row-fluid">
+				<c:set var="isohwm">
+					<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+						value="${hwmTimestamp}" />
+				</c:set>
+				New / proposed  HWM: <input type="text" name="hwmTimestamp" value="${isohwm}">
 			</div>
 			<div class="row-fluid">
 				<button type="submit" name="reanalyse">Reanalyse with
 					proposed LWM / HWM</button>
+				<button type="submit" name="setIntertidal">Change the LWM &amp; HWM timestamps</button>
 			</div>
 		</form>
 	</div>
