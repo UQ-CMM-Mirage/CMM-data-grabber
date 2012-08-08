@@ -12,39 +12,41 @@
 	<div class="container-fluid">
 		<div class="row-fluid"><h1>Queue Diagnostics for ${facilityName}</h1></div>
 		<div class="row-fluid">
-			Grabber status : ${status.status} <br> 
-			Grabber message : ${status.message} <br> 
-			Grabber LWM timestamp : 
+			<table class="table table-bordered">
+				<tr><td class="span2">Grabber status : </td><td class="span10">${status.status}</td></tr> 
+			<tr><td class="span2">Grabber message : </td><td class="span10">${status.message}</td></tr> 
+			<tr><td class="span2">Grabber LWM timestamp :</td><td class="span10"> 
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-						value="${status.grabberLWMTimestamp}"/> <br>
-			Grabber HWM timestamp : 
+						value="${status.grabberLWMTimestamp}"/></td></tr> 
+			<tr><td class="span2">Grabber HWM timestamp : </td><td class="span10">
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-						value="${status.grabberHWMTimestamp}"/> <br>
-			Timestamp of first queued Dataset : 
+						value="${status.grabberHWMTimestamp}"/></td></tr> 
+			<tr><td class="span2">Timestamp of first queued Dataset : </td><td class="span10">
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-						value="${analysis.qStart}"/> <br>
-			Timestamp of last queued Dataset : 
+						value="${analysis.qStart}"/></td></tr> 
+			<tr><td class="span2">Timestamp of last queued Dataset : </td><td class="span10">
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-						value="${analysis.qEnd}"/> <br>
-			Timestamp of first folder Dataset : 
+						value="${analysis.qEnd}"/></td></tr> 
+			<tr><td class="span2">Timestamp of first folder Dataset : </td><td class="span10">
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-						value="${analysis.fStart}"/> <br>
-			Timestamp of last folder Dataset : 
+						value="${analysis.fStart}"/></td></tr> 
+			<tr><td class="span2">Timestamp of last folder Dataset : </td><td class="span10">
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-						value="${analysis.fEnd}"/> <br>
-			LWM / HWM used in analysis : 
+						value="${analysis.fEnd}"/></td></tr> 
+			<tr><td class="span2">LWM / HWM used in analysis : </td><td class="span10">
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
 						value="${lwmTimestamp}"/> / 
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-						value="${hwmTimestamp}"/>
+						value="${hwmTimestamp}"/></td></tr> 
+			</table>
 		</div>
 		<div class="row-fluid"><h2>Statistics</h2></div>
 		<div class="row-fluid">
 		<table class="table table-striped table-condensed">
 			<thead>
 				<tr><th class="span2">Timespan</th>
-					<th class="span2">All Datasets in "instrument data"</th>
-					<th class="span2">Unmatched Datasets on "instrument data"</th>
+					<th class="span2">All Datasets in folder</th>
+					<th class="span2">Unmatched Datasets in folder</th>
 					<th class="span2">All Datasets in queues</th>
 					<th class="span2">Dataset groups with multiples in queues</th>
 					<th class="span2">Unmatched Dataset groups in queues</th>
@@ -61,35 +63,21 @@
 				</tr>
 				<c:if test="${!empty analysis.beforeLWM}">
 					<tr>
-						<td>&#x2264; LWM</td>
+						<td>&lt; LWM</td>
 						<td>${analysis.beforeLWM.datasetsInFolder}</td>
 						<td>${analysis.beforeLWM.datasetsUnmatchedInFolder}</td>
 						<td>${analysis.beforeLWM.datasetsInDatabase}</td>
 						<td>${analysis.beforeLWM.groupsWithDuplicatesInDatabase}</td>
 						<td>${analysis.beforeLWM.groupsUnmatchedInDatabase}</td>
 					</tr>
-				</c:if>
-				<c:if test="${!empty analysis.afterLWM}">
 					<tr>
-						<td>&gt; LWM</td>
-						<td>${analysis.afterLWM.datasetsInFolder}</td>
-						<td>${analysis.afterLWM.datasetsUnmatchedInFolder}</td>
-						<td>${analysis.afterLWM.datasetsInDatabase}</td>
-						<td>${analysis.afterLWM.groupsWithDuplicatesInDatabase}</td>
-						<td>${analysis.afterLWM.groupsUnmatchedInDatabase}</td>
+						<td>between LWM &amp; HWM</td>
+						<td>${analysis.intertidal.datasetsInFolder}</td>
+						<td>${analysis.intertidal.datasetsUnmatchedInFolder}</td>
+						<td>${analysis.intertidal.datasetsInDatabase}</td>
+						<td>${analysis.intertidal.groupsWithDuplicatesInDatabase}</td>
+						<td>${analysis.intertidal.groupsUnmatchedInDatabase}</td>
 					</tr>
-				</c:if>
-				<c:if test="${!empty analysis.beforeHWM}">
-					<tr>
-						<td>&#x2264; HWM</td>
-						<td>${analysis.beforeHWM.datasetsInFolder}</td>
-						<td>${analysis.beforeHWM.datasetsUnmatchedInFolder}</td>
-						<td>${analysis.beforeHWM.datasetsInDatabase}</td>
-						<td>${analysis.beforeHWM.groupsWithDuplicatesInDatabase}</td>
-						<td>${analysis.beforeHWM.groupsUnmatchedInDatabase}</td>
-					</tr>
-				</c:if>
-				<c:if test="${!empty analysis.afterHWM}">
 					<tr>
 						<td>&gt; HWM</td>
 						<td>${analysis.afterHWM.datasetsInFolder}</td>
@@ -101,37 +89,23 @@
 				</c:if>
 				<c:if test="${!empty analysis.beforeQStart}">
 					<tr>
-						<td>&#x2264; current Queue Start</td>
+						<td>&lt; queue start</td>
 						<td>${analysis.beforeQStart.datasetsInFolder}</td>
 						<td>${analysis.beforeQStart.datasetsUnmatchedInFolder}</td>
 						<td>${analysis.beforeQStart.datasetsInDatabase}</td>
 						<td>${analysis.beforeQStart.groupsWithDuplicatesInDatabase}</td>
 						<td>${analysis.beforeQStart.groupsUnmatchedInDatabase}</td>
 					</tr>
-				</c:if>
-				<c:if test="${!empty analysis.afterQStart}">
 					<tr>
-						<td>&gt; current Queue Start</td>
-						<td>${analysis.afterQStart.datasetsInFolder}</td>
-						<td>${analysis.afterQStart.datasetsUnmatchedInFolder}</td>
-						<td>${analysis.afterQStart.datasetsInDatabase}</td>
-						<td>${analysis.afterQStart.groupsWithDuplicatesInDatabase}</td>
-						<td>${analysis.afterQStart.groupsUnmatchedInDatabase}</td>
+						<td>in queue time-range</td>
+						<td>${analysis.inQueue.datasetsInFolder}</td>
+						<td>${analysis.inQueue.datasetsUnmatchedInFolder}</td>
+						<td>${analysis.inQueue.datasetsInDatabase}</td>
+						<td>${analysis.inQueue.groupsWithDuplicatesInDatabase}</td>
+						<td>${analysis.inQueue.groupsUnmatchedInDatabase}</td>
 					</tr>
-				</c:if>
-				<c:if test="${!empty analysis.beforeQEnd}">
 					<tr>
-						<td>&#x2264; current Queue End</td>
-						<td>${analysis.beforeQEnd.datasetsInFolder}</td>
-						<td>${analysis.beforeQEnd.datasetsUnmatchedInFolder}</td>
-						<td>${analysis.beforeQEnd.datasetsInDatabase}</td>
-						<td>${analysis.beforeQEnd.groupsWithDuplicatesInDatabase}</td>
-						<td>${analysis.beforeQEnd.groupsUnmatchedInDatabase}</td>
-					</tr>
-				</c:if>
-				<c:if test="${!empty analysis.afterQEnd}">
-					<tr>
-						<td>&gt; current Queue End</td>
+						<td>&gt; queue end</td>
 						<td>${analysis.afterQEnd.datasetsInFolder}</td>
 						<td>${analysis.afterQEnd.datasetsUnmatchedInFolder}</td>
 						<td>${analysis.afterQEnd.datasetsInDatabase}</td>
@@ -216,7 +190,7 @@
 									    <c:when test="${empty prevId || prevId != problem.dataset.id}">
 									    	<td>
 												<form class="well,form-horizontal"
-													  style="margin: 0px 0px 0px"
+													  style="margin: 0px 0px 0px" method="post"
 												      action="/paul/datasets/${problem.dataset.id}">
 													<input type="hidden" name="returnTo" 
 												   		   value="/paul/queueDiagnostics/${facilityName}">
@@ -390,24 +364,23 @@
 				<input type="checkbox" name="checkHashes" value="true" ${checkHashes ? 'checked' : ''}>
 			</div>
 			<div class="row-fluid">
-				<c:set var="isohwm">
-					<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-						value="${hwmTimestamp}" />
-				</c:set>
-				New HWM: <input type="text" name="hwmTimestamp" value="${isohwm}">
-				<button type="submit" name="setHWM">Change the HWM</button>
-			</div>
-			<div class="row-fluid">
 				<c:set var="isolwm">
 					<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
 						value="${lwmTimestamp}" />
 				</c:set>
-				New LWM: <input type="text" name="lwmTimestamp" value="${isolwm}">
-				<button type="submit" name="setLWM">Change the LWM</button>
+				New / proposed LWM: <input type="text" name="lwmTimestamp" value="${isolwm}">
+			</div>
+			<div class="row-fluid">
+				<c:set var="isohwm">
+					<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+						value="${hwmTimestamp}" />
+				</c:set>
+				New / proposed  HWM: <input type="text" name="hwmTimestamp" value="${isohwm}">
 			</div>
 			<div class="row-fluid">
 				<button type="submit" name="reanalyse">Reanalyse with
 					proposed LWM / HWM</button>
+				<button type="submit" name="setIntertidal">Change the LWM &amp; HWM timestamps</button>
 			</div>
 		</form>
 	</div>

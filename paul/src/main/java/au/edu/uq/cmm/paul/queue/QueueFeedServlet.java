@@ -47,10 +47,6 @@ public class QueueFeedServlet extends AbderaServlet {
         DefaultProvider provider = new DefaultProvider("/atom/");
         provider.addWorkspace(wi);
         provider.init(getAbdera(), null);
-
-        // This frobbit allows the atom feed can be turned on / off via the web UI.
-        FeedSwitch fs = ctx.getBean("feedSwitch", FeedSwitch.class);
-        ca.setFeedSwitch(fs);
         return provider;
     }
 }

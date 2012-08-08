@@ -60,247 +60,10 @@ public class Analyser extends AbstractFileGrabber {
     
     private static Logger LOG = LoggerFactory.getLogger(Analyser.class);
     
-    public static class Statistics {
-        private final int datasetsInFolder;
-        private final int datasetsInDatabase;
-        private int groupsWithDuplicatesInDatabase;
-        private int datasetsUnmatchedInFolder;
-        private int groupsUnmatchedInDatabase;
-
-        public Statistics(int datasetsInFolder, int datasetsInDatabase, 
-                int groupsWithDuplicatesInDatabase, int datasetsUnmatchedInFolder, 
-                int groupsUnmatchedInDatabase) {
-            super();
-            this.datasetsInFolder = datasetsInFolder;
-            this.datasetsInDatabase = datasetsInDatabase;
-            this.groupsWithDuplicatesInDatabase = groupsWithDuplicatesInDatabase;
-            this.datasetsUnmatchedInFolder = datasetsUnmatchedInFolder;
-            this.groupsUnmatchedInDatabase = groupsUnmatchedInDatabase;
-        }
-
-        public final int getDatasetsInFolder() {
-            return datasetsInFolder;
-        }
-
-        public final int getDatasetsInDatabase() {
-            return datasetsInDatabase;
-        }
-
-        public final int getGroupsWithDuplicatesInDatabase() {
-            return groupsWithDuplicatesInDatabase;
-        }
-
-        public final int getDatasetsUnmatchedInFolder() {
-            return datasetsUnmatchedInFolder;
-        }
-
-        public final int getGroupsUnmatchedInDatabase() {
-            return groupsUnmatchedInDatabase;
-        }
-    }
-    
     public enum ProblemType {
         METADATA_MISSING, METADATA_SIZE,
         FILE_MISSING, FILE_SIZE, FILE_SIZE_2,
         FILE_HASH, FILE_HASH_2, IO_ERROR;
-    }
-    
-    public static class Problem {
-        private final DatasetMetadata dataset;
-        private final DatafileMetadata datafile;
-        private final String details;
-        private final ProblemType type;
-        
-        public Problem(DatasetMetadata dataset, DatafileMetadata datafile, 
-                ProblemType type, String details) {
-            super();
-            this.dataset = dataset;
-            this.datafile = datafile;
-            this.details = details;
-            this.type = type;
-        }
-        
-        public final DatasetMetadata getDataset() {
-            return dataset;
-        }
-        
-        public final DatafileMetadata getDatafile() {
-            return datafile;
-        }
-        
-        public final String getDetails() {
-            return details;
-        }
-
-        public final ProblemType getType() {
-            return type;
-        }
-    }
-    
-    public static class Problems {
-        private final List<Problem> problems;
-
-        public Problems(List<Problem> problem) {
-            this.problems = problem;
-        }
-
-        public int getNosProblems() {
-            return problems.size();
-        }
-
-        public final int getIoError() {
-            return count(ProblemType.IO_ERROR);
-        }
-
-        public final int getFileSize2() {
-            return count(ProblemType.FILE_SIZE_2);
-        }
-
-        public final int getFileSize() {
-            return count(ProblemType.FILE_SIZE);
-        }
-
-        public final int getFileHash2() {
-            return count(ProblemType.FILE_HASH_2);
-        }
-
-        public final int getFileHash() {
-            return count(ProblemType.FILE_HASH);
-        }
-
-        public final int getFileMissing() {
-            return count(ProblemType.FILE_MISSING);
-        }
-
-        public final int getMetadataSize() {
-            return count(ProblemType.METADATA_SIZE);
-        }
-
-        public final int getMetadataMissing() {
-            return count(ProblemType.METADATA_MISSING);
-        }
-
-        private int count(ProblemType type) {
-            int count = 0;
-            for (Problem problem : problems) {
-                if (problem.getType() == type) {
-                    count++;
-                }
-            }
-            return count;
-        }
-
-        public final List<Problem> getProblems() {
-            return problems;
-        }
-    }
-    
-    public static class Group implements Comparable<Group> {
-        private final String basePathname;
-        private DatasetMetadata inFolder;
-        private List<DatasetMetadata> allInDatabase = new ArrayList<DatasetMetadata>();
-        
-        public Group(String basePathname) {
-            super();
-            this.basePathname = basePathname;
-        }
-
-        public final String getBasePathname() {
-            return basePathname;
-        }
-
-        public final DatasetMetadata getInFolder() {
-            return inFolder;
-        }
-
-        public final List<DatasetMetadata> getAllInDatabase() {
-            return allInDatabase;
-        }
-        
-        public final List<DecoratedDatasetMetadata> getAllDecorated() {
-            List<DecoratedDatasetMetadata> res = 
-                    new ArrayList<DecoratedDatasetMetadata>(allInDatabase.size() + 1);
-            if (inFolder != null) {
-                res.add(new DecoratedDatasetMetadata(inFolder, inFolder));
-            }
-            for (DatasetMetadata dataset : allInDatabase) {
-                res.add(new DecoratedDatasetMetadata(dataset, inFolder));
-            }
-            return res;
-        }
-        
-        public final boolean isUnmatchedInDatabase() {
-            if (inFolder == null) {
-                return true;
-            }
-            for (DatasetMetadata dataset : allInDatabase) {
-                if (!matches(dataset, inFolder)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public final boolean isDuplicatesInDatabase() {
-            if (inFolder == null) {
-                return false;
-            }
-            int count = 0;
-            for (DatasetMetadata dataset : allInDatabase) {
-                if (matches(dataset, inFolder)) {
-                    count++;
-                }
-            }
-            return count > 1;
-        }
-        
-        public final void setInFolder(DatasetMetadata inFolder) {
-            this.inFolder = inFolder;
-        }
-        
-        public final void addInDatabase(DatasetMetadata inDatabase) {
-            this.allInDatabase.add(inDatabase);
-        }
-
-        @Override
-        public int compareTo(Group o) {
-            return basePathname.compareTo(o.getBasePathname());
-        }
-    }
-    
-    public static class DecoratedDatasetMetadata extends DatasetMetadata {
-        private final DatasetMetadata inFolder;
-        private final boolean isInFolder;
-
-        public DecoratedDatasetMetadata(DatasetMetadata dataset, DatasetMetadata inFolder) {
-            super(dataset.getSourceFilePathnameBase(), 
-                    dataset.getFacilityFilePathnameBase(), 
-                    dataset.getMetadataFilePathname(),
-                    dataset.getUserName(), 
-                    dataset.getFacilityName(), 
-                    dataset.getFacilityId(), 
-                    dataset.getAccountName(), 
-                    dataset.getEmailAddress(),
-                    dataset.getCaptureTimestamp(), 
-                    dataset.getSessionUuid(), 
-                    dataset.getSessionStartTimestamp(), 
-                    dataset.getDatafiles());
-            this.inFolder = inFolder;
-            this.isInFolder = dataset == inFolder;
-            this.setId(dataset.getId());
-        }
-        
-        public boolean isInFolder() {
-            return isInFolder;
-        }
-        
-        public boolean isMatched() {
-            return inFolder != null && matches(inFolder, this);
-        }
-        
-        public boolean isUnmatched() {
-            return inFolder == null || !matches(inFolder, this);
-        }
     }
     
     private static final Comparator<DatasetMetadata> ORDER_BY_BASE_PATH_AND_TIME =
@@ -343,14 +106,12 @@ public class Analyser extends AbstractFileGrabber {
     private List<Group> grouped;
     private Statistics all;
     private Statistics beforeLWM;
-    private Statistics afterLWM;
-    private Statistics beforeHWM;
+    private Statistics intertidal;
     private Statistics afterHWM;
     private Problems problems;
-    private Statistics beforeQEnd;
-    private Statistics afterQEnd;
     private Statistics beforeQStart;
-    private Statistics afterQStart;
+    private Statistics inQueue;
+    private Statistics afterQEnd;
 
     private Date lwm;
     private Date hwm;
@@ -390,69 +151,56 @@ public class Analyser extends AbstractFileGrabber {
         LOG.info("Gathering statistics for " + getFacility().getFacilityName());
         determineFolderRange(inFolder);
         all = gatherStats(grouped, PredicateUtils.truePredicate());
-        if (lwmTimestamp == null) {
+        if (hwmTimestamp == null || lwmTimestamp == null) {
             beforeLWM = null;
-            afterLWM = null;
+            afterHWM = null;
+            intertidal = null;
         } else {
             final long lwm = lwmTimestamp.getTime();
             beforeLWM = gatherStats(grouped, new Predicate() {
                 public boolean evaluate(Object metadata) {
-                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() <= lwm;
+                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() < lwm;
                 }
             });
-            afterLWM = gatherStats(grouped, new Predicate() {
-                public boolean evaluate(Object metadata) {
-                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() > lwm;
-                }
-            });
-        }
-        if (hwmTimestamp == null) {
-            beforeHWM = null;
-            afterHWM = null;
-        } else {
             final long hwm = hwmTimestamp.getTime();
-            beforeHWM = gatherStats(grouped, new Predicate() {
-                public boolean evaluate(Object metadata) {
-                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() <= hwm;
-                }
-            });
             afterHWM = gatherStats(grouped, new Predicate() {
                 public boolean evaluate(Object metadata) {
                     return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() > hwm;
                 }
             });
+            intertidal = gatherStats(grouped, new Predicate() {
+                public boolean evaluate(Object metadata) {
+                    long ts = ((DatasetMetadata) metadata).getLastFileTimestamp().getTime();
+                    return ts >= lwm && ts <= hwm;
+                }
+            });
         }
         if (range == null) {
-            beforeQEnd = null;
             afterQEnd = null;
             beforeQStart = null;
-            afterQStart = null;
+            inQueue = null;
         } else {
             final long qStart = this.qStart.getTime();
             beforeQStart = gatherStats(grouped, new Predicate() {
                 public boolean evaluate(Object metadata) {
-                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() <= qStart;
-                }
-            });
-            afterQStart = gatherStats(grouped, new Predicate() {
-                public boolean evaluate(Object metadata) {
-                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() > qStart;
+                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() < qStart;
                 }
             });
             final long qEnd = this.qEnd.getTime();
-            beforeQEnd = gatherStats(grouped, new Predicate() {
-                public boolean evaluate(Object metadata) {
-                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() <= qEnd;
-                }
-            });
             afterQEnd = gatherStats(grouped, new Predicate() {
                 public boolean evaluate(Object metadata) {
                     return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() > qEnd;
                 }
             });
+            inQueue = gatherStats(grouped, new Predicate() {
+                public boolean evaluate(Object metadata) {
+                    long ts = ((DatasetMetadata) metadata).getLastFileTimestamp().getTime();
+                    return ts >= qStart && ts <= qEnd;
+                }
+            });
         }
         LOG.info("Performing queue entry integrity checks for " + getFacility().getFacilityName());
-        problems = integrityCheck(inDatabase);
+        problems = integrityCheck(grouped);
         return this;
     }
     
@@ -476,9 +224,17 @@ public class Analyser extends AbstractFileGrabber {
         }
     }
 
-    private Problems integrityCheck(SortedSet<DatasetMetadata> inDatabase) {
+    private Problems integrityCheck(List<Group> grouped) {
         List<Problem> problems = new ArrayList<Problem>();
-        for (DatasetMetadata dataset : inDatabase) {
+        for (Group group : grouped) {
+            // Check only the latest queue entry.  Older ones are not really 
+            // relevant, and besides they typically have the "problem" that 
+            // one or more captured component datafiles no longer matches the
+            // in-folder dataset. (Which has typically been recaptured.)
+            DatasetMetadata dataset = group.getLatestInDatabase();
+            if (dataset == null) {
+                continue;
+            }
             File adminFile = new File(dataset.getMetadataFilePathname());
             if (!adminFile.exists()) {
                 logProblem(dataset, null, ProblemType.METADATA_MISSING, problems, 
@@ -510,11 +266,11 @@ public class Analyser extends AbstractFileGrabber {
                     }
                     File source = new File(datafile.getSourceFilePathname());
                     if (source.exists()) {
-                        if (source.length() != file.length()) {
+                        if (source.length() != datafile.getFileSize()) {
                             logProblem(dataset, datafile, ProblemType.FILE_SIZE_2, problems, 
                                     "Data file size mismatch: " + file + 
                                     ": original file size is " + source.length() + 
-                                    " but actual captured file size is " + file.length());
+                                    " but admin metadata says " + datafile.getFileSize());
                         } else if (hash != null && !hash.equals(HashUtils.fileHash(source))) {
                             logProblem(dataset, datafile, ProblemType.FILE_HASH_2, problems,
                                     "Data file hash mismatch between metadata and " + source);
@@ -547,6 +303,7 @@ public class Analyser extends AbstractFileGrabber {
         int datasetsUnmatchedInFolder = 0;
         int groupsUnmatchedInDatabase = 0;
         int groupsWithDuplicatesInDatabase = 0;
+        int groupsInDatabase = 0;
         for (Group group : grouped) {
             if (group.getInFolder() != null && predicate.evaluate(group.getInFolder())) {
                 datasetsInFolder++;
@@ -555,28 +312,32 @@ public class Analyser extends AbstractFileGrabber {
                 }
             }
             int inDatabase = 0;
+            boolean matched = false;
             for (DatasetMetadata dataset : group.getAllInDatabase()) {
                 if (predicate.evaluate(dataset)) {
                     inDatabase++;
+                    if (group.inFolder != null && matches(group.inFolder, dataset)) {
+                        matched = true;
+                    }
                 }
             }
             datasetsInDatabase += inDatabase;
+            if (!matched && group.inFolder != null) {
+                groupsUnmatchedInDatabase++;
+            }
             if (inDatabase > 1) {
                 groupsWithDuplicatesInDatabase++;
             }
-            for (DatasetMetadata dataset : group.getAllInDatabase()) {
-                if (predicate.evaluate(dataset)) {
-                    if (group.inFolder == null || !matches(group.inFolder, dataset))
-                    groupsUnmatchedInDatabase++;
-                }
+            if (inDatabase > 0) {
+                groupsInDatabase++;
             }
-        }
-        return new Statistics(datasetsInFolder, datasetsInDatabase, 
+        } 
+        return new Statistics(datasetsInFolder, datasetsInDatabase, groupsInDatabase,
                 groupsWithDuplicatesInDatabase, datasetsUnmatchedInFolder, 
                 groupsUnmatchedInDatabase);
     }
     
-    private static boolean matches(DatasetMetadata d1, DatasetMetadata d2) {
+    static boolean matches(DatasetMetadata d1, DatasetMetadata d2) {
         return d1.getSourceFilePathnameBase().equals(d2.getSourceFilePathnameBase()) &&
                 d1.getLastFileTimestamp().getTime() == d2.getLastFileTimestamp().getTime();
     }
@@ -610,7 +371,7 @@ public class Analyser extends AbstractFileGrabber {
     
     private boolean intertidal(Date timestamp) {
         return (lwm == null || timestamp.getTime() >= lwm.getTime()) &&
-               (hwm == null || timestamp.getTime() < hwm.getTime());
+               (hwm == null || timestamp.getTime() <= hwm.getTime());
     }
 
     private ArrayList<Group> mergeGroupsFromFolder(ArrayList<Group> groups,
@@ -709,12 +470,8 @@ public class Analyser extends AbstractFileGrabber {
         return beforeLWM;
     }
 
-    public final Statistics getAfterLWM() {
-        return afterLWM;
-    }
-
-    public final Statistics getBeforeHWM() {
-        return beforeHWM;
+    public final Statistics getIntertidal() {
+        return intertidal;
     }
 
     public final Statistics getAfterHWM() {
@@ -725,12 +482,8 @@ public class Analyser extends AbstractFileGrabber {
         return beforeQStart;
     }
 
-    public final Statistics getAfterQStart() {
-        return afterQStart;
-    }
-
-    public final Statistics getBeforeQEnd() {
-        return beforeQEnd;
+    public final Statistics getInQueue() {
+        return inQueue;
     }
 
     public final Statistics getAfterQEnd() {
@@ -768,5 +521,9 @@ public class Analyser extends AbstractFileGrabber {
     public final void setProblems(Problems problems) {
         this.problems = problems;
     }
-    
+
+    @Override
+    protected boolean isShutDown() {
+        return false;
+    }
 }

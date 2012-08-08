@@ -75,8 +75,6 @@ public class PaulConfiguration implements GrabberConfiguration {
     private long queueExpiryTime;
     private long queueExpiryInterval;
     private boolean expireByDeleting;
-    private DataGrabberRestartPolicy dataGrabberRestartPolicy = 
-            DataGrabberRestartPolicy.NO_AUTO_START;
     private boolean holdDatasetsWithNoUser = true;
     private String primaryRepositoryUrl;
     private String aclsUrl;
@@ -107,7 +105,6 @@ public class PaulConfiguration implements GrabberConfiguration {
         setQueueExpiryInterval(staticConfig.getQueueExpiryInterval());
         setQueueExpiryTime(staticConfig.getQueueExpiryTime());
         setExpireByDeleting(staticConfig.isExpireByDeleting());
-        setDataGrabberRestartPolicy(staticConfig.getDataGrabberRestartPolicy());
         setHoldDatasetsWithNoUser(staticConfig.isHoldDatasetsWithNoUser());
         setPrimaryRepositoryUrl(staticConfig.getPrimaryRepositoryUrl());
         setAclsUrl(staticConfig.getAclsUrl());
@@ -273,15 +270,6 @@ public class PaulConfiguration implements GrabberConfiguration {
         this.expireByDeleting = expireByDeleting;
     }
 
-    public DataGrabberRestartPolicy getDataGrabberRestartPolicy() {
-        return dataGrabberRestartPolicy;
-    }
-
-    public void setDataGrabberRestartPolicy(
-            DataGrabberRestartPolicy dataGrabberRestartPolicy) {
-        this.dataGrabberRestartPolicy = dataGrabberRestartPolicy;
-    }
-
     public boolean isHoldDatasetsWithNoUser() {
         return holdDatasetsWithNoUser;
     }
@@ -394,10 +382,6 @@ public class PaulConfiguration implements GrabberConfiguration {
                 + ((captureDirectory == null) ? 0 : captureDirectory.hashCode());
         result = prime
                 * result
-                + ((dataGrabberRestartPolicy == null) ? 0
-                        : dataGrabberRestartPolicy.hashCode());
-        result = prime
-                * result
                 + ((dummyFacilityHostId == null) ? 0 : dummyFacilityHostId
                         .hashCode());
         result = prime
@@ -471,9 +455,6 @@ public class PaulConfiguration implements GrabberConfiguration {
                 return false;
             }
         } else if (!captureDirectory.equals(other.captureDirectory)) {
-            return false;
-        }
-        if (dataGrabberRestartPolicy != other.dataGrabberRestartPolicy) {
             return false;
         }
         if (dummyFacilityHostId == null) {

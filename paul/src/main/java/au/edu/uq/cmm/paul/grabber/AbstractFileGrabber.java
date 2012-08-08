@@ -51,7 +51,6 @@ public abstract class AbstractFileGrabber implements FileWatcherEventListener {
     private final HashMap<File, WorkEntry> workMap = new HashMap<File, WorkEntry>();
     private final Facility facility;
     private final Paul services;
-    private volatile boolean shuttingDown;
     
     public AbstractFileGrabber(Paul services, Facility facility) {
         this.services = services;
@@ -59,6 +58,7 @@ public abstract class AbstractFileGrabber implements FileWatcherEventListener {
     }
 
     public final synchronized void remove(File file) {
+        LOG.debug("Removing workMap entry for " + file);
         workMap.remove(file);
     }
 
@@ -119,7 +119,7 @@ public abstract class AbstractFileGrabber implements FileWatcherEventListener {
             synchronized (this) {
                 // If we are shutting down, we only deal with events for
                 // files in datasets we've already started grabbing.
-                if (!shuttingDown) {
+                if (!isShutDown()) {
                     WorkEntry workEntry = workMap.get(baseFile);
                     if (workEntry == null) {
                         workEntry = new WorkEntry(services, event, baseFile);
@@ -137,14 +137,8 @@ public abstract class AbstractFileGrabber implements FileWatcherEventListener {
         }
     }
     
-    protected final boolean isShuttingDown() {
-        return shuttingDown;
-    }
-
-    protected final void setShuttingDown(boolean shuttingDown) {
-        this.shuttingDown = shuttingDown;
-    }
-
+    protected abstract boolean isShutDown();
+    
     protected abstract void enqueueWorkEntry(WorkEntry entry);
 
     protected final Facility getFacility() {

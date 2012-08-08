@@ -62,7 +62,6 @@ import au.edu.uq.cmm.aclslib.config.ConfigurationException;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.proxy.AclsAuthenticationException;
 import au.edu.uq.cmm.aclslib.proxy.AclsInUseException;
-import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.aclslib.service.Service.State;
 import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.eccles.UnknownUserException;
@@ -72,9 +71,10 @@ import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.grabber.Analyser;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
-import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetGrabber;
+import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 import au.edu.uq.cmm.paul.queue.AtomFeed;
+import au.edu.uq.cmm.paul.queue.QueueFileException;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.queue.QueueManager.DateRange;
 import au.edu.uq.cmm.paul.queue.QueueManager.Slice;
@@ -91,10 +91,6 @@ import au.edu.uq.cmm.paul.watcher.FileWatcher;
  */
 @Controller
 public class WebUIController implements ServletContextAware {
-    public enum Status {
-        ON, OFF, TRANSITIONAL
-    }
-    
     private static final Logger LOG = 
             LoggerFactory.getLogger(WebUIController.class);
 
@@ -125,50 +121,26 @@ public class WebUIController implements ServletContextAware {
 
     @RequestMapping(value="/control", method=RequestMethod.POST)
     public String controlAction(Model model, HttpServletRequest request) {
-        processStatusChange(getFileWatcher(), request.getParameter("watcher"));
-        processStatusChange(getAtomFeed(), request.getParameter("atomFeed"));
+        processStatusChange("watcher", request.getParameter("watcher"));
+        processStatusChange("atomFeed", request.getParameter("atomFeed"));
         addStateAndStatus(model);
         return "control";
     }
     
-    private void processStatusChange(Service service, String param) {
-        Service.State current = service.getState();
-        if (param == null) {
-            return;
-        }
-        Status target = Status.valueOf(param);
-        if (target == stateToStatus(current) || 
-                stateToStatus(current) == Status.TRANSITIONAL) {
-            return;
-        }
-        if (target == Status.ON) {
-            service.startStartup();
-        } else {
-            service.startShutdown();
+    private void processStatusChange(String serviceName, String param) {
+        if (param != null) {
+            services.processStatusChange(serviceName, param);
         }
     }
     
     private void addStateAndStatus(Model model) {
         State ws = getFileWatcher().getState();
         model.addAttribute("watcherState", ws);
-        model.addAttribute("watcherStatus", stateToStatus(ws));
+        model.addAttribute("watcherStatus", Status.forState(ws));
         State as = getAtomFeed().getState();
         model.addAttribute("atomFeedState", as);
-        model.addAttribute("atomFeedStatus", stateToStatus(as));
+        model.addAttribute("atomFeedStatus", Status.forState(as));
         model.addAttribute("resetRequired", getLatestConfig() != getConfig());
-    }
-    
-    private Status stateToStatus(State state) {
-        switch (state) {
-        case STARTED:
-           return Status.ON;
-        case FAILED:
-        case STOPPED:
-        case INITIAL:
-            return Status.OFF;
-        default:
-            return Status.TRANSITIONAL;
-        }
     }
     
     @RequestMapping(value="/sessions", method=RequestMethod.GET)
@@ -373,70 +345,55 @@ public class WebUIController implements ServletContextAware {
         return (option != null && option.equals("true"));
     }
 
-    @RequestMapping(value="/facilities/{facilityName:.+}", params={"setHWM"},
+    @RequestMapping(value="/facilities/{facilityName:.+}", params={"setIntertidal"},
             method=RequestMethod.POST)
     public String setFacilityHWM(@PathVariable String facilityName, Model model,
-            HttpServletRequest request, @RequestParam String hwmTimestamp) 
+            HttpServletRequest request, 
+            @RequestParam String lwmTimestamp, 
+            @RequestParam String hwmTimestamp) 
             throws ConfigurationException {
         model.addAttribute("returnTo", inferReturnTo(request, "/facilities"));
         Facility facility = lookupFacilityByName(facilityName);
         FacilityStatus status = getFacilityStatusManager().getStatus(facility);
         if (status.getStatus() == FacilityStatusManager.Status.ON) {
-            model.addAttribute("message", "Cannot change HWM while the Grabber is running.");
+            model.addAttribute("message", "Cannot change LWM and HWM while the Grabber is running.");
             return "failed";
         }
-        Date oldHwm = status.getGrabberHWMTimestamp();
-        Date hwm = null;
-        hwmTimestamp = tidy(hwmTimestamp);
-        if (!hwmTimestamp.isEmpty()) {
-            DateTime tmp = parseTimestamp(hwmTimestamp);
-            if (tmp != null) {
-                hwm = tmp.toDate();
-            }
-        }
-        if (hwm != null) {
-            getFacilityStatusManager().updateHWMTimestamp(facility, hwm);
-            model.addAttribute("message", "Changed HWM for '" + facilityName + "' from " +
-                    oldHwm + " to " + hwm);
+        Date oldLWM = status.getGrabberLWMTimestamp();
+        Date oldHWM = status.getGrabberHWMTimestamp();
+        Date lwm = parseDate(lwmTimestamp);
+        Date hwm = parseDate(hwmTimestamp);
+        Date now = new Date();
+        if (lwm != null && hwm != null && !lwm.after(hwm) && hwm.before(now)) {
+            getFacilityStatusManager().updateIntertidalTimestamp(facility, lwm, hwm);
+            model.addAttribute("message", "Changed LWM / HWM for '" + facilityName + "' from " +
+                    oldLWM + " / " + oldHWM + " to " + lwm + " / " + hwm);
             return "ok";
         } else {
-            model.addAttribute("message", "Bad HWM value");
+            if (lwm == null) {
+                model.addAttribute("message", "Invalid LWM timestamp");
+            } else if (hwm == null) {
+                model.addAttribute("message", "Invalid HWM timestamp");
+            } else if (lwm.after(hwm)) {
+                model.addAttribute("message", "Inconsistent timestamps: LWM &gt; HWM");
+            } else if (!hwm.before(now)) {
+                model.addAttribute("message", "Inconsistent timestamps: HWM in the future");
+            }
             return "failed";
         }
     }
     
-    @RequestMapping(value="/facilities/{facilityName:.+}", params={"setLWM"},
-            method = RequestMethod.POST)
-    public String setFacilityLWM(@PathVariable String facilityName, Model model,
-            HttpServletRequest request, @RequestParam String lwmTimestamp) 
-            throws ConfigurationException {
-        model.addAttribute("returnTo", inferReturnTo(request, "/facilities"));
-        Facility facility = lookupFacilityByName(facilityName);
-        FacilityStatus status = getFacilityStatusManager().getStatus(facility);
-        if (status.getStatus() == FacilityStatusManager.Status.ON) {
-            model.addAttribute("message", "Cannot change LWM while the Grabber is running.");
-            return "failed";
-        }
-        Date oldLwm = status.getGrabberLWMTimestamp();
-        Date lwm = null;
-        lwmTimestamp = tidy(lwmTimestamp);
-        if (!lwmTimestamp.isEmpty()) {
-            DateTime tmp = parseTimestamp(lwmTimestamp);
+    private Date parseDate(String str) {
+        str = tidy(str);
+        if (!str.isEmpty()) {
+            DateTime tmp = parseTimestamp(str);
             if (tmp != null) {
-                lwm = tmp.toDate();
+                return tmp.toDate();
             }
         }
-        if (lwm != null) {
-            getFacilityStatusManager().updateLWMTimestamp(facility, lwm);
-            model.addAttribute("message", "Changed LWM for '" + facilityName + "' from " +
-                    oldLwm + " to " + lwm);
-            return "ok";
-        } else {
-            model.addAttribute("message", "Bad LWM value");
-            return "failed";
-        }
+        return null;
     }
-    
+
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST, 
             params={"start"})
     public String startWatcher(@PathVariable String facilityName, Model model,
@@ -446,13 +403,7 @@ public class WebUIController implements ServletContextAware {
         if (facility != null) {
             getFileWatcher().startFileWatching(facility);
         }
-        String returnTo = request.getParameter("returnTo");
-        if (returnTo == null || returnTo.isEmpty()) {
-            returnTo = request.getContextPath() + "/facilities";
-        } else if (returnTo.startsWith("/")) {
-            returnTo = request.getContextPath() + returnTo;
-        }
-        response.sendRedirect(returnTo);
+        response.sendRedirect(inferReturnTo(request, "/facilities"));
         return null;
     }
     
@@ -465,13 +416,7 @@ public class WebUIController implements ServletContextAware {
         if (facility != null) {
             getFileWatcher().stopFileWatching(facility);
         }
-        String returnTo = request.getParameter("returnTo");
-        if (returnTo == null || returnTo.isEmpty()) {
-            returnTo = request.getContextPath() + "/facilities";
-        } else if (returnTo.startsWith("/")) {
-            returnTo = request.getContextPath() + returnTo;
-        }
-        response.sendRedirect(returnTo);
+        response.sendRedirect(inferReturnTo(request, "/facilities"));
         return null;
     }
     
@@ -715,7 +660,7 @@ public class WebUIController implements ServletContextAware {
             HttpServletRequest request, HttpServletResponse response,
             @RequestParam(required=false) String[] ids,
             @RequestParam String facilityName) 
-    throws IOException {
+    throws IOException, QueueFileException, InterruptedException {
         GenericPrincipal principal = (GenericPrincipal) request.getUserPrincipal();
         if (principal == null) {
             LOG.error("No principal ... can't proceed");
@@ -787,7 +732,7 @@ public class WebUIController implements ServletContextAware {
             @RequestParam(required=false) String confirmed,
             @RequestParam String action,
             @RequestParam(required=false) String facilityName) 
-    throws IOException {
+    throws IOException, QueueFileException, InterruptedException {
         GenericPrincipal principal = (GenericPrincipal) request.getUserPrincipal();
         if (principal == null) {
             LOG.error("No principal ... can't proceed");
@@ -858,7 +803,8 @@ public class WebUIController implements ServletContextAware {
     }
 
     private String deleteAll(Model model, HttpServletRequest request, 
-            Slice slice, String facilityName, boolean discard, String confirmed) {
+            Slice slice, String facilityName, boolean discard, String confirmed) 
+                    throws InterruptedException {
         if (confirmed == null) {
             model.addAttribute("discard", discard);
             return "queueDeleteConfirmation";
@@ -871,7 +817,7 @@ public class WebUIController implements ServletContextAware {
     }
     
     private String expire(Model model, HttpServletRequest request, 
-            Slice slice, String facilityName, String confirmed) {
+            Slice slice, String facilityName, String confirmed) throws InterruptedException {
         String mode = request.getParameter("mode");
         String olderThan = request.getParameter("olderThan");
         String age = request.getParameter("age");
@@ -903,19 +849,24 @@ public class WebUIController implements ServletContextAware {
     }
     
     @RequestMapping(value="/datasets/{entry:.+}", params={"regrab"},
-            method=RequestMethod.GET)
+            method=RequestMethod.POST)
     public String regrabPrepare(@PathVariable String entry, Model model, 
             HttpServletRequest request, HttpServletResponse response) 
             throws IOException {
         DatasetMetadata dataset = findDataset(entry, response);
         if (dataset != null) {
             DatasetMetadata grabbedMetadata = new DatasetGrabber(services, dataset).getCandidateDataset();
-            grabbedMetadata.updateDatasetHash();
-            dataset.updateDatasetHash();
-            model.addAttribute("oldEntry", dataset);
-            model.addAttribute("newEntry", grabbedMetadata);
             model.addAttribute("returnTo", inferReturnTo(request));
-            return "regrabConfirmation";
+            if (grabbedMetadata != null) {
+                grabbedMetadata.updateDatasetHash();
+                dataset.updateDatasetHash();
+                model.addAttribute("oldEntry", dataset);
+                model.addAttribute("newEntry", grabbedMetadata);
+                return "regrabConfirmation";
+            } else {
+                model.addAttribute("message", "None of the original dataset files still exist");
+                return "failed";
+            }
         } else {
             return null;
         }
@@ -927,7 +878,7 @@ public class WebUIController implements ServletContextAware {
             @RequestParam String pathnameBase,
             @RequestParam String facilityName,
             HttpServletRequest request, HttpServletResponse response) 
-                    throws IOException, InterruptedException {
+                    throws IOException, InterruptedException, QueueFileException {
         model.addAttribute("returnTo", inferReturnTo(request));
         Facility facility = lookupFacilityByName(facilityName);
         DatasetGrabber dsr = new DatasetGrabber(services, new File(pathnameBase), facility);
@@ -943,7 +894,7 @@ public class WebUIController implements ServletContextAware {
             @RequestParam String hash,
             @RequestParam String regrabNew,
             HttpServletRequest request, HttpServletResponse response) 
-            throws IOException, InterruptedException {
+            throws IOException, InterruptedException, QueueFileException {
         DatasetMetadata dataset = findDataset(entry, response);
         if (dataset != null) {
             model.addAttribute("returnTo", inferReturnTo(request));
@@ -983,7 +934,7 @@ public class WebUIController implements ServletContextAware {
 
     private String doDelete(String entry, Model model,
             HttpServletRequest request, HttpServletResponse response, boolean delete)
-            throws IOException {
+            throws IOException, InterruptedException {
         DatasetMetadata dataset = findDataset(entry, response);
         if (dataset != null) {
             model.addAttribute("returnTo", inferReturnTo(request));
@@ -1084,6 +1035,8 @@ public class WebUIController implements ServletContextAware {
         }
         if (param.startsWith(request.getContextPath())) {
             return param;
+        } else if (param.startsWith("/")) {
+            return request.getContextPath() + param;
         } else {
             return request.getContextPath() + "/" + param;
         }

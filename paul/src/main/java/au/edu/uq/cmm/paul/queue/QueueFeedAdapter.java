@@ -45,6 +45,7 @@ import org.slf4j.LoggerFactory;
 
 import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.paul.PaulConfiguration;
+import au.edu.uq.cmm.paul.PaulControl;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 
@@ -62,11 +63,12 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
     private EntityManagerFactory entityManagerFactory;
     private PaulConfiguration config;
     private boolean holdDatasetsWithNoUser;
-    private FeedSwitch feedSwitch;
+    private PaulControl control;
     
     public QueueFeedAdapter(EntityManagerFactory entityManagerFactory) {
         this.entityManagerFactory = entityManagerFactory;
         config = PaulConfiguration.load(entityManagerFactory);
+        control = PaulControl.load(entityManagerFactory);
         holdDatasetsWithNoUser = config.isHoldDatasetsWithNoUser();
     }
     
@@ -93,7 +95,7 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
     @Override
     public Iterable<DatasetMetadata> getEntries(RequestContext request)
             throws ResponseContextException {
-        if (!feedSwitch.isFeedEnabled()) {
+        if (!control.isAtomFeedEnabled()) {
             throw new ResponseContextException(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
         }
         EntityManager entityManager = entityManagerFactory.createEntityManager();
@@ -134,7 +136,7 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
     @Override
     public DatasetMetadata getEntry(String resourceName, RequestContext request)
             throws ResponseContextException {
-        if (!feedSwitch.isFeedEnabled()) {
+        if (!control.isAtomFeedEnabled()) {
             throw new ResponseContextException(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
         }
         String[] parts = resourceName.split("-");
@@ -299,9 +301,5 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
                 }
             }
         }
-    }
-
-    public void setFeedSwitch(FeedSwitch feedSwitch) {
-        this.feedSwitch = feedSwitch;
     }
 }

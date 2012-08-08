@@ -29,12 +29,6 @@ import au.edu.uq.cmm.aclslib.config.ACLSProxyConfiguration;
  */
 public interface GrabberConfiguration extends ACLSProxyConfiguration {
     
-    public enum DataGrabberRestartPolicy {
-        AUTO_START_NO_CATCHUP,
-        AUTO_START_CATCHUP,
-        NO_AUTO_START
-    }
-
     /**
      * Get the base URL that will be used for the URLs of files
      * in the ingestion queue.
@@ -112,11 +106,6 @@ public interface GrabberConfiguration extends ACLSProxyConfiguration {
      * This determines if expired queue entries are archived or deleted outright. 
      */
     boolean isExpireByDeleting();
-    
-    /**
-     * This determines the DataGrabber's behavior on restart.
-     */
-    DataGrabberRestartPolicy getDataGrabberRestartPolicy();
     
     /**
      * This determines if the DataGrabber will hold datasets that don't belong
