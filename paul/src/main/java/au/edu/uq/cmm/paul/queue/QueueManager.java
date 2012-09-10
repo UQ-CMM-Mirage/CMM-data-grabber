@@ -87,7 +87,7 @@ public class QueueManager {
     public List<DatasetMetadata> getSnapshot(Slice slice, String facilityName) {
         EntityManager em = createEntityManager();
         try {
-            String whereClause = "";
+            String whereClause;
             switch (slice) {
             case HELD:
                 whereClause = "where m.userName is null ";
@@ -95,6 +95,8 @@ public class QueueManager {
             case INGESTIBLE:
                 whereClause = "where m.userName is not null ";
                 break;
+            default:
+                whereClause = "";
             }
             TypedQuery<DatasetMetadata> query;
             if (facilityName == null) {
@@ -183,7 +185,7 @@ public class QueueManager {
         EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
-            String andPart = "";
+            String andPart;
             switch (slice) {
             case HELD:
                 andPart = " and m.userName is null";
@@ -191,6 +193,8 @@ public class QueueManager {
             case INGESTIBLE:
                 andPart = " and m.userName is not null";
                 break;
+            default:
+                andPart = "";
             }
             if (facilityName != null && !facilityName.isEmpty()) {
                 andPart += " and m.facilityName = :facility";
@@ -218,7 +222,7 @@ public class QueueManager {
         EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
-            String whereClause = "";
+            String whereClause;
             switch (slice) {
             case HELD:
                 whereClause = " where m.userName is null";
@@ -226,6 +230,8 @@ public class QueueManager {
             case INGESTIBLE:
                 whereClause = " where m.userName is not null";
                 break;
+            default:
+                whereClause = "";
             }
             if (facilityName != null && !facilityName.isEmpty()) {
                 if (whereClause.isEmpty()) {
