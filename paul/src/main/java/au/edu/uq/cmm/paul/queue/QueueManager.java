@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import javax.persistence.NoResultException;
 import javax.persistence.TemporalType;
 import javax.persistence.TypedQuery;
@@ -35,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import au.edu.uq.cmm.paul.Paul;
+import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 import au.edu.uq.cmm.paul.status.Facility;
@@ -76,12 +78,16 @@ public class QueueManager {
     }
     
     private static final Logger LOG = LoggerFactory.getLogger(QueueManager.class);
-    private final Paul services;
     private final QueueFileManager fileManager;
+    private EntityManagerFactory emf;
 
     public QueueManager(Paul services) {
-        this.services = services;
-        this.fileManager = new CopyingQueueFileManager(services.getConfiguration());
+        this(services.getConfiguration(), services.getEntityManagerFactory());
+    }
+
+    public QueueManager(PaulConfiguration config, EntityManagerFactory emf) {
+        this.emf = emf;
+        this.fileManager = new CopyingQueueFileManager(config);
     }
 
     public List<DatasetMetadata> getSnapshot(Slice slice, String facilityName) {
@@ -348,7 +354,7 @@ public class QueueManager {
     }
     
     private EntityManager createEntityManager() {
-        return services.getEntityManagerFactory().createEntityManager();
+        return emf.createEntityManager();
     }
 
     public QueueFileManager getFileManager() {
