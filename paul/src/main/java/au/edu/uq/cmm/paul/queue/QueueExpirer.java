@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import au.edu.uq.cmm.aclslib.service.MonitoredThreadServiceBase;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulConfiguration;
+import au.edu.uq.cmm.paul.queue.QueueManager.Removal;
 
 /**
  * The expirer is a single thread service that periodically expires
@@ -59,7 +60,7 @@ public class QueueExpirer extends MonitoredThreadServiceBase {
     public void run() {
         long expiryTime = config.getQueueExpiryTime();
         long expiryInterval = config.getQueueExpiryInterval();
-        boolean expireByDeleting = config.isExpireByDeleting();
+        Removal removal = config.isExpireByDeleting() ? Removal.DELETE : Removal.ARCHIVE;
         try {
             if (expiryInterval <= 0 || expiryTime <= 0) {
                 LOG.info("Automatic queue expiration is disabled");
@@ -70,7 +71,7 @@ public class QueueExpirer extends MonitoredThreadServiceBase {
             } else {
                 while (true) {
                     LOG.info("Running automatic queue expiration");
-                    doExpiry(expiryTime * 60, expireByDeleting);
+                    doExpiry(expiryTime * 60, removal);
                     LOG.info("Completed automatic queue expiration");
                     Thread.sleep(expiryInterval * 60 * 1000);
                 }
@@ -84,10 +85,10 @@ public class QueueExpirer extends MonitoredThreadServiceBase {
      * Run the expiration.
      * 
      * @param expiryTime the expiry age (in seconds).
-     * @param expireByDeleting if true, expired
+     * @param removal the method of removal (or not)
      * @throws InterruptedException
      */
-    private int doExpiry(long expiryTime, boolean expireByDeleting) 
+    private int doExpiry(long expiryTime, Removal removal) 
             throws InterruptedException {
         if (expiryTime <= 0) {
             throw new IllegalArgumentException("Non-positive expiry time");
@@ -96,7 +97,7 @@ public class QueueExpirer extends MonitoredThreadServiceBase {
         Date cutoff = new Date(millis);
         LOG.info("Expiry cutoff date/time is " + cutoff);
         int nosExpired = queueManager.expireAll(
-                expireByDeleting, null, QueueManager.Slice.ALL, cutoff);
+                removal, null, QueueManager.Slice.ALL, cutoff);
         LOG.info("Expired " + nosExpired + " queue entries");
         return nosExpired;
     }
@@ -110,17 +111,21 @@ public class QueueExpirer extends MonitoredThreadServiceBase {
      */
     public static void main(String[] args) {
         int pos = 0;
-        boolean expireByDeleting = true;
+        boolean delete = true;
+        boolean dryRun = false;
         String logLevel = "error";
         while (pos < args.length) {
             if (args[pos].equals("--help")) {
                 bail("", 0);
             } else if (args[pos].equals("--delete")) {
                 pos++;
-                expireByDeleting = true;
+                delete = true;
             } else if (args[pos].equals("--archive")) {
                 pos++;
-                expireByDeleting = false;
+                delete = false;
+            } else if (args[pos].equals("--dryrun")) {
+                pos++;
+                dryRun = true;
             } else if (args[pos].equals("--logging")) {
                 pos++;
                 if (pos >= args.length) {
@@ -178,9 +183,14 @@ public class QueueExpirer extends MonitoredThreadServiceBase {
         QueueManager queueManager = new QueueManager(config, entityManagerFactory);
         QueueExpirer expirer = new QueueExpirer(config, queueManager);
         try {
-            int expired = expirer.doExpiry(expiryTime, expireByDeleting);
-            System.out.println(expired == 1 ? "Expired 1 queue entry" : 
-                    ("Expired " + expired + " queue entries"));
+            Removal removal = dryRun ? Removal.DRY_RUN : 
+                delete ? Removal.DELETE : Removal.ARCHIVE;
+            int expired = expirer.doExpiry(expiryTime, removal);
+            String actionDescription = 
+                    (dryRun ? "would have " : "") + (delete ? "deleted " : "archived ");
+            System.out.println(
+                    "Expiration " + actionDescription +
+                    (expired == 1 ? "1 queue entry" : (expired + " queue entries")));
         } catch (InterruptedException ex) {
             // We can ignore this ...
         }

@@ -77,6 +77,10 @@ public class QueueManager {
         HELD, INGESTIBLE, ALL;
     }
     
+    public static enum Removal {
+        DELETE, ARCHIVE, DRY_RUN
+    }
+    
     private static final Logger LOG = LoggerFactory.getLogger(QueueManager.class);
     private final QueueFileManager fileManager;
     private EntityManagerFactory emf;
@@ -186,8 +190,9 @@ public class QueueManager {
         LOG.info("Saved admin metadata to " + metadataFile);
     }
 
-    public int expireAll(boolean discard, String facilityName, Slice slice, Date olderThan) 
+    public int expireAll(Removal removal, String facilityName, Slice slice, Date olderThan) 
             throws InterruptedException {
+        // FIXME - should expiration adjust the LWM?
         EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
@@ -215,7 +220,7 @@ public class QueueManager {
             }
             List<DatasetMetadata> datasets = query.getResultList();
             for (DatasetMetadata dataset : datasets) {
-                doDelete(discard, em, dataset);
+                doDelete(removal, em, dataset);
             }
             em.getTransaction().commit();
             return datasets.size();
@@ -224,7 +229,7 @@ public class QueueManager {
         }
     }
 
-    public int deleteAll(boolean discard, String facilityName, Slice slice) throws InterruptedException {
+    public int deleteAll(Removal removal, String facilityName, Slice slice) throws InterruptedException {
         EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
@@ -253,7 +258,7 @@ public class QueueManager {
             query.setParameter("facility", facilityName);
             List<DatasetMetadata> datasets = query.getResultList();
             for (DatasetMetadata dataset : datasets) {
-                doDelete(discard, em, dataset);
+                doDelete(removal, em, dataset);
             }
             em.getTransaction().commit();
             return datasets.size();
@@ -262,7 +267,7 @@ public class QueueManager {
         }
     }
     
-    public int delete(String[] ids, boolean discard) throws InterruptedException {
+    public int delete(String[] ids, Removal removal) throws InterruptedException {
         int count = 0;
         EntityManager em = createEntityManager();
         try {
@@ -275,7 +280,7 @@ public class QueueManager {
                 query.setParameter("id", id);
                 List<DatasetMetadata> datasets = query.getResultList();
                 for (DatasetMetadata dataset : datasets) {
-                    doDelete(discard, em, dataset);
+                    doDelete(removal, em, dataset);
                     count++;
                 }
             }
@@ -286,24 +291,36 @@ public class QueueManager {
         return count;
     }
 
-    private void doDelete(boolean discard, EntityManager entityManager,
+    private void doDelete(Removal removal, EntityManager entityManager,
             DatasetMetadata dataset) throws InterruptedException {
         // FIXME - should we do the file removal after committing the
         // database update?
         for (DatafileMetadata datafile : dataset.getDatafiles()) {
-            disposeOfFile(datafile.getCapturedFilePathname(), discard);
+            disposeOfFile(datafile.getCapturedFilePathname(), removal);
         }
-        disposeOfFile(dataset.getMetadataFilePathname(), discard);
-        entityManager.remove(dataset);
+        disposeOfFile(dataset.getMetadataFilePathname(), removal);
+        switch (removal) {
+        case DELETE:
+        case ARCHIVE:
+            entityManager.remove(dataset);
+            break;
+        default:
+            LOG.debug("Dry run: would have removed record for dataset " + dataset.getId());
+        }
     }
 
-    private void disposeOfFile(String pathname, boolean discard) throws InterruptedException {
+    private void disposeOfFile(String pathname, Removal removal) throws InterruptedException {
         File file = new File(pathname);
         try {
-            if (discard) {
+            switch (removal) {
+            case DELETE: 
                 fileManager.removeFile(file);
-            } else {
+                break;
+            case ARCHIVE:
                 fileManager.archiveFile(file);
+                break;
+            default:
+                LOG.debug("Dry run: would have disposed of file " + file);
             }
         } catch (QueueFileException ex) {
             LOG.warn("Problem disposing of file", ex);
