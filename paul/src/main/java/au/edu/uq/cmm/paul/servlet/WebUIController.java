@@ -77,6 +77,7 @@ import au.edu.uq.cmm.paul.queue.AtomFeed;
 import au.edu.uq.cmm.paul.queue.QueueFileException;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.queue.QueueManager.DateRange;
+import au.edu.uq.cmm.paul.queue.QueueManager.Removal;
 import au.edu.uq.cmm.paul.queue.QueueManager.Slice;
 import au.edu.uq.cmm.paul.status.Facility;
 import au.edu.uq.cmm.paul.status.FacilityStatus;
@@ -766,12 +767,12 @@ public class WebUIController implements ServletContextAware {
             int nosChanged;
             switch (action) {
             case "archive":
-                nosChanged = qm.delete(ids, false);
+                nosChanged = qm.delete(ids, Removal.ARCHIVE);
                 model.addAttribute("message", 
                         verbiage(nosChanged, "dataset", "datasets", "archived"));
                 return "ok";
             case "delete":
-                nosChanged = qm.delete(ids, true);
+                nosChanged = qm.delete(ids, Removal.DELETE);
                 model.addAttribute("message",
                         verbiage(nosChanged, "dataset", "datasets", "deleted"));
                 return "ok";
@@ -809,7 +810,8 @@ public class WebUIController implements ServletContextAware {
             model.addAttribute("discard", discard);
             return "queueDeleteConfirmation";
         }
-        int count = getQueueManager().deleteAll(discard, facilityName, slice);
+        Removal removal = discard ? Removal.DELETE : Removal.ARCHIVE;
+        int count = getQueueManager().deleteAll(removal, facilityName, slice);
         model.addAttribute("message", 
                 verbiage(count, "queue entry", "queue entries", 
                         discard ? "deleted" : "archived"));
@@ -825,8 +827,8 @@ public class WebUIController implements ServletContextAware {
         if (cutoff == null || confirmed == null) {
             return "queueExpiryForm";
         }
-        int count = getQueueManager().expireAll(
-                mode.equals("discard"), facilityName, slice, cutoff);
+        Removal removal = mode.equals("discard") ? Removal.DELETE : Removal.ARCHIVE;
+        int count = getQueueManager().expireAll(removal, facilityName, slice, cutoff);
 
         model.addAttribute("message", 
                 verbiage(count, "queue entry", "queue entries", "expired"));
@@ -933,19 +935,20 @@ public class WebUIController implements ServletContextAware {
     }
 
     private String doDelete(String entry, Model model,
-            HttpServletRequest request, HttpServletResponse response, boolean delete)
+            HttpServletRequest request, HttpServletResponse response, boolean discard)
             throws IOException, InterruptedException {
         DatasetMetadata dataset = findDataset(entry, response);
         if (dataset != null) {
             model.addAttribute("returnTo", inferReturnTo(request));
             QueueManager qm = getQueueManager();
-            int nosDeleted = qm.delete(new String[]{entry}, delete);
+            Removal removal = discard ? Removal.DELETE : Removal.ARCHIVE;
+            int nosDeleted = qm.delete(new String[]{entry}, removal);
             if (nosDeleted == 0) {
                 model.addAttribute("message", "Could not find that dataset");
                 return "failed";
             } else {
                 model.addAttribute("message", "Dataset #" + entry + 
-                        (delete ? " deleted" : " archived"));
+                        (discard ? " deleted" : " archived"));
                 return "ok";
             }
         } else {

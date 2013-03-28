@@ -29,7 +29,7 @@ public class DefaultSessionDetailsMapper implements SessionDetailMapper {
 
     @Override
     public String mapToUserName(String userName) {
-        return userName;
+        return userName.toLowerCase();
     }
 
     @Override

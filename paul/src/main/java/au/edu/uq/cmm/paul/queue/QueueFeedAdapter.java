@@ -20,6 +20,7 @@
 package au.edu.uq.cmm.paul.queue;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -46,8 +47,10 @@ import org.slf4j.LoggerFactory;
 import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.PaulControl;
+import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
+import au.edu.uq.cmm.paul.grabber.HashUtils;
 
 /**
  * This class is an Abdera feed adapter that maps the data grabber's output queue as
@@ -221,10 +224,22 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
                 link.setAttributeValue("hash", "sha-512:" + datafile.getDatafileHash());
             }
         }
-        Link link = entry.addLink(config.getBaseFileUrl() + 
-                new File(record.getMetadataFilePathname()).getName(),
-                "enclosure");
-        link.setAttributeValue("hash", "sha-512:" + record.getDatasetHash());
+        File file = new File(record.getMetadataFilePathname());
+        if (file.exists()) {
+            Link link = entry.addLink(config.getBaseFileUrl() + 
+                    file.getName(),
+                    "enclosure");
+            // We can't use the admin file's internal checksum because that excludes the
+            // checksum itself ... and therefore won't be the same as what the feed 
+            // consumer would calculate from the file itself.
+            try {
+                link.setAttributeValue("hash", "sha-512:" + HashUtils.fileHash(file));
+            } catch (IOException ex) {
+                throw new PaulException("IO error while calculating admin file hash", ex);
+            }
+            link.setLength(file.length());
+            link.setMimeType("application/json");
+        }
         return res;
     }
 

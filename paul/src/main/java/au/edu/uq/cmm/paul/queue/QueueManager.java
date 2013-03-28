@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import javax.persistence.NoResultException;
 import javax.persistence.TemporalType;
 import javax.persistence.TypedQuery;
@@ -35,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import au.edu.uq.cmm.paul.Paul;
+import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.grabber.DatafileMetadata;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 import au.edu.uq.cmm.paul.status.Facility;
@@ -75,19 +77,27 @@ public class QueueManager {
         HELD, INGESTIBLE, ALL;
     }
     
+    public static enum Removal {
+        DELETE, ARCHIVE, DRY_RUN
+    }
+    
     private static final Logger LOG = LoggerFactory.getLogger(QueueManager.class);
-    private final Paul services;
     private final QueueFileManager fileManager;
+    private EntityManagerFactory emf;
 
     public QueueManager(Paul services) {
-        this.services = services;
-        this.fileManager = new CopyingQueueFileManager(services.getConfiguration());
+        this(services.getConfiguration(), services.getEntityManagerFactory());
+    }
+
+    public QueueManager(PaulConfiguration config, EntityManagerFactory emf) {
+        this.emf = emf;
+        this.fileManager = new CopyingQueueFileManager(config);
     }
 
     public List<DatasetMetadata> getSnapshot(Slice slice, String facilityName) {
         EntityManager em = createEntityManager();
         try {
-            String whereClause = "";
+            String whereClause;
             switch (slice) {
             case HELD:
                 whereClause = "where m.userName is null ";
@@ -95,6 +105,8 @@ public class QueueManager {
             case INGESTIBLE:
                 whereClause = "where m.userName is not null ";
                 break;
+            default:
+                whereClause = "";
             }
             TypedQuery<DatasetMetadata> query;
             if (facilityName == null) {
@@ -178,12 +190,13 @@ public class QueueManager {
         LOG.info("Saved admin metadata to " + metadataFile);
     }
 
-    public int expireAll(boolean discard, String facilityName, Slice slice, Date olderThan) 
+    public int expireAll(Removal removal, String facilityName, Slice slice, Date olderThan) 
             throws InterruptedException {
+        // FIXME - should expiration adjust the LWM?
         EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
-            String andPart = "";
+            String andPart;
             switch (slice) {
             case HELD:
                 andPart = " and m.userName is null";
@@ -191,6 +204,8 @@ public class QueueManager {
             case INGESTIBLE:
                 andPart = " and m.userName is not null";
                 break;
+            default:
+                andPart = "";
             }
             if (facilityName != null && !facilityName.isEmpty()) {
                 andPart += " and m.facilityName = :facility";
@@ -205,7 +220,7 @@ public class QueueManager {
             }
             List<DatasetMetadata> datasets = query.getResultList();
             for (DatasetMetadata dataset : datasets) {
-                doDelete(discard, em, dataset);
+                doDelete(removal, em, dataset);
             }
             em.getTransaction().commit();
             return datasets.size();
@@ -214,11 +229,11 @@ public class QueueManager {
         }
     }
 
-    public int deleteAll(boolean discard, String facilityName, Slice slice) throws InterruptedException {
+    public int deleteAll(Removal removal, String facilityName, Slice slice) throws InterruptedException {
         EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
-            String whereClause = "";
+            String whereClause;
             switch (slice) {
             case HELD:
                 whereClause = " where m.userName is null";
@@ -226,6 +241,8 @@ public class QueueManager {
             case INGESTIBLE:
                 whereClause = " where m.userName is not null";
                 break;
+            default:
+                whereClause = "";
             }
             if (facilityName != null && !facilityName.isEmpty()) {
                 if (whereClause.isEmpty()) {
@@ -241,7 +258,7 @@ public class QueueManager {
             query.setParameter("facility", facilityName);
             List<DatasetMetadata> datasets = query.getResultList();
             for (DatasetMetadata dataset : datasets) {
-                doDelete(discard, em, dataset);
+                doDelete(removal, em, dataset);
             }
             em.getTransaction().commit();
             return datasets.size();
@@ -250,7 +267,7 @@ public class QueueManager {
         }
     }
     
-    public int delete(String[] ids, boolean discard) throws InterruptedException {
+    public int delete(String[] ids, Removal removal) throws InterruptedException {
         int count = 0;
         EntityManager em = createEntityManager();
         try {
@@ -263,7 +280,7 @@ public class QueueManager {
                 query.setParameter("id", id);
                 List<DatasetMetadata> datasets = query.getResultList();
                 for (DatasetMetadata dataset : datasets) {
-                    doDelete(discard, em, dataset);
+                    doDelete(removal, em, dataset);
                     count++;
                 }
             }
@@ -274,24 +291,36 @@ public class QueueManager {
         return count;
     }
 
-    private void doDelete(boolean discard, EntityManager entityManager,
+    private void doDelete(Removal removal, EntityManager entityManager,
             DatasetMetadata dataset) throws InterruptedException {
         // FIXME - should we do the file removal after committing the
         // database update?
         for (DatafileMetadata datafile : dataset.getDatafiles()) {
-            disposeOfFile(datafile.getCapturedFilePathname(), discard);
+            disposeOfFile(datafile.getCapturedFilePathname(), removal);
         }
-        disposeOfFile(dataset.getMetadataFilePathname(), discard);
-        entityManager.remove(dataset);
+        disposeOfFile(dataset.getMetadataFilePathname(), removal);
+        switch (removal) {
+        case DELETE:
+        case ARCHIVE:
+            entityManager.remove(dataset);
+            break;
+        default:
+            LOG.debug("Dry run: would have removed record for dataset " + dataset.getId());
+        }
     }
 
-    private void disposeOfFile(String pathname, boolean discard) throws InterruptedException {
+    private void disposeOfFile(String pathname, Removal removal) throws InterruptedException {
         File file = new File(pathname);
         try {
-            if (discard) {
+            switch (removal) {
+            case DELETE: 
                 fileManager.removeFile(file);
-            } else {
+                break;
+            case ARCHIVE:
                 fileManager.archiveFile(file);
+                break;
+            default:
+                LOG.debug("Dry run: would have disposed of file " + file);
             }
         } catch (QueueFileException ex) {
             LOG.warn("Problem disposing of file", ex);
@@ -342,7 +371,7 @@ public class QueueManager {
     }
     
     private EntityManager createEntityManager() {
-        return services.getEntityManagerFactory().createEntityManager();
+        return emf.createEntityManager();
     }
 
     public QueueFileManager getFileManager() {

@@ -62,7 +62,7 @@ import au.edu.uq.cmm.aclslib.authenticator.AclsAuthenticator;
  */
 @SuppressWarnings("serial")
 public class Benny extends HttpServlet {
-    private static final Logger LOG = LoggerFactory.getLogger(AclsAuthenticator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Benny.class);
     private static final String PROPS_RESOURCE = "/benny.properties";
     private static final Pattern BASIC_AUTH_PATTERN =
             Pattern.compile("Basic\\s+([a-z0-9+/=]+)\\s*", Pattern.CASE_INSENSITIVE);
