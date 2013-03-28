@@ -13,27 +13,27 @@
 		<div class="row-fluid"><h1>Queue Diagnostics for ${facilityName}</h1></div>
 		<div class="row-fluid">
 			<table class="table table-bordered">
-				<tr><td class="span2">Grabber status : </td><td class="span10">${status.status}</td></tr> 
-			<tr><td class="span2">Grabber message : </td><td class="span10">${status.message}</td></tr> 
-			<tr><td class="span2">Grabber LWM timestamp :</td><td class="span10"> 
+				<tr><td class="span3">Grabber status : </td><td class="span7">${status.status}</td></tr> 
+			<tr><td class="span3">Grabber message : </td><td class="span7">${status.message}</td></tr> 
+			<tr><td class="span3">Grabber LWM timestamp :</td><td class="span7"> 
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
 						value="${status.grabberLWMTimestamp}"/></td></tr> 
-			<tr><td class="span2">Grabber HWM timestamp : </td><td class="span10">
+			<tr><td class="span3">Grabber HWM timestamp : </td><td class="span7">
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
 						value="${status.grabberHWMTimestamp}"/></td></tr> 
-			<tr><td class="span2">Timestamp of first queued Dataset : </td><td class="span10">
+			<tr><td class="span3">Timestamp of first queued Dataset : </td><td class="span7">
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
 						value="${analysis.qStart}"/></td></tr> 
-			<tr><td class="span2">Timestamp of last queued Dataset : </td><td class="span10">
+			<tr><td class="span3">Timestamp of last queued Dataset : </td><td class="span7">
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
 						value="${analysis.qEnd}"/></td></tr> 
-			<tr><td class="span2">Timestamp of first folder Dataset : </td><td class="span10">
+			<tr><td class="span3">Timestamp of first folder Dataset : </td><td class="span7">
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
 						value="${analysis.fStart}"/></td></tr> 
-			<tr><td class="span2">Timestamp of last folder Dataset : </td><td class="span10">
+			<tr><td class="span3">Timestamp of last folder Dataset : </td><td class="span7">
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
 						value="${analysis.fEnd}"/></td></tr> 
-			<tr><td class="span2">LWM / HWM used in analysis : </td><td class="span10">
+			<tr><td class="span3">LWM / HWM used in analysis : </td><td class="span7">
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
 						value="${lwmTimestamp}"/> / 
 				<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
@@ -282,13 +282,13 @@
 											<c:when test="${dataset.inFolder}">
 												<td>In-folder version -
 													${dataset.facilityFilePathnameBase} <br> 
-													<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-														value="${dataset.firstFileTimestamp}" />
-													<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-														value="${dataset.lastFileTimestamp}" />
-													<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-														value="${dataset.captureTimestamp}" />
-													<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+													FF: <fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+														value="${dataset.firstFileTimestamp}" />,
+													LF: <fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+														value="${dataset.lastFileTimestamp}" />,
+													C: <fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+														value="${dataset.captureTimestamp}" />,
+													U: <fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
 														value="${dataset.updateTimestamp}" />
 												</td>
 											</c:when>
@@ -301,13 +301,13 @@
 													</c:choose>
 													<a href="/paul/datasets/${dataset.id}">Dataset
 														#${dataset.id}</a> - ${dataset.facilityFilePathnameBase} <br>
-													<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-														value="${dataset.firstFileTimestamp}" />
-													<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-														value="${dataset.lastFileTimestamp}" />
-													<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
-														value="${dataset.captureTimestamp}" />
-													<fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+													FF: <fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+														value="${dataset.firstFileTimestamp}" />,
+													LF: <fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+														value="${dataset.lastFileTimestamp}" />,
+													C: <fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
+														value="${dataset.captureTimestamp}" />,
+													U: <fmt:formatDate pattern="yyyy-MM-dd'T'HH:mm:ss"
 														value="${dataset.updateTimestamp}" />
 												</td>
 											</c:otherwise>

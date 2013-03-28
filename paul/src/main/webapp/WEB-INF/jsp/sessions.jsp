@@ -37,7 +37,7 @@
 										<button class="btn" name="endSession" type="submit">End
 											Session</button>
 									</form>
-									<form class="btn" action="facilities/${session.facilityName}">
+									<form class="btn" action="sessions/${session.facilityName}">
 										<input type="hidden" name="returnTo" value="/sessions">
 										<button class="btn" type="submit" name="sessionLog">View Session 
 											Log</button>
@@ -57,7 +57,7 @@
 										<button class="btn" name="startSession" type="submit">Start
 											Session</button>
 									</form>
-									<form class="btn" action="facilities/${session.facilityName}">
+									<form class="btn" action="sessions/${session.facilityName}">
 										<input type="hidden" name="returnTo" value="/sessions">
 										<button class="btn" type="submit" name="sessionLog">View Session 
 											Log</button>
