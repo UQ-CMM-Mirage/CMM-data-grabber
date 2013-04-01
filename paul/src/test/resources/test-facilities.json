@@ -1,0 +1,23 @@
+{
+  "facilities" : [
+    {
+      "address" : "172.27.208.78",
+      "useFullScreen" : true,
+      "driveName" : "S",
+      "accessPassword" : "secret",
+      "accessName" : "jim",
+      "folderName" : "\\\\test\\neoscope",
+      "facilityName" : "HAWKEN SEM JEOL NEOSCOPE",
+      "useTimer" : false,
+      "facilityDescription" : "The JEOL Neoscope in the Hawken Laboratory",
+      "fileSettlingTime" : 5000,
+      "caseInsensitive" : true,
+      "datafileTemplates" : [
+        {"filePattern" : "(.*)\\.txt", "mimeType" : "text/plain", "suffix" : ".txt" },
+        {"filePattern" : "(.*)\\.tif", "mimeType" : "image/tiff", "suffix" : ".tif", "minimumSize" : 1024 },
+        {"filePattern" : "(.*)\\.jpg", "mimeType" : "image/jpeg", "suffix" : ".jpg", "minimumSize" : 1024 }
+      ],
+      "localHostId" : "HAWKEN-NEO"
+    }
+  ]
+}
