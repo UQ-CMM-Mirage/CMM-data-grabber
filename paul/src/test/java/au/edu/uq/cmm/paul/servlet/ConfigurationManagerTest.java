@@ -20,6 +20,7 @@
 package au.edu.uq.cmm.paul.servlet;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -77,7 +78,7 @@ public class ConfigurationManagerTest {
 	}
 	
 	@Test
-	public void testBuildFacility() throws ConfigurationException {
+	public void testBuildFacility1() throws ConfigurationException {
 		Facility f = new Facility();
 		ConfigurationManager cm = new ConfigurationManager(
 					EMF, buildStaticConfig(),
@@ -91,7 +92,22 @@ public class ConfigurationManagerTest {
 					"fileSettlingTime", "1000", "folderName", "/foo",
 					"accessName", "", "facilityDescription", "");
 			assertEquals(cm.buildFacility(f, params, em).toString(), "{}");
-			params = buildParamMap(
+		} finally {
+			em.close();
+		}
+		
+		
+	}
+	
+	@Test
+	public void testBuildFacility2() throws ConfigurationException {
+		Facility f = new Facility();
+		ConfigurationManager cm = new ConfigurationManager(
+					EMF, buildStaticConfig(),
+					buildStaticFacilities());
+		EntityManager em = EMF.createEntityManager();
+		try {
+			Map<?, ?> params = buildParamMap(
 					"facilityName", "fred", "localHostId", "",
 					"address", "127.0.0.1", "accessPassword", "",
 					"lastTemplate", "x", "driveName", "",
@@ -102,8 +118,203 @@ public class ConfigurationManagerTest {
 		} finally {
 			em.close();
 		}
-		
-		
+	}
+	
+	@Test
+	public void testBuildFacility3() throws ConfigurationException {
+		Facility f = new Facility();
+		ConfigurationManager cm = new ConfigurationManager(
+					EMF, buildStaticConfig(),
+					buildStaticFacilities());
+		EntityManager em = EMF.createEntityManager();
+		try {
+			Map<?, ?> params = buildParamMap(
+					"facilityName", "fred", "localHostId", "",
+					"address", "127.0.0.1", "accessPassword", "",
+					"lastTemplate", "0", "driveName", "",
+					"fileSettlingTime", "zzz", "folderName", "/foo",
+					"accessName", "", "facilityDescription", "");
+			assertEquals(cm.buildFacility(f, params, em).toString(), 
+					"{fileSettlingTime=this value is not a valid integer}");
+		} finally {
+			em.close();
+		}
+	}
+
+	@Test
+	public void testBuildFacility4() throws ConfigurationException {
+		Facility f = new Facility();
+		ConfigurationManager cm = new ConfigurationManager(
+					EMF, buildStaticConfig(),
+					buildStaticFacilities());
+		EntityManager em = EMF.createEntityManager();
+		try {
+			Map<?, ?> params = buildParamMap(
+					"facilityName", "", "localHostId", "",
+					"address", "127.0.0.1", "accessPassword", "",
+					"lastTemplate", "0", "driveName", "",
+					"fileSettlingTime", "1000", "folderName", "/foo",
+					"accessName", "", "facilityDescription", "");
+			assertEquals(cm.buildFacility(f, params, em).toString(), 
+					"{facilityName=this field must not be empty}");
+		} finally {
+			em.close();
+		}
+	}
+
+	@Test
+	public void testBuildFacility5() throws ConfigurationException {
+		Facility f = new Facility();
+		ConfigurationManager cm = new ConfigurationManager(
+					EMF, buildStaticConfig(),
+					buildStaticFacilities());
+		EntityManager em = EMF.createEntityManager();
+		try {
+			Map<?, ?> params = buildParamMap(
+					"facilityName", "fred", "localHostId", "",
+					"address", "", "accessPassword", "",
+					"lastTemplate", "0", "driveName", "",
+					"fileSettlingTime", "1000", "folderName", "/foo",
+					"accessName", "", "facilityDescription", "");
+			assertEquals(cm.buildFacility(f, params, em).toString(), 
+					"{localHostId=the local host id must be non-empty if address is empty}");
+		} finally {
+			em.close();
+		}
+	}
+
+	@Test
+	public void testBuildFacility6() throws ConfigurationException {
+		Facility f = new Facility();
+		ConfigurationManager cm = new ConfigurationManager(
+					EMF, buildStaticConfig(),
+					buildStaticFacilities());
+		EntityManager em = EMF.createEntityManager();
+		try {
+			Map<?, ?> params = buildParamMap(
+					"facilityName", "fred", "localHostId", "1234",
+					"address", "", "accessPassword", "",
+					"lastTemplate", "0", "driveName", "",
+					"fileSettlingTime", "1000", "folderName", "",
+					"accessName", "", "facilityDescription", "");
+			assertEquals(cm.buildFacility(f, params, em).toString(), 
+					"{folderName=this field must not be empty}");
+		} finally {
+			em.close();
+		}
+	}
+
+	@Test
+	public void testBuildFacility7() throws ConfigurationException {
+		Facility f = new Facility();
+		ConfigurationManager cm = new ConfigurationManager(
+					EMF, buildStaticConfig(),
+					buildStaticFacilities());
+		EntityManager em = EMF.createEntityManager();
+		try {
+			Map<?, ?> params = buildParamMap(
+					"facilityName", "fred", "localHostId", "1234",
+					"address", "", "accessPassword", "",
+					"lastTemplate", "0", "driveName", "9",
+					"fileSettlingTime", "1000", "folderName", "/foo",
+					"accessName", "", "facilityDescription", "");
+			assertEquals(cm.buildFacility(f, params, em).toString(), 
+					"{driveName=the drive name must be a single uppercase letter}");
+		} finally {
+			em.close();
+		}
+	}
+
+	@Test
+	public void testBuildFacility8() throws ConfigurationException {
+		Facility f = new Facility();
+		ConfigurationManager cm = new ConfigurationManager(
+					EMF, buildStaticConfig(),
+					buildStaticFacilities());
+		EntityManager em = EMF.createEntityManager();
+		try {
+			Map<?, ?> params = buildParamMap(
+					"facilityName", "fred", "localHostId", "1234",
+					"address", "", "accessPassword", "",
+					"lastTemplate", "0", "driveName", "ZZ",
+					"fileSettlingTime", "1000", "folderName", "/foo",
+					"accessName", "", "facilityDescription", "");
+			assertEquals(cm.buildFacility(f, params, em).toString(), 
+					"{driveName=the drive name must be a single uppercase letter}");
+		} finally {
+			em.close();
+		}
+	}
+
+	@Test
+	public void testBuildFacility9() throws ConfigurationException {
+		Facility f = new Facility();
+		ConfigurationManager cm = new ConfigurationManager(
+					EMF, buildStaticConfig(),
+					buildStaticFacilities());
+		EntityManager em = EMF.createEntityManager();
+		try {
+			Map<?, ?> params = buildParamMap(
+					"facilityName", "fred", "localHostId", "1234",
+					"address", "1.2.3.5.6", "accessPassword", "",
+					"lastTemplate", "0", "driveName", "Z",
+					"fileSettlingTime", "1000", "folderName", "/foo",
+					"accessName", "", "facilityDescription", "");
+			assertEquals(cm.buildFacility(f, params, em).toString(), 
+					"{address=1.2.3.5.6: Name or service not known}");
+		} finally {
+			em.close();
+		}
+	}
+
+	@Test
+	public void testBuildFacility10() throws ConfigurationException {
+		Facility f = new Facility();
+		ConfigurationManager cm = new ConfigurationManager(
+					EMF, buildStaticConfig(),
+					buildStaticFacilities());
+		EntityManager em = EMF.createEntityManager();
+		try {
+			Map<?, ?> params = buildParamMap(
+					"facilityName", "fred", "localHostId", "1234",
+					"address", "wurzle.example.com", "accessPassword", "",
+					"lastTemplate", "0", "driveName", "Z",
+					"fileSettlingTime", "1000", "folderName", "/foo",
+					"accessName", "", "facilityDescription", "");
+			assertEquals(cm.buildFacility(f, params, em).toString(), 
+					"{address=wurzle.example.com: Name or service not known}");
+		} finally {
+			em.close();
+		}
+	}
+	
+	@Test
+	public void testBuildFacility11() throws ConfigurationException {
+		Facility f = new Facility();
+		ConfigurationManager cm = new ConfigurationManager(
+					EMF, buildStaticConfig(),
+					buildStaticFacilities());
+		EntityManager em = EMF.createEntityManager();
+		try {
+			Map<?, ?> params = buildParamMap(
+					"facilityName", "fred", "localHostId", "1234",
+					"address", "127.0.0.1", "accessPassword", "",
+					"lastTemplate", "0", "driveName", "Z",
+					"fileSettlingTime", "1000", "folderName", "/foo",
+					"accessName", "", "facilityDescription", "");
+			ValidationResult<Facility> vr = cm.createFacility(params);
+			assertTrue(vr.getDiags().isEmpty());
+			params = buildParamMap(
+					"facilityName", "bert", "localHostId", "1234",
+					"address", "127.0.0.1", "accessPassword", "",
+					"lastTemplate", "0", "driveName", "Z",
+					"fileSettlingTime", "1000", "folderName", "/foo",
+					"accessName", "", "facilityDescription", "");
+			assertEquals(cm.buildFacility(f, params, em).toString(), 
+					"{localHostId=local host id '1234' already assigned to facility 'fred'}");
+		} finally {
+			em.close();
+		}
 	}
 
 	private Map<?, ?> buildParamMap(String ... args) {

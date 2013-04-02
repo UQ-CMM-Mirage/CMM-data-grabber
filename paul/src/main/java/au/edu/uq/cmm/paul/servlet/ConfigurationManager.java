@@ -327,7 +327,7 @@ public class ConfigurationManager {
             } catch (UnknownHostException ex) {
                 // We cannot report this to the user ...
                 LOG.warn("Cannot resolve hostname / address " + other[1] +
-                        " for facility " + other[0]);
+                        " for facility '" + other[0] + "'");
             }
         }
     }
@@ -374,7 +374,7 @@ public class ConfigurationManager {
         List<String> names = query.getResultList();
         if (!names.isEmpty()) {
             addDiag(diags, "localHostId", "local host id '" + localHostId + 
-                    "' already assigned to facility '" + names.get(0));
+                    "' already assigned to facility '" + names.get(0) + "'");
         }
     }
 
