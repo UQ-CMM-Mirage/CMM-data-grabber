@@ -91,11 +91,10 @@ public class ConfigurationManagerTest {
 					"lastTemplate", "0", "driveName", "",
 					"fileSettlingTime", "1000", "folderName", "/foo",
 					"accessName", "", "facilityDescription", "");
-			assertEquals(cm.buildFacility(f, params, em).toString(), "{}");
+			assertEquals("{}", cm.buildFacility(f, params, em).toString());
 		} finally {
 			em.close();
 		}
-		
 		
 	}
 	
@@ -113,8 +112,9 @@ public class ConfigurationManagerTest {
 					"lastTemplate", "x", "driveName", "",
 					"fileSettlingTime", "1000", "folderName", "/foo",
 					"accessName", "", "facilityDescription", "");
-			assertEquals(cm.buildFacility(f, params, em).toString(), 
-					"{lastTemplate=this value is not a valid integer}");
+			assertEquals(
+					"{lastTemplate=this value is not a valid integer}",
+					cm.buildFacility(f, params, em).toString());
 		} finally {
 			em.close();
 		}
@@ -134,8 +134,9 @@ public class ConfigurationManagerTest {
 					"lastTemplate", "0", "driveName", "",
 					"fileSettlingTime", "zzz", "folderName", "/foo",
 					"accessName", "", "facilityDescription", "");
-			assertEquals(cm.buildFacility(f, params, em).toString(), 
-					"{fileSettlingTime=this value is not a valid integer}");
+			assertEquals(
+					"{fileSettlingTime=this value is not a valid integer}",
+					cm.buildFacility(f, params, em).toString());
 		} finally {
 			em.close();
 		}
@@ -155,8 +156,9 @@ public class ConfigurationManagerTest {
 					"lastTemplate", "0", "driveName", "",
 					"fileSettlingTime", "1000", "folderName", "/foo",
 					"accessName", "", "facilityDescription", "");
-			assertEquals(cm.buildFacility(f, params, em).toString(), 
-					"{facilityName=this field must not be empty}");
+			assertEquals(
+					"{facilityName=this field must not be empty}",
+					cm.buildFacility(f, params, em).toString());
 		} finally {
 			em.close();
 		}
@@ -176,8 +178,9 @@ public class ConfigurationManagerTest {
 					"lastTemplate", "0", "driveName", "",
 					"fileSettlingTime", "1000", "folderName", "/foo",
 					"accessName", "", "facilityDescription", "");
-			assertEquals(cm.buildFacility(f, params, em).toString(), 
-					"{localHostId=the local host id must be non-empty if address is empty}");
+			assertEquals(
+					"{localHostId=the local host id must be non-empty if address is empty}",
+					cm.buildFacility(f, params, em).toString());
 		} finally {
 			em.close();
 		}
@@ -197,8 +200,9 @@ public class ConfigurationManagerTest {
 					"lastTemplate", "0", "driveName", "",
 					"fileSettlingTime", "1000", "folderName", "",
 					"accessName", "", "facilityDescription", "");
-			assertEquals(cm.buildFacility(f, params, em).toString(), 
-					"{folderName=this field must not be empty}");
+			assertEquals(
+					"{folderName=this field must not be empty}",
+					cm.buildFacility(f, params, em).toString());
 		} finally {
 			em.close();
 		}
@@ -218,8 +222,9 @@ public class ConfigurationManagerTest {
 					"lastTemplate", "0", "driveName", "9",
 					"fileSettlingTime", "1000", "folderName", "/foo",
 					"accessName", "", "facilityDescription", "");
-			assertEquals(cm.buildFacility(f, params, em).toString(), 
-					"{driveName=the drive name must be a single uppercase letter}");
+			assertEquals(
+					"{driveName=the drive name must be a single uppercase letter}",
+					cm.buildFacility(f, params, em).toString());
 		} finally {
 			em.close();
 		}
@@ -239,8 +244,9 @@ public class ConfigurationManagerTest {
 					"lastTemplate", "0", "driveName", "ZZ",
 					"fileSettlingTime", "1000", "folderName", "/foo",
 					"accessName", "", "facilityDescription", "");
-			assertEquals(cm.buildFacility(f, params, em).toString(), 
-					"{driveName=the drive name must be a single uppercase letter}");
+			assertEquals(
+					"{driveName=the drive name must be a single uppercase letter}",
+					cm.buildFacility(f, params, em).toString());
 		} finally {
 			em.close();
 		}
@@ -256,12 +262,13 @@ public class ConfigurationManagerTest {
 		try {
 			Map<?, ?> params = buildParamMap(
 					"facilityName", "fred", "localHostId", "1234",
-					"address", "1.2.3.5.6", "accessPassword", "",
+					"address", "", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "Z",
-					"fileSettlingTime", "1000", "folderName", "/foo",
+					"fileSettlingTime", "-11000", "folderName", "/foo",
 					"accessName", "", "facilityDescription", "");
-			assertEquals(cm.buildFacility(f, params, em).toString(), 
-					"{address=1.2.3.5.6: Name or service not known}");
+			assertEquals(
+					"{fileSettlingTime=the file setting time cannot be negative}",
+					cm.buildFacility(f, params, em).toString());
 		} finally {
 			em.close();
 		}
@@ -277,17 +284,18 @@ public class ConfigurationManagerTest {
 		try {
 			Map<?, ?> params = buildParamMap(
 					"facilityName", "fred", "localHostId", "1234",
-					"address", "wurzle.example.com", "accessPassword", "",
+					"address", "1.2.3.5.6", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "Z",
 					"fileSettlingTime", "1000", "folderName", "/foo",
 					"accessName", "", "facilityDescription", "");
-			assertEquals(cm.buildFacility(f, params, em).toString(), 
-					"{address=wurzle.example.com: Name or service not known}");
+			assertEquals(
+					"{address=1.2.3.5.6: Name or service not known}",
+					cm.buildFacility(f, params, em).toString());
 		} finally {
 			em.close();
 		}
 	}
-	
+
 	@Test
 	public void testBuildFacility11() throws ConfigurationException {
 		Facility f = new Facility();
@@ -298,25 +306,88 @@ public class ConfigurationManagerTest {
 		try {
 			Map<?, ?> params = buildParamMap(
 					"facilityName", "fred", "localHostId", "1234",
-					"address", "127.0.0.1", "accessPassword", "",
+					"address", "wurzle.example.com", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "Z",
 					"fileSettlingTime", "1000", "folderName", "/foo",
 					"accessName", "", "facilityDescription", "");
-			ValidationResult<Facility> vr = cm.createFacility(params);
-			assertTrue(vr.getDiags().isEmpty());
-			params = buildParamMap(
-					"facilityName", "bert", "localHostId", "1234",
-					"address", "127.0.0.1", "accessPassword", "",
-					"lastTemplate", "0", "driveName", "Z",
-					"fileSettlingTime", "1000", "folderName", "/foo",
-					"accessName", "", "facilityDescription", "");
-			assertEquals(cm.buildFacility(f, params, em).toString(), 
-					"{localHostId=local host id '1234' already assigned to facility 'fred'}");
+			assertEquals(
+					"{address=wurzle.example.com: Name or service not known}",
+					cm.buildFacility(f, params, em).toString());
 		} finally {
 			em.close();
 		}
 	}
+	
+	@Test
+	public void testBuildFacility12() throws ConfigurationException {
+		Facility f = new Facility();
+		ConfigurationManager cm = new ConfigurationManager(
+					EMF, buildStaticConfig(),
+					buildStaticFacilities());
+		EntityManager em = EMF.createEntityManager();
+		ValidationResult<Facility> vr = null;
+		try {
+			Map<?, ?> params = buildParamMap(
+					"facilityName", "fred", "localHostId", "1234",
+					"address", "127.0.0.1", "accessPassword", "",
+					"lastTemplate", "0", "driveName", "Z",
+					"fileSettlingTime", "1000", "folderName", "/foo",
+					"accessName", "", "facilityDescription", "");
+			vr = cm.createFacility(params);
+			assertTrue(vr.getDiags().isEmpty());
+			params = buildParamMap(
+					"facilityName", "bert", "localHostId", "1234",
+					"address", "127.0.0.2", "accessPassword", "",
+					"lastTemplate", "0", "driveName", "Z",
+					"fileSettlingTime", "1000", "folderName", "/foo",
+					"accessName", "", "facilityDescription", "");
+			assertEquals(
+					"{localHostId=local host id '1234' already assigned to facility 'fred'}",
+					cm.buildFacility(f, params, em).toString());
+		} finally {
+			if (vr.isValid()) {
+				cm.deleteFacility(vr.getTarget().getFacilityName());
+			}
+			em.close();
+		}
+	}
 
+	@Test
+	public void testBuildFacility13() throws ConfigurationException {
+		Facility f = new Facility();
+		ConfigurationManager cm = new ConfigurationManager(
+					EMF, buildStaticConfig(),
+					buildStaticFacilities());
+		EntityManager em = EMF.createEntityManager();
+		ValidationResult<Facility> vr = null;
+		try {
+			Map<?, ?> params = buildParamMap(
+					"facilityName", "fred", "localHostId", "1234",
+					"address", "127.0.0.1", "accessPassword", "",
+					"lastTemplate", "0", "driveName", "Z",
+					"fileSettlingTime", "1000", "folderName", "/foo",
+					"accessName", "", "facilityDescription", "");
+			vr = cm.createFacility(params);
+			assertTrue(vr.getDiags().isEmpty());
+			params = buildParamMap(
+					"facilityName", "bert", "localHostId", "1235",
+					"address", "127.0.0.1", "accessPassword", "",
+					"lastTemplate", "0", "driveName", "Z",
+					"fileSettlingTime", "1000", "folderName", "/foo",
+					"accessName", "", "facilityDescription", "");
+			assertEquals(
+					"{address=address also used by facility 'fred'.  " +
+							"Resolve the address conflict or mark both " +
+							"facilities as 'multiplexed'}",
+					cm.buildFacility(f, params, em).toString());
+		} finally {
+			if (vr.isValid()) {
+				cm.deleteFacility(vr.getTarget().getFacilityName());
+			}
+			em.close();
+		}
+	}
+	
 	private Map<?, ?> buildParamMap(String ... args) {
 		Map<String, String[]> res = new HashMap<>();
 		for (int i = 0; i < args.length; i += 2) {
