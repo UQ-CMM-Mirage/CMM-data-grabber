@@ -19,6 +19,7 @@
 
 package au.edu.uq.cmm.paul;
 
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -45,7 +46,7 @@ public class StaticPaulFacilities {
      * Load the facilities from a file.
      * 
      * @param facilitiesFile
-     * @return the facilities or null if it couldn't be found / read.
+     * @return the facilities.
      * @throws ConfigurationException 
      */
     public static StaticPaulFacilities loadFacilities(String facilitiesFile) 
@@ -58,7 +59,7 @@ public class StaticPaulFacilities {
      * Load the facilities from a URL.  This understands any URL that the
      * JVM has a protocol handler for, and also "classpath:" URLs. 
      * 
-     * @return the facilities or null if it couldn't be found / read.
+     * @return the facilities.
      * @param urlString the URL for the config file
      * @throws URISyntaxException 
      * @throws MalformedURLException 
@@ -68,5 +69,20 @@ public class StaticPaulFacilities {
             throws ConfigurationException {
         return new JsonConfigLoader<StaticPaulFacilities>(StaticPaulFacilities.class).
                 loadConfigurationFromUrl(urlString);
+    }
+
+    /**
+     * Load the facilities from a Stream.
+     * 
+     * @return the facilities.
+     * @param urlString the URL for the config file
+     * @throws URISyntaxException 
+     * @throws MalformedURLException 
+     * @throws ConfigurationException 
+     */
+    public static StaticPaulFacilities loadFacilities(InputStream is) 
+            throws ConfigurationException {
+        return new JsonConfigLoader<StaticPaulFacilities>(StaticPaulFacilities.class).
+                loadConfiguration(is);
     }
 }

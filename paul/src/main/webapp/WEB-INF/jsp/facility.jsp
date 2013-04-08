@@ -163,7 +163,7 @@
 						<td colspan="3">Facility name</td>
 						<td><input name="facilityName" type="text" class="span4"
 								${edit ? '' : 'readonly="readonly"'}
-								value="${facility.facilityName}"></td>
+								value="${fn:escapeXml(facility.facilityName)}"></td>
 						<td><strong>${diags.facilityName}</strong></td>
 					</tr>
 					<tr>
@@ -178,49 +178,57 @@
 						<td colspan="3">Facility description</td>
 						<td><input name="facilityDescription" type="text"
 								class="span4" ${edit ? '' : 'readonly="readonly"'}
-								value="${facility.facilityDescription}"></td>
+								value="${fn:escapeXml(facility.facilityDescription)}"></td>
 						<td><strong>${diags.facilityDescription}</strong></td>
 					</tr>
 					<tr>
 						<td colspan="3">DNS name / IP address</td>
 						<td><input name="address" type="text" class="span4"
 								${edit ? '' : 'readonly="readonly"'}
-								value="${facility.address}"></td>
+								value="${fn:escapeXml(facility.address)}"></td>
 						<td><strong>${diags.address}</strong></td>
 					</tr>
 					<tr>
 						<td colspan="3">Local Host ID</td>
 						<td><input name="localHostId" type="text" class="span4"
 								${edit ? '' : 'readonly="readonly"'}
-								value="${facility.localHostId}"></td>
+								value="${fn:escapeXml(facility.localHostId)}"></td>
 						<td><strong>${diags.localHostId}</strong></td>
+					</tr>
+					<tr>
+						<td colspan="3">Multiplexed</td>
+						<td><input name="multiplexed" type="checkbox"
+								${edit ? '' : 'readonly="readonly"'}
+								${facility.multiplexed ? ' checked="checked"' : ''}
+						value="true"></td>
+						<td><strong>${diags.multiplexed}</strong></td>
 					</tr>
 					<tr>
 						<td colspan="3">Drive name</td>
 						<td><input name="driveName" type="text" class="span4"
 							${edit ? '' : 'readonly="readonly"'}
 						value="${facility.driveName}"></td>
-						<td><strong>${diags.driveName}</strong></td>
+						<td><strong>${fn:escapeXml(diags.driveName)}</strong></td>
 					</tr>
 					<tr>
 						<td colspan="3">Folder name</td>
 						<td><input name="folderName" type="text" class="span4"
 								${edit ? '' : 'readonly="readonly"'}
-								value="${facility.folderName}"></td>
+								value="${fn:escapeXml(facility.folderName)}"></td>
 						<td><strong>${diags.folderName}</strong></td>
 					</tr>
 					<tr>
 						<td colspan="3">Access name</td>
 						<td><input name="accessName" type="text" class="span4"
 								${edit ? '' : 'readonly="readonly"'}
-								value="${facility.accessName}"></td>
+								value="${fn:escapeXml(facility.accessName)}"></td>
 						<td><strong>${diags.accessName}</strong></td>
 					</tr>
 					<tr>
 						<td colspan="3">Access password</td>
 						<td><input name="accessPassword" type="text" class="span4"
 								${edit ? '' : 'readonly="readonly"'}
-								value="${facility.accessPassword}"></td>
+								value="${fn:escapeXml(facility.accessPassword)}"></td>
 						<td><strong>${diags.accessPassword}</strong></td>
 					</tr>
 					<tr>
@@ -254,7 +262,7 @@
 							<td>File pattern</td>
 							<td><input name="template${index}filePattern" type="text"
 									class="span4" ${edit ? '' : 'readonly="readonly"'}
-									value="${template.filePattern}"></td>
+									value="${fn:escapeXml(template.filePattern)}"></td>
 							<td><c:set var="key" value="template${index}filePattern" />
 								<strong>${diags[key]}</strong></td>
 						</tr>
@@ -264,7 +272,7 @@
 							<td>File mimeType</td>
 							<td><input name="template${index}mimeType" type="text"
 									class="span4" ${edit ? '' : 'readonly="readonly"'}
-									value="${template.mimeType}"></td>
+									value="${fn:escapeXml(template.mimeType)}"></td>
 							<td><c:set var="key" value="template${index}mimeType" /> <strong>${diags[key]}</strong>
 							</td>
 						</tr>
@@ -274,7 +282,7 @@
 							<td>File suffix</td>
 							<td><input name="template${index}suffix" type="text"
 									class="span4" ${edit ? '' : 'readonly="readonly"'}
-									value="${template.suffix}"></td>
+									value="${fn:escapeXml(template.suffix)}"></td>
 							<td><c:set var="key" value="template${index}suffix" /> <strong>${diags[key]}</strong>
 							</td>
 						</tr>

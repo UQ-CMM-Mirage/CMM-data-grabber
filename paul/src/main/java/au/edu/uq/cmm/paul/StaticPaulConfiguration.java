@@ -19,6 +19,7 @@
 
 package au.edu.uq.cmm.paul;
 
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -304,5 +305,18 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
             throws ConfigurationException {
         return new JsonConfigLoader<StaticPaulConfiguration>(StaticPaulConfiguration.class).
                 loadConfigurationFromUrl(urlString);
+    }
+
+    /**
+     * Load the configuration from a stream.   
+     * @return the configuration or null
+     * @param urlString the URL for the config file
+     * @throws URISyntaxException 
+     * @throws MalformedURLException 
+     */
+    public static StaticPaulConfiguration loadConfiguration(InputStream is) 
+            throws ConfigurationException {
+        return new JsonConfigLoader<StaticPaulConfiguration>(StaticPaulConfiguration.class).
+                loadConfiguration(is);
     }
 }
