@@ -196,6 +196,14 @@
 						<td><strong>${diags.localHostId}</strong></td>
 					</tr>
 					<tr>
+						<td colspan="3">Multiplexed</td>
+						<td><input name="multiplexed" type="checkbox"
+								${edit ? '' : 'readonly="readonly"'}
+								${facility.multiplexed ? ' checked="checked"' : ''}
+						value="true"></td>
+						<td><strong>${diags.multiplexed}</strong></td>
+					</tr>
+					<tr>
 						<td colspan="3">Drive name</td>
 						<td><input name="driveName" type="text" class="span4"
 							${edit ? '' : 'readonly="readonly"'}
