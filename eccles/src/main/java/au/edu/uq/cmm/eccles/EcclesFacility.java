@@ -50,6 +50,7 @@ public class EcclesFacility implements FacilityConfig {
     private String facilityDescription;
     private boolean useFullScreen;
     private boolean useTimer;
+    private boolean multiplexed;
 
     @Override
     public String getAddress() {
@@ -155,4 +156,12 @@ public class EcclesFacility implements FacilityConfig {
     public void setId(Long id) {
         this.id = id;
     }
+
+	public boolean isMultiplexed() {
+		return multiplexed;
+	}
+
+	public void setMultiplexed(boolean multiplexed) {
+		this.multiplexed = multiplexed;
+	}
 }

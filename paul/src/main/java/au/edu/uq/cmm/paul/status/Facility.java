@@ -74,6 +74,7 @@ public class Facility implements FacilityConfig {
     private List<DatafileTemplate> datafileTemplates;
     private boolean disabled;
     private FacilityStatus status;
+    private boolean multiplexed = false;
     
 
     public Facility() {
@@ -98,6 +99,7 @@ public class Facility implements FacilityConfig {
         for (DatafileTemplateConfig template : facility.getDatafileTemplates()) {
             datafileTemplates.add(new DatafileTemplate(template));
         }
+        multiplexed = facility.isMultiplexed();
     }
     
     public String getAddress() {
@@ -134,6 +136,10 @@ public class Facility implements FacilityConfig {
 
     public boolean isUseFullScreen() {
         return useFullScreen;
+    }
+
+    public boolean isMultiplexed() {
+        return multiplexed;
     }
 
     @JsonIgnore
@@ -180,6 +186,10 @@ public class Facility implements FacilityConfig {
 
     public void setUseFullScreen(boolean useFullScreen) {
         this.useFullScreen = useFullScreen;
+    }
+
+    public void setMultiplexed(boolean multiplexed) {
+        this.multiplexed = multiplexed;
     }
 
     public void setUseTimer(boolean useTimer) {
@@ -263,6 +273,6 @@ public class Facility implements FacilityConfig {
                 + caseInsensitive + ", fileSettlingTime=" + fileSettlingTime
                 + ", address=" + address + ", datafileTemplates="
                 + datafileTemplates + ", disabled=" + disabled
-                + ", status=" + status + "]";
+                + ", multiplexed=" + multiplexed + ", status=" + status + "]";
     }
 }

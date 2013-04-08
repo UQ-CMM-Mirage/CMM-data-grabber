@@ -199,8 +199,10 @@ public class ConfigurationManager {
         String localHostId = getStringOrNull(params, "localHostId", diags);
         String address = getStringOrNull(params, "address", diags);
         checkFacilityNameUnique(facilityName, res.getId(), diags, em);
+        res.setMultiplexed(getBoolean(params, "multiplexed", diags));
         if (address != null) {
-            checkAddressability(address, localHostId, res.getId(), diags, em);
+            checkAddressability(address, localHostId, res.getId(), 
+            		res.isMultiplexed(), diags, em);
         }
         checkLocalHostIdUnique(localHostId, res.getId(), diags, em);
         if (address == null && localHostId == null) {
@@ -285,16 +287,13 @@ public class ConfigurationManager {
     }
 
     private void checkAddressability(String address, String localHostId, Long id,
-            Map<String, String> diags, EntityManager em) {
+            boolean multiplexed, Map<String, String> diags, EntityManager em) {
         // Check that the supplied address is valiid / resolves.
         InetAddress inetAddr;
         try {
             inetAddr = InetAddress.getByName(address);
         } catch (UnknownHostException ex) {
             addDiag(diags, "address", ex.getMessage());
-            return;
-        }
-        if (localHostId != null) {
             return;
         }
         // If this facility has no local host id, then its address must
@@ -304,13 +303,12 @@ public class ConfigurationManager {
         TypedQuery<Object[]> query;
         if (id == null) {
             query = em.createQuery(
-                    "select f.facilityName, f.address from Facility f " +
-                            "where f.localHostId = NULL", 
+                    "select f.facilityName, f.address, f.multiplexed from Facility f", 
                             Object[].class);
         } else {
             query = em.createQuery(
-                    "select f.facilityName, f.address from Facility f " +
-                            "where f.localHostId = NULL and f.id != :id", 
+                    "select f.facilityName, f.address, f.multiplexed from Facility f " +
+                            "where f.id != :id", 
                             Object[].class);
             query.setParameter("id", id.longValue());
         }
@@ -318,16 +316,18 @@ public class ConfigurationManager {
         for (Object[] other : others) {
             try {
                 InetAddress otherAddr = InetAddress.getByName((String) other[1]);
-                if (otherAddr.equals(inetAddr)) { /* compares IP addresses */
-                    addDiag(diags, "address", 
-                            "address resolves to an IP address used by " +
-                                    "another facility ('" + other[0] + "').  " +
-                            "Resolve the address conflict or use a local host id");
+                Boolean otherMultiplexed = (Boolean) other[2];
+                if (otherAddr.equals(inetAddr) && /* compares IP addresses */
+                	!(multiplexed && otherMultiplexed)) {
+                	addDiag(diags, "address", 
+                			"address also used by facility '" + other[0] + "'.  " +
+                					"Resolve the address conflict or mark " +
+                					"both facilities as 'multiplexed'");
                 }
             } catch (UnknownHostException ex) {
                 // We cannot report this to the user ...
                 LOG.warn("Cannot resolve hostname / address " + other[1] +
-                        " for facility " + other[0]);
+                        " for facility '" + other[0] + "'");
             }
         }
     }
@@ -374,7 +374,7 @@ public class ConfigurationManager {
         List<String> names = query.getResultList();
         if (!names.isEmpty()) {
             addDiag(diags, "localHostId", "local host id '" + localHostId + 
-                    "' already assigned to facility '" + names.get(0));
+                    "' already assigned to facility '" + names.get(0) + "'");
         }
     }
 
