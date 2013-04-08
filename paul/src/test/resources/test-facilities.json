@@ -17,7 +17,8 @@
         {"filePattern" : "(.*)\\.tif", "mimeType" : "image/tiff", "suffix" : ".tif", "minimumSize" : 1024 },
         {"filePattern" : "(.*)\\.jpg", "mimeType" : "image/jpeg", "suffix" : ".jpg", "minimumSize" : 1024 }
       ],
-      "localHostId" : "HAWKEN-NEO"
+      "localHostId" : "HAWKEN-NEO",
+      "multiplexed" : false
     }
   ]
 }
