@@ -162,8 +162,10 @@ public class QueueManager {
     }
 
     public void addEntry(DatasetMetadata dataset, boolean mayExist) 
-            throws JsonGenerationException, IOException, QueueFileException, InterruptedException {
-        saveToFileSystem(new File(dataset.getMetadataFilePathname()), dataset, mayExist);
+            throws JsonGenerationException, IOException, 
+                QueueFileException, InterruptedException {
+        saveToFileSystem(new File(dataset.getMetadataFilePathname()), 
+                    dataset, mayExist);
         saveToDatabase(dataset);
     }
 
@@ -182,15 +184,18 @@ public class QueueManager {
         }
     }
 
-    private void saveToFileSystem(File metadataFile, DatasetMetadata metadata, boolean mayExist)
-            throws IOException, JsonGenerationException, QueueFileException, InterruptedException {
+    private void saveToFileSystem(File metadataFile, DatasetMetadata metadata, 
+                boolean mayExist)
+            throws IOException, JsonGenerationException, QueueFileException,
+                InterruptedException {
         StringWriter sw = new StringWriter();
         metadata.serialize(sw);
         fileManager.enqueueFile(sw.toString(), metadataFile, mayExist);
         LOG.info("Saved admin metadata to " + metadataFile);
     }
 
-    public int expireAll(Removal removal, String facilityName, Slice slice, Date olderThan) 
+    public int expireAll(Removal removal, String facilityName, Slice slice,
+                Date olderThan) 
             throws InterruptedException {
         // FIXME - should expiration adjust the LWM?
         EntityManager em = createEntityManager();
@@ -211,6 +216,7 @@ public class QueueManager {
                 andPart += " and m.facilityName = :facility";
             }
             String queryString = "from DatasetMetadata m " +
+            		"left join fetch m.datafiles " +
                     "where m.updateTimestamp < :cutoff" + andPart;
             TypedQuery<DatasetMetadata> query = 
                     em.createQuery(queryString, DatasetMetadata.class);
@@ -229,7 +235,8 @@ public class QueueManager {
         }
     }
 
-    public int deleteAll(Removal removal, String facilityName, Slice slice) throws InterruptedException {
+    public int deleteAll(Removal removal, String facilityName, Slice slice) 
+            throws InterruptedException {
         EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
@@ -253,7 +260,8 @@ public class QueueManager {
                 whereClause += "m.facilityName = :facility";
             }
             TypedQuery<DatasetMetadata> query = em.createQuery(
-                    "from DatasetMetadata m" + whereClause, 
+                    "from DatasetMetadata m " +
+                    "left join fetch m.datafiles " + whereClause, 
                     DatasetMetadata.class);
             query.setParameter("facility", facilityName);
             List<DatasetMetadata> datasets = query.getResultList();
@@ -267,7 +275,8 @@ public class QueueManager {
         }
     }
     
-    public int delete(String[] ids, Removal removal) throws InterruptedException {
+    public int delete(String[] ids, Removal removal) 
+            throws InterruptedException {
         int count = 0;
         EntityManager em = createEntityManager();
         try {
@@ -275,7 +284,8 @@ public class QueueManager {
             for (String idStr : ids) {
                 long id = Long.parseLong(idStr);
                 TypedQuery<DatasetMetadata> query =
-                        em.createQuery("from DatasetMetadata d where d.id = :id", 
+                        em.createQuery("from DatasetMetadata m " +
+                        		"left join fetch m.datafiles where m.id = :id", 
                                 DatasetMetadata.class);
                 query.setParameter("id", id);
                 List<DatasetMetadata> datasets = query.getResultList();
@@ -305,11 +315,13 @@ public class QueueManager {
             entityManager.remove(dataset);
             break;
         default:
-            LOG.debug("Dry run: would have removed record for dataset " + dataset.getId());
+            LOG.debug("Dry run: would have removed record for dataset " + 
+                    dataset.getId());
         }
     }
 
-    private void disposeOfFile(String pathname, Removal removal) throws InterruptedException {
+    private void disposeOfFile(String pathname, Removal removal) 
+            throws InterruptedException {
         File file = new File(pathname);
         try {
             switch (removal) {
@@ -343,7 +355,8 @@ public class QueueManager {
     }
 
     public int changeUser(String[] ids, String userName, boolean reassign) 
-            throws JsonGenerationException, IOException, QueueFileException, InterruptedException {
+            throws JsonGenerationException, IOException, QueueFileException, 
+                InterruptedException {
         EntityManager em = createEntityManager();
         int nosChanged = 0;
         try {
@@ -357,7 +370,8 @@ public class QueueManager {
                 if (reassign || dataset.getUserName() == null) {
                     dataset.setUserName(userName.isEmpty() ? null : userName);
                     dataset.setUpdateTimestamp(new Date());
-                    saveToFileSystem(new File(dataset.getMetadataFilePathname()), dataset, true);
+                    saveToFileSystem(new File(dataset.getMetadataFilePathname()),
+                                dataset, true);
                     nosChanged++;
                 }
             }
