@@ -38,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import au.edu.uq.cmm.eccles.FacilitySession;
+import au.edu.uq.cmm.paul.GrabberFacilityConfig.FileArrivalMode;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.queue.QueueFileException;
@@ -228,8 +229,12 @@ class WorkEntry implements Runnable {
 
     public DatasetMetadata grabFiles(boolean regrabbing) 
             throws InterruptedException, IOException, QueueFileException {
-        LOG.debug("WorkEntry.grabFiles has " + files.size() + " files to grab");
+        // Perform pre-grab checks
+        if (!regrabbing && !isGrabbable()) {
+            LOG.debug("WorkEntry is not grabbable");
+        }
         // Prepare for grabbing
+        LOG.debug("WorkEntry.grabFiles has " + files.size() + " files to grab");
         FacilitySession session = statusManager.getSession(
                 facility.getFacilityName(), timestamp.getTime());
         // Optionally lock the files, then grab them.
@@ -260,6 +265,47 @@ class WorkEntry implements Runnable {
         } catch (JsonGenerationException ex) {
             throw new PaulException(ex);
         } 
+    }
+
+    private boolean isGrabbable() {
+        if (facility.getFileArrivalMode() == FileArrivalMode.DIRECT) {
+            return true;
+        }
+        if (facility.getFileArrivalMode() == FileArrivalMode.RSYNC) {
+            // If the latest file modification date in the putative dataset is
+            // before the LWM, we are not interested in it.
+            Date latest = new Date(Long.MAX_VALUE);
+            for (GrabbedFile file: files.values()) {
+                file.getFileTimestamp().after(latest);
+                latest = file.getFileTimestamp();
+            }
+            if (latest.before(facility.getStatus().getGrabberLWMTimestamp())) {
+                LOG.debug("WorkEntry falls before Grabber LWM");
+                return false;
+            }
+        }
+        // Look for existing Datasets in the queue with the same baseFile.
+        List<DatasetMetadata> possibles = 
+                    queueManager.lookupDatasets(baseFile.toString());
+        if (possibles.size() == 0) {
+            return true;
+        }
+        // Trawl through the existing Datasets, knocking out any files in the 
+        // grab list that are already in a Dataset
+        for (DatasetMetadata dm: possibles) {
+            for (DatafileMetadata df: dm.getDatafiles()) {
+                for (GrabbedFile file: files.values()) {
+                    if (file.getFile().equals(df.getSourceFilePathname())) {
+                        files.remove(file.getFile());
+                        if (files.isEmpty()) {
+                            return false;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     /**

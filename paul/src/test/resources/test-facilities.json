@@ -18,7 +18,8 @@
         {"filePattern" : "(.*)\\.jpg", "mimeType" : "image/jpeg", "suffix" : ".jpg", "minimumSize" : 1024 }
       ],
       "localHostId" : "HAWKEN-NEO",
-      "multiplexed" : false
+      "multiplexed" : false,
+      "fileArrivalMode" : "DIRECT"
     }
   ]
 }

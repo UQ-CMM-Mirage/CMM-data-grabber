@@ -41,6 +41,7 @@ import org.hibernate.annotations.GenericGenerator;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.paul.DatafileTemplateConfig;
 import au.edu.uq.cmm.paul.GrabberFacilityConfig;
+import au.edu.uq.cmm.paul.GrabberFacilityConfig.FileArrivalMode;
 
 /**
  * The Paul implementation of FacilityConfig persists the configuration data
@@ -75,6 +76,8 @@ public class Facility implements FacilityConfig {
     private boolean disabled;
     private FacilityStatus status;
     private boolean multiplexed = false;
+
+    private FileArrivalMode fileArrivalMode;
     
 
     public Facility() {
@@ -100,6 +103,7 @@ public class Facility implements FacilityConfig {
             datafileTemplates.add(new DatafileTemplate(template));
         }
         multiplexed = facility.isMultiplexed();
+        fileArrivalMode = facility.getFileArrivalMode();
     }
     
     public String getAddress() {
@@ -249,8 +253,6 @@ public class Facility implements FacilityConfig {
         this.id = id;
     }
 
-    
-
     @JsonIgnore
     @Transient
     public FacilityStatus getStatus() {
@@ -259,6 +261,14 @@ public class Facility implements FacilityConfig {
 
     public void setStatus(FacilityStatus status) {
         this.status = status;
+    }
+
+    public final FileArrivalMode getFileArrivalMode() {
+        return fileArrivalMode;
+    }
+
+    public final void setFileArrivalMode(FileArrivalMode mode) {
+        this.fileArrivalMode = mode == null ? FileArrivalMode.DIRECT : mode;
     }
 
     @Override
@@ -273,6 +283,7 @@ public class Facility implements FacilityConfig {
                 + caseInsensitive + ", fileSettlingTime=" + fileSettlingTime
                 + ", address=" + address + ", datafileTemplates="
                 + datafileTemplates + ", disabled=" + disabled
+                + ", fileArrivalMode=" + fileArrivalMode
                 + ", multiplexed=" + multiplexed + ", status=" + status + "]";
     }
 }

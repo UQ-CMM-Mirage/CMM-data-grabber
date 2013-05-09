@@ -32,6 +32,8 @@ public class StaticPaulFacility extends StaticFacilityConfig implements
     private int fileSettlingTime;
     private List<StaticDatafileTemplateConfig> datafileTemplates =
             new ArrayList<StaticDatafileTemplateConfig>();
+    private GrabberFacilityConfig.FileArrivalMode fileArrivalMode = 
+            GrabberFacilityConfig.FileArrivalMode.DIRECT;
 
     @Override
     public List<? extends DatafileTemplateConfig> getDatafileTemplates() {
@@ -68,5 +70,14 @@ public class StaticPaulFacility extends StaticFacilityConfig implements
     public void setDatafileTemplates(
             List<StaticDatafileTemplateConfig> datafileTemplates) {
         this.datafileTemplates = datafileTemplates;
+    }
+
+    @Override
+    public GrabberFacilityConfig.FileArrivalMode getFileArrivalMode() {
+        return fileArrivalMode;
+    }
+
+    public void setFileArrivalMode(GrabberFacilityConfig.FileArrivalMode mode) {
+        this.fileArrivalMode = mode == null ? FileArrivalMode.DIRECT : mode;
     }
 }

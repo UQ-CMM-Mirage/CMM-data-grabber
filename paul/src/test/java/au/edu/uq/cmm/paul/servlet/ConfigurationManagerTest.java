@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.persistence.EntityManager;
@@ -35,8 +36,10 @@ import org.junit.Test;
 
 import au.edu.uq.cmm.aclslib.config.ConfigurationException;
 import au.edu.uq.cmm.eccles.FacilitySession;
+import au.edu.uq.cmm.paul.GrabberFacilityConfig;
 import au.edu.uq.cmm.paul.StaticPaulConfiguration;
 import au.edu.uq.cmm.paul.StaticPaulFacilities;
+import au.edu.uq.cmm.paul.StaticPaulFacility;
 import au.edu.uq.cmm.paul.status.Facility;
 
 public class ConfigurationManagerTest {
@@ -75,6 +78,16 @@ public class ConfigurationManagerTest {
 			throws ConfigurationException {
 		return StaticPaulConfiguration.loadConfiguration(
 				getClass().getResourceAsStream("/test-config.json"));
+	}
+	
+	@Test 
+	public void testLoadStaticFacilities() throws ConfigurationException {
+	    StaticPaulFacilities facilities = buildStaticFacilities();
+	    List<StaticPaulFacility> list = facilities.getFacilities();
+	    assertEquals(1, list.size());
+	    StaticPaulFacility facility = list.get(0);
+	    assertEquals(GrabberFacilityConfig.FileArrivalMode.DIRECT, 
+	            facility.getFileArrivalMode());
 	}
 	
 	@Test

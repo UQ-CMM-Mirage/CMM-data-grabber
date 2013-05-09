@@ -145,7 +145,16 @@
 			<c:if test="${! empty facility.facilityName}"> 
 				for ${facility.facilityName}
 			</c:if>
+			<c:if test="${empty edit}"> - read only</c:if>
 		</h1>
+		<c:if test="${empty edit}">
+			<div class="form-inline">
+				<form class="form-inline" action="${facility.facilityName}">
+					<button class="btn" type="submit" name="edit">Edit
+						Facility Configuration</button>
+				</form>
+			</div>
+		</c:if>
 		<p><strong>${message}</strong></p>
 		<form action="${create ? '/paul/facilities/' : facility.facilityName}" method="post">
 			<input id="lastTemplate" type="hidden" name="lastTemplate"
@@ -317,12 +326,26 @@
 						<td><strong>${diags.fileSettlingTime}</strong></td>
 					</tr>
 					<tr>
-						<td colspan="3">Uses file locking</td>
+						<td colspan="3">Use file locking</td>
 						<td><input name="useFileLocks" type="checkbox"
 								${edit ? '' : 'readonly="readonly"'}
 								${facility.useFileLocks ? 'checked="checked"' : ''}
 								value="true"></td>
 						<td><strong>${diags.useFileLocks}</strong></td>
+					</tr>
+					<tr>
+						<td colspan="3">File arrival mode</td>
+						<td><select name="fileArrivalMode"
+								${edit ? '' : 'disabled="disabled"'}>
+								<option value="DIRECT" ${facility.fileArrivalMode == 'DIRECT' ? 'selected' : '' }>
+									direct</option>
+								<option value="RSYNC" ${facility.fileArrivalMode == 'RSYNC' ? 'selected' : '' }>
+									rsync (trimestamps preserved)</option>
+								<option value="RSYNC_NO_PRESERVE" ${facility.fileArrivalMode == 'RSYNC_NO_PRESERVE' ? 'selected' : '' }>
+									rsync (timestamps not preserved)</option>
+							</select>
+						</td>
+						<td><strong>${diags.fileArrivalMode}</strong></td>
 					</tr>
 					<tr>
 						<td colspan="3">Client uses timer</td>
@@ -351,14 +374,6 @@
 				</c:when>
 			</c:choose>
 		</form>
-		<c:if test="${empty edit}">
-			<div class="form-inline">
-				<form class="form-inline" action="${facility.facilityName}">
-					<button class="btn" type="submit" name="edit">Change
-						Facility Configuration</button>
-				</form>
-			</div>
-		</c:if>
 	</div>
 	<!-- /container -->
 	<%@ include file="/WEB-INF/jsp/commonFooter.jspFrag"%>

@@ -22,6 +22,7 @@ package au.edu.uq.cmm.paul.queue;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -344,12 +345,30 @@ public class QueueManager {
         EntityManager entityManager = createEntityManager();
         try {
             TypedQuery<DatasetMetadata> query = entityManager.createQuery(
-                    "from DatasetMetadata d where d.id = :id", 
+                    "from DatasetMetadata m " +
+                    "left join fetch m.datafiles where m.id = :id", 
                     DatasetMetadata.class);
             query.setParameter("id", id);
             return query.getSingleResult();
         } catch (NoResultException ex) {
             return null;
+        } finally {
+            entityManager.close();
+        }
+    }
+    
+    public List<DatasetMetadata> lookupDatasets(String sourceFilePathnameBase) {
+        EntityManager entityManager = createEntityManager();
+        try {
+            TypedQuery<DatasetMetadata> query = entityManager.createQuery(
+                    "from DatasetMetadata m " +
+                    "left join fetch m.datafiles " +
+                    "where m.sourceFilePathnameBase = :pathname", 
+                    DatasetMetadata.class);
+            query.setParameter("pathname", sourceFilePathnameBase);
+            return query.getResultList();
+        } catch (NoResultException ex) {
+            return Collections.emptyList();
         } finally {
             entityManager.close();
         }
