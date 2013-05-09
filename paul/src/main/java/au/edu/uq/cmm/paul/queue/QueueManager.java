@@ -111,6 +111,7 @@ public class QueueManager {
             TypedQuery<DatasetMetadata> query;
             if (facilityName == null) {
                 query = em.createQuery("from DatasetMetadata m " +
+                    "left join fetch m.datafiles " +
                     whereClause + "order by m.id", DatasetMetadata.class);
             } else {
                 if (whereClause.isEmpty()) {
