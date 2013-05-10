@@ -103,7 +103,8 @@ public class ConfigurationManagerTest {
 					"address", "127.0.0.1", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "",
 					"fileSettlingTime", "1000", "folderName", "/foo",
-					"accessName", "", "facilityDescription", "");
+					"accessName", "", "facilityDescription", "",
+                    "fileArrivalMode", "DIRECT");
 			assertEquals("{}", cm.buildFacility(f, params, em).toString());
 		} finally {
 			em.close();
@@ -124,7 +125,8 @@ public class ConfigurationManagerTest {
 					"address", "127.0.0.1", "accessPassword", "",
 					"lastTemplate", "x", "driveName", "",
 					"fileSettlingTime", "1000", "folderName", "/foo",
-					"accessName", "", "facilityDescription", "");
+					"accessName", "", "facilityDescription", "",
+					"fileArrivalMode", "DIRECT");
 			assertEquals(
 					"{lastTemplate=this value is not a valid integer}",
 					cm.buildFacility(f, params, em).toString());
@@ -146,7 +148,8 @@ public class ConfigurationManagerTest {
 					"address", "127.0.0.1", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "",
 					"fileSettlingTime", "zzz", "folderName", "/foo",
-					"accessName", "", "facilityDescription", "");
+					"accessName", "", "facilityDescription", "",
+                    "fileArrivalMode", "DIRECT");
 			assertEquals(
 					"{fileSettlingTime=this value is not a valid integer}",
 					cm.buildFacility(f, params, em).toString());
@@ -168,7 +171,8 @@ public class ConfigurationManagerTest {
 					"address", "127.0.0.1", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "",
 					"fileSettlingTime", "1000", "folderName", "/foo",
-					"accessName", "", "facilityDescription", "");
+					"accessName", "", "facilityDescription", "",
+                    "fileArrivalMode", "DIRECT");
 			assertEquals(
 					"{facilityName=this field must not be empty}",
 					cm.buildFacility(f, params, em).toString());
@@ -190,7 +194,8 @@ public class ConfigurationManagerTest {
 					"address", "", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "",
 					"fileSettlingTime", "1000", "folderName", "/foo",
-					"accessName", "", "facilityDescription", "");
+					"accessName", "", "facilityDescription", "",
+                    "fileArrivalMode", "DIRECT");
 			assertEquals(
 					"{localHostId=the local host id must be non-empty if address is empty}",
 					cm.buildFacility(f, params, em).toString());
@@ -212,7 +217,8 @@ public class ConfigurationManagerTest {
 					"address", "", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "",
 					"fileSettlingTime", "1000", "folderName", "",
-					"accessName", "", "facilityDescription", "");
+					"accessName", "", "facilityDescription", "",
+                    "fileArrivalMode", "DIRECT");
 			assertEquals(
 					"{folderName=this field must not be empty}",
 					cm.buildFacility(f, params, em).toString());
@@ -234,7 +240,8 @@ public class ConfigurationManagerTest {
 					"address", "", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "9",
 					"fileSettlingTime", "1000", "folderName", "/foo",
-					"accessName", "", "facilityDescription", "");
+					"accessName", "", "facilityDescription", "",
+                    "fileArrivalMode", "DIRECT");
 			assertEquals(
 					"{driveName=the drive name must be a single uppercase letter}",
 					cm.buildFacility(f, params, em).toString());
@@ -256,7 +263,8 @@ public class ConfigurationManagerTest {
 					"address", "", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "ZZ",
 					"fileSettlingTime", "1000", "folderName", "/foo",
-					"accessName", "", "facilityDescription", "");
+					"accessName", "", "facilityDescription", "",
+                    "fileArrivalMode", "DIRECT");
 			assertEquals(
 					"{driveName=the drive name must be a single uppercase letter}",
 					cm.buildFacility(f, params, em).toString());
@@ -278,7 +286,8 @@ public class ConfigurationManagerTest {
 					"address", "", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "Z",
 					"fileSettlingTime", "-11000", "folderName", "/foo",
-					"accessName", "", "facilityDescription", "");
+					"accessName", "", "facilityDescription", "",
+                    "fileArrivalMode", "DIRECT");
 			assertEquals(
 					"{fileSettlingTime=the file setting time cannot be negative}",
 					cm.buildFacility(f, params, em).toString());
@@ -300,7 +309,8 @@ public class ConfigurationManagerTest {
 					"address", "1.2.3.5.6", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "Z",
 					"fileSettlingTime", "1000", "folderName", "/foo",
-					"accessName", "", "facilityDescription", "");
+					"accessName", "", "facilityDescription", "",
+                    "fileArrivalMode", "DIRECT");
 			assertEquals(
 					"{address=1.2.3.5.6: Name or service not known}",
 					cm.buildFacility(f, params, em).toString());
@@ -322,7 +332,8 @@ public class ConfigurationManagerTest {
 					"address", "wurzle.example.com", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "Z",
 					"fileSettlingTime", "1000", "folderName", "/foo",
-					"accessName", "", "facilityDescription", "");
+					"accessName", "", "facilityDescription", "",
+                    "fileArrivalMode", "DIRECT");
 			assertEquals(
 					"{address=wurzle.example.com: Name or service not known}",
 					cm.buildFacility(f, params, em).toString());
@@ -345,7 +356,8 @@ public class ConfigurationManagerTest {
 					"address", "127.0.0.1", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "Z",
 					"fileSettlingTime", "1000", "folderName", "/foo",
-					"accessName", "", "facilityDescription", "");
+					"accessName", "", "facilityDescription", "",
+                    "fileArrivalMode", "DIRECT");
 			vr = cm.createFacility(params);
 			assertTrue(vr.getDiags().isEmpty());
 			params = buildParamMap(
@@ -353,7 +365,8 @@ public class ConfigurationManagerTest {
 					"address", "127.0.0.2", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "Z",
 					"fileSettlingTime", "1000", "folderName", "/foo",
-					"accessName", "", "facilityDescription", "");
+					"accessName", "", "facilityDescription", "",
+                    "fileArrivalMode", "DIRECT");
 			assertEquals(
 					"{localHostId=local host id '1234' already assigned to facility 'fred'}",
 					cm.buildFacility(f, params, em).toString());
@@ -379,7 +392,8 @@ public class ConfigurationManagerTest {
 					"address", "127.0.0.1", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "Z",
 					"fileSettlingTime", "1000", "folderName", "/foo",
-					"accessName", "", "facilityDescription", "");
+					"accessName", "", "facilityDescription", "",
+                    "fileArrivalMode", "DIRECT");
 			vr = cm.createFacility(params);
 			assertTrue(vr.getDiags().isEmpty());
 			params = buildParamMap(
@@ -387,7 +401,8 @@ public class ConfigurationManagerTest {
 					"address", "127.0.0.1", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "Z",
 					"fileSettlingTime", "1000", "folderName", "/foo",
-					"accessName", "", "facilityDescription", "");
+					"accessName", "", "facilityDescription", "",
+                    "fileArrivalMode", "DIRECT");
 			assertEquals(
 					"{address=address also used by facility 'fred'.  " +
 							"Resolve the address conflict or mark both " +
@@ -400,6 +415,29 @@ public class ConfigurationManagerTest {
 			em.close();
 		}
 	}
+	
+	@Test
+    public void testBuildFacility14() throws ConfigurationException {
+        Facility f = new Facility();
+        ConfigurationManager cm = new ConfigurationManager(
+                    EMF, buildStaticConfig(),
+                    buildStaticFacilities());
+        EntityManager em = EMF.createEntityManager();
+        try {
+            Map<?, ?> params = buildParamMap(
+                    "facilityName", "fred", "localHostId", "",
+                    "address", "127.0.0.1", "accessPassword", "",
+                    "lastTemplate", "0", "driveName", "",
+                    "fileSettlingTime", "1000", "folderName", "/foo",
+                    "accessName", "", "facilityDescription", "",
+                    "fileArrivalMode", "CHEESE");
+            assertEquals(
+                    "{fileArrivalMode=unrecognized mode 'CHEESE'}",
+                    cm.buildFacility(f, params, em).toString());
+        } finally {
+            em.close();
+        }
+    }
 	
 	private Map<?, ?> buildParamMap(String ... args) {
 		Map<String, String[]> res = new HashMap<>();

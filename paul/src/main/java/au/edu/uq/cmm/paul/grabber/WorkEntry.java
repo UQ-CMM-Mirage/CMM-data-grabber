@@ -21,6 +21,7 @@ package au.edu.uq.cmm.paul.grabber;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.channels.FileLock;
 import java.util.ArrayList;
@@ -299,15 +300,22 @@ class WorkEntry implements Runnable {
         // grab list that are already in a Dataset
         for (DatasetMetadata dm: possibles) {
             for (DatafileMetadata df: dm.getDatafiles()) {
-                for (GrabbedFile file: files.values()) {
-                    LOG.debug("Comparing " + file.getFile().toString() + 
+                for (GrabbedFile gf: files.values()) {
+                    File file = gf.getFile();
+                    LOG.debug("Comparing " + file.toString() + 
                             " and " + df.getSourceFilePathname());
-                    if (file.getFile().toString().equals(df.getSourceFilePathname())) {
-                        files.remove(file.getFile());
-                        if (files.isEmpty()) {
-                            return false;
+                    try {
+                        if (file.toString().equals(df.getSourceFilePathname()) &&
+                                df.getDatafileHash().equals(gf.computeFileHash())) {
+                            files.remove(file);
+                            if (files.isEmpty()) {
+                                return false;
+                            }
+                            break;
                         }
-                        break;
+                    } catch (IOException ex) {
+                        // We ran into a problem calculating the file's hash ...
+                        LOG.warn("Unexpected exception", ex);
                     }
                 }
             }
@@ -446,9 +454,6 @@ class WorkEntry implements Runnable {
             throws IOException, JsonGenerationException, QueueFileException, InterruptedException {
         File metadataFile = fileManager.generateUniqueFile(".admin", regrabbing);
         DatasetMetadata dataset = assembleDatasetMetadata(now, session, metadataFile);
-        for (DatafileMetadata d : dataset.getDatafiles()) {
-            d.updateDatafileHash();
-        }
         dataset.updateDatasetHash();
         if (!regrabbing) {
             queueManager.addEntry(dataset, false);

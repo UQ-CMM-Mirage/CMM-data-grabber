@@ -45,6 +45,7 @@ import org.junit.Test;
 
 import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.paul.Paul;
+import au.edu.uq.cmm.paul.GrabberFacilityConfig;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.queue.CopyingQueueFileManager;
@@ -82,6 +83,7 @@ public class GrabberEventTest {
     private static Facility buildFacility() {
         Facility facility = new Facility();
         facility.setFacilityName("test");
+        facility.setFileArrivalMode(GrabberFacilityConfig.FileArrivalMode.DIRECT);
         DatafileTemplate template = new DatafileTemplate();
         template.setSuffix("txt");
         template.setMimeType("text/plain");

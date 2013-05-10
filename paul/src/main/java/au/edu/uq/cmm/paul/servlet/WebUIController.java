@@ -907,6 +907,10 @@ public class WebUIController implements ServletContextAware {
             model.addAttribute("returnTo", inferReturnTo(request));
             DatasetGrabber dsr = new DatasetGrabber(services, dataset);
             DatasetMetadata grabbedDataset = dsr.regrabDataset(regrabNew.equalsIgnoreCase("yes"));
+            if (grabbedDataset == null) {
+                model.addAttribute("message", "Dataset regrab failed - see logs");
+                return "failed";
+            }
             grabbedDataset.updateDatasetHash();
             if (!hash.equals(grabbedDataset.getCombinedDatafileHash())) {
                 LOG.debug("supplied hash is " + hash);
