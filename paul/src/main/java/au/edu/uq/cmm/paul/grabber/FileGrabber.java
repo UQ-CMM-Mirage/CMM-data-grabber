@@ -152,8 +152,10 @@ public class FileGrabber extends AbstractFileGrabber implements SimpleService {
             LOG.info("Resuming the worker thread");
             work.resume();
         } else {
+            LOG.error("HWM and queue date range are inconsistent: queue hwm is " + hwm + 
+                    ", queue date range is " + range);
             status.setStatus(Status.OFF);
-            status.setMessage("Grabber LWM / HWM need attention");
+            status.setMessage("Grabber LWM / HWM need attention (see log)");
             throw new ServiceException(status.getMessage());
         }
     }
