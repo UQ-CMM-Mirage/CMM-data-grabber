@@ -39,7 +39,6 @@ import au.edu.uq.cmm.aclslib.proxy.AclsInUseException;
 import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
-import au.edu.uq.cmm.paul.grabber.FileGrabber;
 
 /**
  * This class represents the session state of the facilities as 
