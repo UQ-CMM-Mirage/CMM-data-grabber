@@ -298,7 +298,7 @@ class WorkEntry implements Runnable {
         for (DatasetMetadata dm: possibles) {
             for (DatafileMetadata df: dm.getDatafiles()) {
                 for (GrabbedFile file: files.values()) {
-                    if (file.getFile().equals(df.getSourceFilePathname())) {
+                    if (file.getFile().toString().equals(df.getSourceFilePathname())) {
                         files.remove(file.getFile());
                         if (files.isEmpty()) {
                             return false;
