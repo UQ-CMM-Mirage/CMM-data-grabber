@@ -281,7 +281,8 @@ class WorkEntry implements Runnable {
                     latest = modified;
                 }
             }
-            if (latest < facility.getStatus().getGrabberLWMTimestamp().getTime()) {
+            FacilityStatus status = statusManager.getStatus(facility);
+            if (latest < status.getGrabberLWMTimestamp().getTime()) {
                 LOG.debug("WorkEntry falls before Grabber LWM");
                 return false;
             }
