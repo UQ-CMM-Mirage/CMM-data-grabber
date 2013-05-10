@@ -885,9 +885,14 @@ public class WebUIController implements ServletContextAware {
         Facility facility = lookupFacilityByName(facilityName);
         DatasetGrabber dsr = new DatasetGrabber(services, new File(pathnameBase), facility);
         DatasetMetadata grabbedDataset = dsr.grabDataset();
-        grabbedDataset.updateDatasetHash();
-        model.addAttribute("message", "Dataset grab succeeded");
-        return "ok";
+        if (grabbedDataset != null) {
+            grabbedDataset.updateDatasetHash();
+            model.addAttribute("message", "Dataset grab succeeded");
+            return "ok";
+        } else {
+            model.addAttribute("message", "Dataset grab failed");
+            return "failed";
+        }
     }
 
     @RequestMapping(value="/datasets/{entry:.+}", params={"regrabNew"},

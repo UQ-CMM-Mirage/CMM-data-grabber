@@ -232,6 +232,7 @@ class WorkEntry implements Runnable {
         // Perform pre-grab checks
         if (!regrabbing && !isGrabbable()) {
             LOG.debug("WorkEntry is not grabbable");
+            return null;
         }
         // Prepare for grabbing
         LOG.debug("WorkEntry.grabFiles has " + files.size() + " files to grab");
