@@ -291,6 +291,7 @@ class WorkEntry implements Runnable {
         List<DatasetMetadata> possibles = 
                     queueManager.lookupDatasets(baseFile.toString());
         if (possibles.size() == 0) {
+            LOG.debug("WorkEntry has no possible previous Datasets");
             return true;
         }
         // Trawl through the existing Datasets, knocking out any files in the 
@@ -298,6 +299,8 @@ class WorkEntry implements Runnable {
         for (DatasetMetadata dm: possibles) {
             for (DatafileMetadata df: dm.getDatafiles()) {
                 for (GrabbedFile file: files.values()) {
+                    LOG.debug("Comparing " + file.getFile().toString() + 
+                            " and " + df.getSourceFilePathname());
                     if (file.getFile().toString().equals(df.getSourceFilePathname())) {
                         files.remove(file.getFile());
                         if (files.isEmpty()) {

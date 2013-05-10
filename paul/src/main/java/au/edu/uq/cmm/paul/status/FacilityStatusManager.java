@@ -52,7 +52,7 @@ public class FacilityStatusManager {
         ON, DISABLED, OFF
     }
 
-    private static final Logger LOG = LoggerFactory.getLogger(FileGrabber.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FacilityStatusManager.class);
     private EntityManagerFactory emf;
     private AclsHelper aclsHelper;
     private Map<Long, FacilityStatus> facilityStatuses = 
@@ -256,7 +256,7 @@ public class FacilityStatusManager {
             query.setParameter("facilityName", facilityName);
             query.setParameter("timestamp", new Date(timestamp));
             query.setMaxResults(1);
-            LOG.error("facilityName = " + facilityName + ", timestamp = " + timestamp);
+            LOG.debug("computeSession: facilityName = " + facilityName + ", timestamp = " + timestamp);
             List<FacilitySession> list = query.getResultList();
             if (list.size() == 0) {
                 LOG.debug("No session on '" + facilityName + "' matches timestamp " + timestamp);

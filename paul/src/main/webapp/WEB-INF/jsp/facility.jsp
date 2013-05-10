@@ -340,7 +340,7 @@
 								<option value="DIRECT" ${facility.fileArrivalMode == 'DIRECT' ? 'selected' : '' }>
 									direct</option>
 								<option value="RSYNC" ${facility.fileArrivalMode == 'RSYNC' ? 'selected' : '' }>
-									rsync (trimestamps preserved)</option>
+									rsync (timestamps preserved)</option>
 								<option value="RSYNC_NO_PRESERVE" ${facility.fileArrivalMode == 'RSYNC_NO_PRESERVE' ? 'selected' : '' }>
 									rsync (timestamps not preserved)</option>
 							</select>
