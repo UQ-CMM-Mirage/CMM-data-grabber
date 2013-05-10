@@ -274,12 +274,14 @@ class WorkEntry implements Runnable {
         if (facility.getFileArrivalMode() == FileArrivalMode.RSYNC) {
             // If the latest file modification date in the putative dataset is
             // before the LWM, we are not interested in it.
-            Date latest = new Date(Long.MAX_VALUE);
+            long latest = Long.MAX_VALUE;
             for (GrabbedFile file: files.values()) {
-                file.getFileTimestamp().after(latest);
-                latest = file.getFileTimestamp();
+                long modified = file.getFile().lastModified();
+                if (modified > latest) {
+                    latest = modified;
+                }
             }
-            if (latest.before(facility.getStatus().getGrabberLWMTimestamp())) {
+            if (latest < facility.getStatus().getGrabberLWMTimestamp().getTime()) {
                 LOG.debug("WorkEntry falls before Grabber LWM");
                 return false;
             }
