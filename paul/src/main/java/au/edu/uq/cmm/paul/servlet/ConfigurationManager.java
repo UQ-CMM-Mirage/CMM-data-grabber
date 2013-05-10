@@ -35,6 +35,7 @@ import javax.persistence.TypedQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import au.edu.uq.cmm.paul.GrabberFacilityConfig;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.StaticPaulConfiguration;
 import au.edu.uq.cmm.paul.StaticPaulFacilities;
@@ -228,6 +229,14 @@ public class ConfigurationManager {
         res.setUseFullScreen(getBoolean(params, "useFullScreen", diags));
         res.setUseTimer(getBoolean(params, "useTimer", diags));
         res.setDisabled(getBoolean(params, "disabled", diags));
+        String arg = getNonEmptyString(params, "fileArrivalMode", diags);
+        if (arg != null) {
+            try {
+                res.setFileArrivalMode(GrabberFacilityConfig.FileArrivalMode.valueOf(arg));        
+            } catch (IllegalArgumentException ex) {
+                addDiag(diags, "fileArrivalMode", "unrecognized mode '" + arg + "'");
+            }
+        }
         
         List<DatafileTemplate> templates = new LinkedList<DatafileTemplate>();
         int last = getInteger(params, "lastTemplate", diags);
