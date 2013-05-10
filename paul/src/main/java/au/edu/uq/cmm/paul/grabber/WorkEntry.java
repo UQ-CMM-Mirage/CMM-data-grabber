@@ -21,7 +21,6 @@ package au.edu.uq.cmm.paul.grabber;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.channels.FileLock;
 import java.util.ArrayList;
@@ -305,14 +304,20 @@ class WorkEntry implements Runnable {
                     LOG.debug("Comparing " + file.toString() + 
                             " and " + df.getSourceFilePathname());
                     try {
-                        if (file.toString().equals(df.getSourceFilePathname()) &&
-                                df.getDatafileHash().equals(gf.computeFileHash())) {
-                            files.remove(file);
-                            if (files.isEmpty()) {
-                                return false;
-                            }
-                            break;
+                        if (!file.toString().equals(df.getSourceFilePathname())) {
+                            LOG.debug("No matching file");
+                            continue;
                         }
+                        if (!df.getDatafileHash().equals(gf.computeFileHash())) {
+                            LOG.debug("Hashes don't match");
+                            continue;
+                        }
+                        LOG.debug("Files have same name and hash");
+                        files.remove(file);
+                        if (files.isEmpty()) {
+                            return false;
+                        }
+                        break;
                     } catch (IOException ex) {
                         // We ran into a problem calculating the file's hash ...
                         LOG.warn("Unexpected exception", ex);
