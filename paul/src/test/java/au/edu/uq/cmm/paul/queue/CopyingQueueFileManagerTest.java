@@ -133,7 +133,7 @@ public class CopyingQueueFileManagerTest {
 	@Test 
 	public void testArchiveFile() throws QueueFileException, InterruptedException {
 		QueueFileManager qfm = new CopyingQueueFileManager(buildConfig());
-		File enqueued = qfm.enqueueFile(sourceFiles[0], ".txt", false);
+		File enqueued = qfm.enqueueFile(sourceFiles[1], ".txt", false);
 		File archived = qfm.archiveFile(enqueued);
 		assertTrue(!qfm.isQueuedFile(archived));
 		assertTrue(qfm.isCopiedFile(archived));
@@ -145,6 +145,27 @@ public class CopyingQueueFileManagerTest {
 		assertTrue(qfm.isCopiedFile(enqueued));
 		assertTrue(!qfm.isArchivedFile(enqueued));
 		assertTrue(!enqueued.exists());
+	}
+
+	@Test 
+	public void testRemoveFile() throws QueueFileException, InterruptedException {
+		QueueFileManager qfm = new CopyingQueueFileManager(buildConfig());
+		File enqueued = qfm.enqueueFile(sourceFiles[2], ".txt", false);
+		qfm.removeFile(enqueued);
+		assertTrue(!enqueued.exists());
+		
+		try {
+			qfm.removeFile(sourceFiles[2]);
+			fail("no exception");
+		} catch (QueueFileException ex) {
+			assertTrue(ex.getMessage().contains("is not in the queue"));
+		}
+		try {
+			qfm.removeFile(new File("/fubar"));
+			fail("no exception");
+		} catch (QueueFileException ex) {
+			assertTrue(ex.getMessage().contains("no longer exists"));
+		}
 	}
 
 	private PaulConfiguration buildConfig() {
