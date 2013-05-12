@@ -34,6 +34,8 @@
 					</c:otherwise>
 				</c:choose> 
 			</li>
+			<li>${user.digest ? 'User has logged on via Eccles' : 
+								'User has never logged on'}</li>
 		</ul>
 	</div>
 	<!-- /container -->

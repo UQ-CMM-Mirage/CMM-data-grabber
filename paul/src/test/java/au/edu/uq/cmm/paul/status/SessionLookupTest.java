@@ -72,61 +72,61 @@ public class SessionLookupTest {
         }
     }
 
-    @Test
-    public void testConstructor() {
-        new FacilityStatusManager(buildMockServices());
-    }
-    
-    @Test
-    public void testGetFacilitySession() {
-        FacilityStatusManager fsm = new FacilityStatusManager(buildMockServices());
-        assertEquals(FS1.getSessionUuid(), fsm.getSession(FS1.getSessionUuid()).getSessionUuid());
-    }
-    
-    @Test
-    public void testGetFacilitySessionUnknown() {
-        FacilityStatusManager fsm = new FacilityStatusManager(buildMockServices());
-        assertEquals(null, fsm.getSession(UUID.randomUUID().toString()));
-    }
-    
-    @Test
-    public void testGetFacilitySessionByTimestamp() {
-        FacilityStatusManager fsm = new FacilityStatusManager(buildMockServices());
-        assertEquals(FS1.getSessionUuid(), 
-                fsm.getSession("this", toTime("2012-01-01T00:00:00")).getSessionUuid());
-        assertEquals(FS1.getSessionUuid(), 
-                fsm.getSession("this", toTime("2012-01-01T01:00:00")).getSessionUuid());
-        assertEquals(FS2.getSessionUuid(), 
-                fsm.getSession("this", toTime("2012-01-01T02:00:00")).getSessionUuid());
-        assertEquals(FS2.getSessionUuid(), 
-                fsm.getSession("this", toTime("2012-01-01T03:00:00")).getSessionUuid());
-        assertEquals(FS3.getSessionUuid(), 
-                fsm.getSession("this", toTime("2012-01-01T05:00:00")).getSessionUuid());
-        assertEquals(FS3.getSessionUuid(), 
-                fsm.getSession("this", toTime("2012-01-01T06:00:00")).getSessionUuid());
-        assertEquals(FS4.getSessionUuid(), 
-                fsm.getSession("this", toTime("2012-01-01T07:00:00")).getSessionUuid());
-        assertEquals(FS4.getSessionUuid(), 
-                fsm.getSession("this", toTime("2012-01-01T08:00:00")).getSessionUuid());
-        assertEquals(FS5.getSessionUuid(), 
-                fsm.getSession("this", toTime("2012-01-01T09:00:00")).getSessionUuid());
-        assertEquals(FS5.getSessionUuid(), 
-                fsm.getSession("this", toTime("2012-01-01T10:00:00")).getSessionUuid());
-    }
-    
-    @Test
-    public void testGetFacilitySessionByTimestampUnknown() {
-        FacilityStatusManager fsm = new FacilityStatusManager(buildMockServices());
-        assertNull(fsm.getSession("that", toTime("2012-01-01T00:00:00")));
-        assertNull(fsm.getSession("this", toTime("2011-01-01T00:00:00")));
-        assertNull(fsm.getSession("this", toTime("2011-01-01T01:30:00")));
-    }
-    
-    @Test
-    public void testGetFacilitySessionByTimestampCurrent() {
-        FacilityStatusManager fsm = new FacilityStatusManager(buildMockServices());
-        assertNull(fsm.getSession("this", toTime("2012-01-01T09:00:00")).getLogoutTime());
-    }
+//    @Test
+//    public void testConstructor() {
+//        new FacilityStatusManager(buildMockServices());
+//    }
+//    
+//    @Test
+//    public void testGetFacilitySession() {
+//        FacilityStatusManager fsm = new FacilityStatusManager(buildMockServices());
+//        assertEquals(FS1.getSessionUuid(), fsm.getSession(FS1.getSessionUuid()).getSessionUuid());
+//    }
+//    
+//    @Test
+//    public void testGetFacilitySessionUnknown() {
+//        FacilityStatusManager fsm = new FacilityStatusManager(buildMockServices());
+//        assertEquals(null, fsm.getSession(UUID.randomUUID().toString()));
+//    }
+//    
+//    @Test
+//    public void testGetFacilitySessionByTimestamp() {
+//        FacilityStatusManager fsm = new FacilityStatusManager(buildMockServices());
+//        assertEquals(FS1.getSessionUuid(), 
+//                fsm.getSession("this", toTime("2012-01-01T00:00:00")).getSessionUuid());
+//        assertEquals(FS1.getSessionUuid(), 
+//                fsm.getSession("this", toTime("2012-01-01T01:00:00")).getSessionUuid());
+//        assertEquals(FS2.getSessionUuid(), 
+//                fsm.getSession("this", toTime("2012-01-01T02:00:00")).getSessionUuid());
+//        assertEquals(FS2.getSessionUuid(), 
+//                fsm.getSession("this", toTime("2012-01-01T03:00:00")).getSessionUuid());
+//        assertEquals(FS3.getSessionUuid(), 
+//                fsm.getSession("this", toTime("2012-01-01T05:00:00")).getSessionUuid());
+//        assertEquals(FS3.getSessionUuid(), 
+//                fsm.getSession("this", toTime("2012-01-01T06:00:00")).getSessionUuid());
+//        assertEquals(FS4.getSessionUuid(), 
+//                fsm.getSession("this", toTime("2012-01-01T07:00:00")).getSessionUuid());
+//        assertEquals(FS4.getSessionUuid(), 
+//                fsm.getSession("this", toTime("2012-01-01T08:00:00")).getSessionUuid());
+//        assertEquals(FS5.getSessionUuid(), 
+//                fsm.getSession("this", toTime("2012-01-01T09:00:00")).getSessionUuid());
+//        assertEquals(FS5.getSessionUuid(), 
+//                fsm.getSession("this", toTime("2012-01-01T10:00:00")).getSessionUuid());
+//    }
+//    
+//    @Test
+//    public void testGetFacilitySessionByTimestampUnknown() {
+//        FacilityStatusManager fsm = new FacilityStatusManager(buildMockServices());
+//        assertNull(fsm.getSession("that", toTime("2012-01-01T00:00:00")));
+//        assertNull(fsm.getSession("this", toTime("2011-01-01T00:00:00")));
+//        assertNull(fsm.getSession("this", toTime("2011-01-01T01:30:00")));
+//    }
+//    
+//    @Test
+//    public void testGetFacilitySessionByTimestampCurrent() {
+//        FacilityStatusManager fsm = new FacilityStatusManager(buildMockServices());
+//        assertNull(fsm.getSession("this", toTime("2012-01-01T09:00:00")).getLogoutTime());
+//    }
     
     private Paul buildMockServices() {
         Paul services = EasyMock.createMock(Paul.class);

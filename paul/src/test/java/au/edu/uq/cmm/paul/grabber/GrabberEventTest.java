@@ -66,13 +66,6 @@ public class GrabberEventTest {
     @BeforeClass
     public static void setup() {
         EMF = Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul");
-        EntityManager em = EMF.createEntityManager();
-        try {
-            em.getTransaction().begin();
-            em.getTransaction().commit();
-        } finally {
-            em.close();
-        }
         FACILITY = buildFacility();
         CONFIG = new PaulConfiguration();
         CONFIG.setCaptureDirectory(prepareDirectory("/tmp/testSafe").toString());
@@ -105,6 +98,7 @@ public class GrabberEventTest {
     @AfterClass
     public static void teardown() {
         removeCaptureDirectory();
+        EMF.close();
     }
 
     private static void removeCaptureDirectory() {

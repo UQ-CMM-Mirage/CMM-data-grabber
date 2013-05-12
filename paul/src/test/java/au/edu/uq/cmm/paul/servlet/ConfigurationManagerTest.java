@@ -28,10 +28,13 @@ import java.util.Map;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
 import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import au.edu.uq.cmm.aclslib.config.ConfigurationException;
@@ -58,8 +61,13 @@ public class ConfigurationManagerTest {
             }
             em.getTransaction().commit();
         } finally {
-            em.close();
+        	emClose(em);
         }
+    }
+    
+    @AfterClass
+    public static void teardown() {
+    	EMF.close();
     }
 
     @Test
@@ -67,18 +75,6 @@ public class ConfigurationManagerTest {
         new ConfigurationManager(EMF, buildStaticConfig(),
         		buildStaticFacilities());
     }
-
-	private StaticPaulFacilities buildStaticFacilities() 
-			throws ConfigurationException {
-		return StaticPaulFacilities.loadFacilities(
-				getClass().getResourceAsStream("/test-facilities.json"));
-	}
-
-	private StaticPaulConfiguration buildStaticConfig() 
-			throws ConfigurationException {
-		return StaticPaulConfiguration.loadConfiguration(
-				getClass().getResourceAsStream("/test-config.json"));
-	}
 	
 	@Test 
 	public void testLoadStaticFacilities() throws ConfigurationException {
@@ -107,9 +103,8 @@ public class ConfigurationManagerTest {
                     "fileArrivalMode", "DIRECT");
 			assertEquals("{}", cm.buildFacility(f, params, em).toString());
 		} finally {
-			em.close();
+			emClose(em);
 		}
-		
 	}
 	
 	@Test
@@ -131,7 +126,7 @@ public class ConfigurationManagerTest {
 					"{lastTemplate=this value is not a valid integer}",
 					cm.buildFacility(f, params, em).toString());
 		} finally {
-			em.close();
+			emClose(em);
 		}
 	}
 	
@@ -154,7 +149,7 @@ public class ConfigurationManagerTest {
 					"{fileSettlingTime=this value is not a valid integer}",
 					cm.buildFacility(f, params, em).toString());
 		} finally {
-			em.close();
+			emClose(em);
 		}
 	}
 
@@ -177,7 +172,7 @@ public class ConfigurationManagerTest {
 					"{facilityName=this field must not be empty}",
 					cm.buildFacility(f, params, em).toString());
 		} finally {
-			em.close();
+			emClose(em);
 		}
 	}
 
@@ -200,7 +195,7 @@ public class ConfigurationManagerTest {
 					"{localHostId=the local host id must be non-empty if address is empty}",
 					cm.buildFacility(f, params, em).toString());
 		} finally {
-			em.close();
+			emClose(em);
 		}
 	}
 
@@ -223,7 +218,7 @@ public class ConfigurationManagerTest {
 					"{folderName=this field must not be empty}",
 					cm.buildFacility(f, params, em).toString());
 		} finally {
-			em.close();
+			emClose(em);
 		}
 	}
 
@@ -246,7 +241,7 @@ public class ConfigurationManagerTest {
 					"{driveName=the drive name must be a single uppercase letter}",
 					cm.buildFacility(f, params, em).toString());
 		} finally {
-			em.close();
+			emClose(em);
 		}
 	}
 
@@ -269,7 +264,7 @@ public class ConfigurationManagerTest {
 					"{driveName=the drive name must be a single uppercase letter}",
 					cm.buildFacility(f, params, em).toString());
 		} finally {
-			em.close();
+			emClose(em);
 		}
 	}
 
@@ -292,7 +287,7 @@ public class ConfigurationManagerTest {
 					"{fileSettlingTime=the file setting time cannot be negative}",
 					cm.buildFacility(f, params, em).toString());
 		} finally {
-			em.close();
+			emClose(em);
 		}
 	}
 
@@ -315,7 +310,7 @@ public class ConfigurationManagerTest {
 					"{address=1.2.3.5.6: Name or service not known}",
 					cm.buildFacility(f, params, em).toString());
 		} finally {
-			em.close();
+			emClose(em);
 		}
 	}
 
@@ -338,7 +333,7 @@ public class ConfigurationManagerTest {
 					"{address=wurzle.example.com: Name or service not known}",
 					cm.buildFacility(f, params, em).toString());
 		} finally {
-			em.close();
+			emClose(em);
 		}
 	}
 	
@@ -374,7 +369,7 @@ public class ConfigurationManagerTest {
 			if (vr.isValid()) {
 				cm.deleteFacility(vr.getTarget().getFacilityName());
 			}
-			em.close();
+			emClose(em);
 		}
 	}
 
@@ -412,7 +407,7 @@ public class ConfigurationManagerTest {
 			if (vr.isValid()) {
 				cm.deleteFacility(vr.getTarget().getFacilityName());
 			}
-			em.close();
+			emClose(em);
 		}
 	}
 	
@@ -435,7 +430,7 @@ public class ConfigurationManagerTest {
                     "{fileArrivalMode=unrecognized mode 'CHEESE'}",
                     cm.buildFacility(f, params, em).toString());
         } finally {
-            em.close();
+        	emClose(em);
         }
     }
 	
@@ -445,5 +440,25 @@ public class ConfigurationManagerTest {
 			res.put(args[i], new String[]{args[i + 1]});
 		}
 		return res;
+	}
+	
+	private static void emClose(EntityManager em) {
+		EntityTransaction t = em.getTransaction();
+		if (t.isActive()) {
+			t.rollback();
+		}
+		em.close();
+	}
+
+	private StaticPaulFacilities buildStaticFacilities() 
+			throws ConfigurationException {
+		return StaticPaulFacilities.loadFacilities(
+				getClass().getResourceAsStream("/test-facilities.json"));
+	}
+
+	private StaticPaulConfiguration buildStaticConfig() 
+			throws ConfigurationException {
+		return StaticPaulConfiguration.loadConfiguration(
+				getClass().getResourceAsStream("/test-config.json"));
 	}
 }

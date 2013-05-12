@@ -19,7 +19,6 @@
 
 package au.edu.uq.cmm.paul.status;
 
-import java.lang.annotation.ElementType;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -267,11 +266,11 @@ public class Facility implements FacilityConfig {
     }
 
     @Enumerated(EnumType.STRING)
-    public final FileArrivalMode getFileArrivalMode() {
+    public FileArrivalMode getFileArrivalMode() {
         return fileArrivalMode;
     }
 
-    public final void setFileArrivalMode(FileArrivalMode mode) {
+    public void setFileArrivalMode(FileArrivalMode mode) {
         this.fileArrivalMode = mode == null ? FileArrivalMode.DIRECT : mode;
     }
 

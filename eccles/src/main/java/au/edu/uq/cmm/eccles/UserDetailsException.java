@@ -20,11 +20,11 @@
 package au.edu.uq.cmm.eccles;
 
 @SuppressWarnings("serial")
-public class UnknownUserException extends Exception {
+public class UserDetailsException extends Exception {
 
     private String userName;
 
-    public UnknownUserException(String userName) {
+    public UserDetailsException(String userName) {
         super("Unknown user '" + userName + "'");
         this.userName = userName;
     }

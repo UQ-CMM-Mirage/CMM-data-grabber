@@ -30,6 +30,8 @@ import java.util.Random;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.NoResultException;
+import javax.persistence.PersistenceException;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
 import org.slf4j.Logger;
@@ -53,7 +55,7 @@ public class UserDetailsManager {
     }
     
     public UserDetails lookupUser(String userName, boolean fetchCollections) 
-            throws UnknownUserException {
+            throws UserDetailsException {
         EntityManager em = emf.createEntityManager();
         try {
             TypedQuery<UserDetails> query = em.createQuery(
@@ -67,7 +69,7 @@ public class UserDetailsManager {
             }
             return userDetails;
         } catch (NoResultException ex) {
-            throw new UnknownUserException(userName);
+            throw new UserDetailsException(userName);
         } finally {
             em.close();
         }
@@ -94,6 +96,34 @@ public class UserDetailsManager {
             em.close();
         }
     }
+
+	public void addUser(String userName) throws UserDetailsException {
+		EntityManager em = emf.createEntityManager();
+        try {
+            UserDetails user = new UserDetails();
+            user.setUserName(userName);
+            em.persist(user);
+        } catch (PersistenceException ex) {
+        	throw new UserDetailsException("User '" + userName + "' already exists");
+        } finally {
+            em.close();
+        } 
+	}
+
+	public void removeUser(String userName) throws UserDetailsException {
+		EntityManager em = emf.createEntityManager();
+        try {
+            Query query = em.createQuery(
+                    "delete from UserDetails u where u.userName = :userName");
+            query.setParameter("userName", userName);
+            int deleted = query.executeUpdate();
+            if (deleted == 0) {
+            	throw new UserDetailsException("User '" + userName + "' not found");
+            }
+        } finally {
+            em.close();
+        }
+	}
 
     public void refreshUserDetails(EntityManager em, String userName, String email, 
             AclsLoginDetails loginDetails) {
@@ -130,6 +160,9 @@ public class UserDetailsManager {
             UserDetails userDetails = lookupUser(userName, true);
             String myDigest = createDigest(password, userDetails.getSeed());
             String savedDigest = userDetails.getDigest();
+            if (savedDigest == null) {
+            	return null;
+            }
             LOG.debug("Comparing digests - " + savedDigest + " vs " + myDigest);
             if (myDigest.equals(savedDigest)) {
                 Certification cert = Certification.parse(
@@ -143,7 +176,7 @@ public class UserDetailsManager {
                         cert, userDetails.isOnsiteAssist(), true);
             }
             return null;
-        } catch (UnknownUserException ex) {
+        } catch (UserDetailsException ex) {
             return null;
         }
     }

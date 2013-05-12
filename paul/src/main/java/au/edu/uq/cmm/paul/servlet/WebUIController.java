@@ -64,8 +64,8 @@ import au.edu.uq.cmm.aclslib.proxy.AclsAuthenticationException;
 import au.edu.uq.cmm.aclslib.proxy.AclsInUseException;
 import au.edu.uq.cmm.aclslib.service.Service.State;
 import au.edu.uq.cmm.eccles.FacilitySession;
-import au.edu.uq.cmm.eccles.UnknownUserException;
 import au.edu.uq.cmm.eccles.UserDetails;
+import au.edu.uq.cmm.eccles.UserDetailsException;
 import au.edu.uq.cmm.eccles.UserDetailsManager;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulConfiguration;
@@ -1015,6 +1015,38 @@ public class WebUIController implements ServletContextAware {
         return "users";
     }
 
+    @RequestMapping(value="/users", params={"add"},	 
+            method=RequestMethod.POST)
+    public String userAdd(
+    		@RequestParam() String userName, 
+            Model model) {
+    	UserDetailsManager um = getUserDetailsManager();
+    	try {
+    		um.addUser(userName);
+    		model.addAttribute("message", "User added");
+    	} catch (UserDetailsException ex) {
+    		model.addAttribute("message", ex.getMessage());
+    	}
+        model.addAttribute("userNames", um.getUserNames());
+        return "users";
+    }
+
+    @RequestMapping(value="/users", params={"remove"},	 
+            method=RequestMethod.POST)
+    public String userRemove(
+    		@RequestParam() String userName, 
+            Model model) {
+    	UserDetailsManager um = getUserDetailsManager();
+    	try {
+    		um.removeUser(userName);
+    		model.addAttribute("message", "User removed");
+    	} catch (UserDetailsException ex) {
+    		model.addAttribute("message", ex.getMessage());
+    	}
+        model.addAttribute("userNames", um.getUserNames());
+        return "users";
+    }
+
     @RequestMapping(value="/users/{userName:.+}", method=RequestMethod.GET)
     public String user(@PathVariable String userName, Model model,
             HttpServletResponse response) 
@@ -1022,8 +1054,7 @@ public class WebUIController implements ServletContextAware {
         try {
             UserDetails userDetails = getUserDetailsManager().lookupUser(userName, true);
             model.addAttribute("user", userDetails);
-        } catch (UnknownUserException e) {
-            LOG.debug("Rejected request for security reasons");
+        } catch (UserDetailsException e) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return null;
         }
