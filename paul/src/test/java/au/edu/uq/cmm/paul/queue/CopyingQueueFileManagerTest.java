@@ -128,6 +128,33 @@ public class CopyingQueueFileManagerTest {
 		assertTrue(!qfm.isArchivedFile(enqueued));
 		assertTrue(enqueued.exists());
 		assertEquals(13L, enqueued.length());
+		assertTrue(enqueued.toString().contains("/file-"));
+		assertTrue(!enqueued.toString().contains("/regrabbed-"));
+		enqueued = qfm.enqueueFile(sourceFiles[0], ".txt", true);
+		assertTrue(!enqueued.toString().contains("/file-"));
+		assertTrue(enqueued.toString().contains("/regrabbed-"));
+	}
+
+	@Test 
+	public void testEnqueueText() throws QueueFileException, InterruptedException {
+		QueueFileManager qfm = new CopyingQueueFileManager(buildConfig());
+		File file = qfm.generateUniqueFile("foop", false);
+		qfm.enqueueFile("content\n", file, false);
+		assertTrue(qfm.isQueuedFile(file));
+		assertTrue(qfm.isCopiedFile(file));
+		assertTrue(!qfm.isArchivedFile(file));
+		assertTrue(file.exists());
+		assertEquals(8L, file.length());
+		try {
+			qfm.enqueueFile("content\n", file, false);
+			fail("no exception thrown");
+		} catch (QueueFileException ex) {
+			/**/
+		}try {
+			qfm.enqueueFile("content\n", file, true);
+		} catch (QueueFileException ex) {
+			fail("exception thrown");
+		}
 	}
 
 	@Test 
