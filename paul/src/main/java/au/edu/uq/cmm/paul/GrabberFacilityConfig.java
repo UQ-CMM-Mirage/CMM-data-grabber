@@ -82,4 +82,9 @@ public interface GrabberFacilityConfig extends FacilityConfig {
      */
     FileArrivalMode getFileArrivalMode();
     
+    /**
+     * If true (the default) the instrument is operated by the end user, and we can intuit
+     * the ownership of output files based on who was logged in at the time the file was created.
+     */
+    boolean isUserOperated();
 }

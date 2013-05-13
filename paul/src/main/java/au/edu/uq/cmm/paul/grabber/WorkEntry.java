@@ -237,8 +237,7 @@ class WorkEntry implements Runnable {
         }
         // Prepare for grabbing
         LOG.debug("WorkEntry.grabFiles has " + files.size() + " files to grab");
-        FacilitySession session = statusManager.getSession(
-                facility.getFacilityName(), timestamp.getTime());
+        SessionDetails session = assembleSessionDetails(timestamp);
         // Optionally lock the files, then grab them.
         for (GrabbedFile file : files.values()) {
             if (Thread.interrupted()) {
@@ -267,6 +266,22 @@ class WorkEntry implements Runnable {
         } catch (JsonGenerationException ex) {
             throw new PaulException(ex);
         } 
+    }
+
+    private SessionDetails assembleSessionDetails(Date now) {
+        FacilitySession session = statusManager.getSession(
+                facility.getFacilityName(), timestamp.getTime());
+        if (facility.isUserOperated()) {
+            if (session != null) {
+                return new SessionDetails(session);
+            } else if (!holdDatasetsWithNoUser) {
+                return new SessionDetails(facility, now);
+            } else {
+                return null;
+            }
+        } else {
+            return null;
+        }
     }
 
     private boolean isGrabbable() {
@@ -456,7 +471,7 @@ class WorkEntry implements Runnable {
         LOG.debug("Done grabbing "+ file.getFile() + " -> " + copiedFile);
     }
 
-    private DatasetMetadata saveMetadata(Date now, FacilitySession session, boolean regrabbing)
+    private DatasetMetadata saveMetadata(Date now, SessionDetails session, boolean regrabbing)
             throws IOException, JsonGenerationException, QueueFileException, InterruptedException {
         File metadataFile = fileManager.generateUniqueFile(".admin", regrabbing);
         DatasetMetadata dataset = assembleDatasetMetadata(now, session, metadataFile);
@@ -468,15 +483,7 @@ class WorkEntry implements Runnable {
     }
 
     public DatasetMetadata assembleDatasetMetadata(
-            Date now, FacilitySession session, File metadataFile) {
-        if (session == null && !holdDatasetsWithNoUser) {
-            session = FacilitySession.makeDummySession(facility.getFacilityName(), now);
-        }
-        String userName = session == null ? null : session.getUserName();
-        String account = session == null ? null : session.getAccount();
-        String sessionUuid = session == null ? null : session.getSessionUuid();
-        String emailAddress = session == null ? null : session.getEmailAddress();
-        Date loginTime = session == null ? null : session.getLoginTime();
+            Date now, SessionDetails session, File metadataFile) {
         List<DatafileMetadata> list = new ArrayList<DatafileMetadata>(files.size());
         for (GrabbedFile g : files.values()) {
             String mimeType = (g.getTemplate() == null) ? 
@@ -492,8 +499,10 @@ class WorkEntry implements Runnable {
         DatasetMetadata dataset = new DatasetMetadata(
                 baseFile.getAbsolutePath(), 
                 instrumentBasePath, metadataFile.getAbsolutePath(), 
-                userName, facility.getFacilityName(), facility.getId(), 
-                account, emailAddress, now, sessionUuid, loginTime, list);
+                session.getUserName(), facility.getFacilityName(), facility.getId(), 
+                session.getAccount(), session.getEmailAddress(), 
+                session.getOperatorName(), now, session.getSessionUuid(), 
+                session.getLoginTime(), list);
         return dataset;
     }
 

@@ -78,6 +78,7 @@ public class Facility implements FacilityConfig {
     private boolean disabled;
     private FacilityStatus status;
     private boolean multiplexed = false;
+    private boolean userOperated = true;
 
     private FileArrivalMode fileArrivalMode;
     
@@ -105,6 +106,7 @@ public class Facility implements FacilityConfig {
             datafileTemplates.add(new DatafileTemplate(template));
         }
         multiplexed = facility.isMultiplexed();
+        userOperated = facility.isUserOperated();
         fileArrivalMode = facility.getFileArrivalMode();
     }
     
@@ -274,6 +276,14 @@ public class Facility implements FacilityConfig {
         this.fileArrivalMode = mode == null ? FileArrivalMode.DIRECT : mode;
     }
 
+    public boolean isUserOperated() {
+        return userOperated;
+    }
+
+    public void setUserOperated(boolean userOperated) {
+        this.userOperated = userOperated;
+    }
+
     @Override
     public String toString() {
         return "Facility [id=" + id + ", useFullScreen=" + useFullScreen
@@ -287,6 +297,7 @@ public class Facility implements FacilityConfig {
                 + ", address=" + address + ", datafileTemplates="
                 + datafileTemplates + ", disabled=" + disabled
                 + ", fileArrivalMode=" + fileArrivalMode
+                + ", userOperated=" + userOperated
                 + ", multiplexed=" + multiplexed + ", status=" + status + "]";
     }
 }

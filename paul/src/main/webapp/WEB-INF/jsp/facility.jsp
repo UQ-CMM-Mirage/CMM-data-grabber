@@ -157,6 +157,14 @@
 		</c:if>
 		<p><strong>${message}</strong></p>
 		<form action="${create ? '/paul/facilities/' : facility.facilityName}" method="post">
+			<c:choose>
+				<c:when test="${!empty create}">
+					<button class="btn" type="submit" name="create">Save New Facility</button>
+				</c:when>
+				<c:when test="${!empty edit}">
+					<button class="btn" type="submit" name="update">Save Facility Changes</button>
+				</c:when>
+			</c:choose>
 			<input id="lastTemplate" type="hidden" name="lastTemplate"
 				value="${fn:length(facility.datafileTemplates)}">
 			<table class="table table-striped table-condensed">
@@ -334,6 +342,14 @@
 						<td><strong>${diags.useFileLocks}</strong></td>
 					</tr>
 					<tr>
+						<td colspan="3">End-user operated</td>
+						<td><input name="userOperated" type="checkbox"
+								${edit ? '' : 'readonly="readonly"'}
+								${facility.userOperated ? 'checked="checked"' : ''}
+								value="true"></td>
+						<td><strong>${diags.userOperated}</strong></td>
+					</tr>
+					<tr>
 						<td colspan="3">File arrival mode</td>
 						<td><select name="fileArrivalMode"
 								${edit ? '' : 'disabled="disabled"'}>
@@ -365,14 +381,6 @@
 					</tr>
 				</tbody>
 			</table>
-			<c:choose>
-				<c:when test="${!empty create}">
-					<button class="btn" type="submit" name="create">Save New Facility</button>
-				</c:when>
-				<c:when test="${!empty edit}">
-					<button class="btn" type="submit" name="update">Save Facility Changes</button>
-				</c:when>
-			</c:choose>
 		</form>
 	</div>
 	<!-- /container -->

@@ -34,6 +34,7 @@ public class StaticPaulFacility extends StaticFacilityConfig implements
             new ArrayList<StaticDatafileTemplateConfig>();
     private GrabberFacilityConfig.FileArrivalMode fileArrivalMode = 
             GrabberFacilityConfig.FileArrivalMode.DIRECT;
+    private boolean userOperated;
 
     @Override
     public List<? extends DatafileTemplateConfig> getDatafileTemplates() {
@@ -79,5 +80,13 @@ public class StaticPaulFacility extends StaticFacilityConfig implements
 
     public void setFileArrivalMode(GrabberFacilityConfig.FileArrivalMode mode) {
         this.fileArrivalMode = mode == null ? FileArrivalMode.DIRECT : mode;
+    }
+
+    public boolean isUserOperated() {
+        return userOperated;
+    }
+
+    public void setUserOperated(boolean userOperated) {
+        this.userOperated = userOperated;
     }
 }

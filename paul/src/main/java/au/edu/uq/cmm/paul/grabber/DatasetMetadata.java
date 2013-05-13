@@ -80,6 +80,7 @@ public class DatasetMetadata {
     private String sessionUuid;
     private String recordUuid;
     private String emailAddress;
+    private String operatorName;
     private String datasetHash;
     private List<DatafileMetadata> datafiles;
     
@@ -92,7 +93,8 @@ public class DatasetMetadata {
             String facilityFilePathnameBase,
             String metadataFilePathname, String userName, 
             String facilityName, Long facilityId,
-            String accountName, String emailAddress, Date captureTimestamp,
+            String accountName, String emailAddress, 
+            String operatorName, Date captureTimestamp,
             String sessionUuid, Date sessionStartTimestamp, 
             List<DatafileMetadata> datafiles) {
         super();
@@ -104,6 +106,7 @@ public class DatasetMetadata {
         this.facilityId = facilityId;
         this.accountName = accountName;
         this.emailAddress = emailAddress;
+        this.operatorName = operatorName;
         this.captureTimestamp = captureTimestamp;
         this.updateTimestamp = captureTimestamp;
         this.sessionStartTimestamp = sessionStartTimestamp;
@@ -265,6 +268,14 @@ public class DatasetMetadata {
 
     public void setDatafiles(List<DatafileMetadata> datafiles) {
         this.datafiles = datafiles;
+    }
+
+    public final String getOperatorName() {
+        return operatorName;
+    }
+
+    public final void setOperatorName(String operatorName) {
+        this.operatorName = operatorName;
     }
 
     public Long getFacilityId() {

@@ -225,6 +225,7 @@ public class ConfigurationManager {
                     "the file setting time cannot be negative");
         }
         res.setCaseInsensitive(getBoolean(params, "caseInsensitive", diags));
+        res.setUserOperated(getBoolean(params, "userOperated", diags));
         res.setUseFileLocks(getBoolean(params, "useFileLocks", diags));
         res.setUseFullScreen(getBoolean(params, "useFullScreen", diags));
         res.setUseTimer(getBoolean(params, "useTimer", diags));
