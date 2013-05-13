@@ -1023,7 +1023,7 @@ public class WebUIController implements ServletContextAware {
     	UserDetailsManager um = getUserDetailsManager();
     	try {
     		um.addUser(userName);
-    		model.addAttribute("message", "User added");
+    		model.addAttribute("message", "User '" + userName + "' added");
     	} catch (UserDetailsException ex) {
     		model.addAttribute("message", ex.getMessage());
     	}
@@ -1039,7 +1039,7 @@ public class WebUIController implements ServletContextAware {
     	UserDetailsManager um = getUserDetailsManager();
     	try {
     		um.removeUser(userName);
-    		model.addAttribute("message", "User removed");
+    		model.addAttribute("message", "User '" + userName + "' removed");
     	} catch (UserDetailsException ex) {
     		model.addAttribute("message", ex.getMessage());
     	}
