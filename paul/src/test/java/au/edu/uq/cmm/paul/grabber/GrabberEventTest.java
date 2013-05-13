@@ -122,10 +122,13 @@ public class GrabberEventTest {
         session.setFacilityName("test");
         session.setUserName("fred");
         session.setAccount("count");
+        SessionDetails details = new SessionDetails(session);
         status.setLocalDirectory(new File("/tmp"));
         EasyMock.expect(fsm.getStatus(FACILITY)).andReturn(status).anyTimes();
         EasyMock.expect(fsm.getSession(EasyMock.eq(FACILITY), EasyMock.anyLong())).
         		andReturn(session).anyTimes();
+        EasyMock.expect(fsm.getSessionDetails(EasyMock.eq(FACILITY), EasyMock.anyLong(), EasyMock.anyObject(File.class))).
+                andReturn(details).anyTimes();
         fsm.advanceHWMTimestamp(EasyMock.eq(FACILITY), EasyMock.anyObject(Date.class));
         EasyMock.expectLastCall().anyTimes();
         EasyMock.replay(fsm);
