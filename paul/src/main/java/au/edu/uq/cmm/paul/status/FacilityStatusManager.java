@@ -19,6 +19,7 @@
 
 package au.edu.uq.cmm.paul.status;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -39,6 +40,7 @@ import au.edu.uq.cmm.aclslib.proxy.AclsInUseException;
 import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
+import au.edu.uq.cmm.paul.grabber.SessionDetails;
 
 /**
  * This class represents the session state of the facilities as 
@@ -222,8 +224,29 @@ public class FacilityStatusManager {
             em.close();
         }
     }
+    
+    public FacilitySession getSession(Facility facility, long timestamp, File datasetBasename) {
+        FacilitySession session = getSessionByLoginTime(facility, timestamp);
+        if (facility.isUserOperated()) {
+            return session;
+        } else {
+            String userName = intuitUserName(datasetBasename);
+        }
+    }
 
-    public FacilitySession getSession(String facilityName, long timestamp) {
+    private String intuitUserName(File pathname) {
+        File parent = pathname.getParentFile();
+        if (parent != null) {
+            String parentUserName = intuitUserName(parent);
+            if (parentUserName != null) {
+                return parentUserName;
+            }
+        }
+        if (
+    }
+
+    public FacilitySession getSessionByLoginTime(Facility facility, long timestamp) {
+        String facilityName = facility.getFacilityName();
         FacilitySessionCache cache = facilitySessionCaches.get(facilityName);
         if (cache == null) {
             cache = new FacilitySessionCache();

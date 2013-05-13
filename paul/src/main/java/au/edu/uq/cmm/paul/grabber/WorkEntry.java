@@ -74,7 +74,6 @@ class WorkEntry implements Runnable {
     private int settling;
     private Date timestamp;
     private long latestFileTimestamp = 0L;
-    private final boolean holdDatasetsWithNoUser;
     private final boolean catchup;
     
     private Thread grabberThread;
@@ -92,8 +91,6 @@ class WorkEntry implements Runnable {
         this.baseFile = baseFile;
         this.instrumentBasePath = mapToInstrumentPath(facility, baseFile);
         this.files = new ConcurrentHashMap<File, GrabbedFile>();
-        this.holdDatasetsWithNoUser = 
-                services.getConfiguration().isHoldDatasetsWithNoUser();
         long timeout = services.getConfiguration().getGrabberTimeout();
         this.grabberTimeout = timeout == 0 ? DEFAULT_GRABBER_TIMEOUT : timeout;
         this.catchup = event.isCatchup();
@@ -237,7 +234,7 @@ class WorkEntry implements Runnable {
         }
         // Prepare for grabbing
         LOG.debug("WorkEntry.grabFiles has " + files.size() + " files to grab");
-        SessionDetails session = assembleSessionDetails(timestamp);
+        FacilitySession session = statusManager.getSession(facility, timestamp.getTime());
         // Optionally lock the files, then grab them.
         for (GrabbedFile file : files.values()) {
             if (Thread.interrupted()) {
@@ -266,22 +263,6 @@ class WorkEntry implements Runnable {
         } catch (JsonGenerationException ex) {
             throw new PaulException(ex);
         } 
-    }
-
-    private SessionDetails assembleSessionDetails(Date now) {
-        FacilitySession session = statusManager.getSession(
-                facility.getFacilityName(), timestamp.getTime());
-        if (facility.isUserOperated()) {
-            if (session != null) {
-                return new SessionDetails(session);
-            } else if (!holdDatasetsWithNoUser) {
-                return new SessionDetails(facility, now);
-            } else {
-                return null;
-            }
-        } else {
-            return null;
-        }
     }
 
     private boolean isGrabbable() {
@@ -471,7 +452,7 @@ class WorkEntry implements Runnable {
         LOG.debug("Done grabbing "+ file.getFile() + " -> " + copiedFile);
     }
 
-    private DatasetMetadata saveMetadata(Date now, SessionDetails session, boolean regrabbing)
+    private DatasetMetadata saveMetadata(Date now, FacilitySession session, boolean regrabbing)
             throws IOException, JsonGenerationException, QueueFileException, InterruptedException {
         File metadataFile = fileManager.generateUniqueFile(".admin", regrabbing);
         DatasetMetadata dataset = assembleDatasetMetadata(now, session, metadataFile);
@@ -483,7 +464,7 @@ class WorkEntry implements Runnable {
     }
 
     public DatasetMetadata assembleDatasetMetadata(
-            Date now, SessionDetails session, File metadataFile) {
+            Date now, FacilitySession session, File metadataFile) {
         List<DatafileMetadata> list = new ArrayList<DatafileMetadata>(files.size());
         for (GrabbedFile g : files.values()) {
             String mimeType = (g.getTemplate() == null) ? 

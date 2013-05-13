@@ -446,7 +446,7 @@ public class Analyser extends AbstractFileGrabber {
         for (Runnable runnable : queue) {
             WorkEntry entry = (WorkEntry) runnable;
             FacilitySession session = fsm.getSession(
-                    getFacility().getFacilityName(), entry.getTimestamp().getTime());
+                    getFacility(), entry.getTimestamp().getTime());
             entry.pretendToGrabFiles();
             inFolder.add(entry.assembleDatasetMetadata(null, session, new File("")));
         }
