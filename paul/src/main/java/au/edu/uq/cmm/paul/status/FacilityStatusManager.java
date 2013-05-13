@@ -38,6 +38,9 @@ import au.edu.uq.cmm.aclslib.proxy.AclsAuthenticationException;
 import au.edu.uq.cmm.aclslib.proxy.AclsHelper;
 import au.edu.uq.cmm.aclslib.proxy.AclsInUseException;
 import au.edu.uq.cmm.eccles.FacilitySession;
+import au.edu.uq.cmm.eccles.UserDetails;
+import au.edu.uq.cmm.eccles.UserDetailsException;
+import au.edu.uq.cmm.eccles.UserDetailsManager;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.grabber.SessionDetails;
@@ -60,10 +63,12 @@ public class FacilityStatusManager {
             new HashMap<Long, FacilityStatus>();
     private Map<String, FacilitySessionCache> facilitySessionCaches =
             new HashMap<String, FacilitySessionCache>();
+	private UserDetailsManager userDetailsManager;
 
     public FacilityStatusManager(Paul services) {
         this.emf = services.getEntityManagerFactory();
         this.aclsHelper = services.getAclsHelper();
+        this.userDetailsManager = services.getUserDetailsManager();
     }
 
     private Facility getFacility(EntityManager em, String facilityName) {
@@ -225,27 +230,34 @@ public class FacilityStatusManager {
         }
     }
     
-    public FacilitySession getSession(Facility facility, long timestamp, File datasetBasename) {
-        FacilitySession session = getSessionByLoginTime(facility, timestamp);
+    public SessionDetails getSessionDetails(Facility facility, 
+    		long timestamp, File datasetBasename) {
+        FacilitySession session = getSession(facility, timestamp);
         if (facility.isUserOperated()) {
-            return session;
+            return new SessionDetails(session);
         } else {
-            String userName = intuitUserName(datasetBasename);
+            UserDetails user = intuitUser(datasetBasename);
+            return new SessionDetails(session, user);
         }
     }
 
-    private String intuitUserName(File pathname) {
+    private UserDetails intuitUser(File pathname) {
         File parent = pathname.getParentFile();
         if (parent != null) {
-            String parentUserName = intuitUserName(parent);
-            if (parentUserName != null) {
-                return parentUserName;
+        	UserDetails user = intuitUser(parent);
+            if (user != null) {
+                return user;
             }
         }
-        if (
+        String name = pathname.getName().toLowerCase();
+        try {
+        	return userDetailsManager.lookupUser(name, true);
+        } catch (UserDetailsException ex) {
+        	return null;
+        }
     }
 
-    public FacilitySession getSessionByLoginTime(Facility facility, long timestamp) {
+    public FacilitySession getSession(Facility facility, long timestamp) {
         String facilityName = facility.getFacilityName();
         FacilitySessionCache cache = facilitySessionCaches.get(facilityName);
         if (cache == null) {

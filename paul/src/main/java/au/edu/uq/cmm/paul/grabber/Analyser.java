@@ -41,7 +41,6 @@ import org.apache.commons.collections.PredicateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.queue.QueueManager.DateRange;
 import au.edu.uq.cmm.paul.status.Facility;
@@ -445,8 +444,8 @@ public class Analyser extends AbstractFileGrabber {
         analyseTree(localDir, Long.MIN_VALUE, Long.MAX_VALUE);
         for (Runnable runnable : queue) {
             WorkEntry entry = (WorkEntry) runnable;
-            FacilitySession session = fsm.getSession(
-                    getFacility(), entry.getTimestamp().getTime());
+            SessionDetails session = fsm.getSessionDetails(
+                    getFacility(), entry.getTimestamp().getTime(), entry.getBaseFile());
             entry.pretendToGrabFiles();
             inFolder.add(entry.assembleDatasetMetadata(null, session, new File("")));
         }

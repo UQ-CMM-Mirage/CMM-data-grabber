@@ -483,7 +483,9 @@ public class WebUIController implements ServletContextAware {
         }
         String userName = principal.getName();
         FacilityStatusManager fsm = getFacilityStatusManager();
-        FacilitySession session = fsm.getSession(facilityName, System.currentTimeMillis());
+        FacilitySession session = fsm.getSession(
+        		lookupFacilityByName(facilityName), 
+        		System.currentTimeMillis());
         if (session == null || !session.getUserName().equals(userName)) {
             model.addAttribute("message", "You are not logged in on '" + facilityName + "'");
             return "failed";

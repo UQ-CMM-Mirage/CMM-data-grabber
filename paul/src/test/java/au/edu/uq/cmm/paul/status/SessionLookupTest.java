@@ -42,12 +42,17 @@ import au.edu.uq.cmm.paul.Paul;
 public class SessionLookupTest {
     private static EntityManagerFactory EMF;
     private static FacilitySession FS1, FS2, FS3, FS4, FS5;
+    private static Facility THIS, THAT;
     
     private static Logger LOG = Logger.getLogger(SessionLookupTest.class);
     
 
     @BeforeClass
     public static void setup() {
+    	THIS = new Facility();
+    	THIS.setFacilityName("this");
+    	THAT = new Facility();
+    	THAT.setFacilityName("that");
         EMF = Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul");
         EntityManager em = EMF.createEntityManager();
         try {
@@ -98,45 +103,46 @@ public class SessionLookupTest {
     public void testGetFacilitySessionByTimestamp() {
         FacilityStatusManager fsm = new FacilityStatusManager(buildMockServices());
         assertEquals(FS1.getSessionUuid(), 
-                fsm.getSession("this", toTime("2012-01-01T00:00:00")).getSessionUuid());
+                fsm.getSession(THIS, toTime("2012-01-01T00:00:00")).getSessionUuid());
         assertEquals(FS1.getSessionUuid(), 
-                fsm.getSession("this", toTime("2012-01-01T01:00:00")).getSessionUuid());
+                fsm.getSession(THIS, toTime("2012-01-01T01:00:00")).getSessionUuid());
         assertEquals(FS2.getSessionUuid(), 
-                fsm.getSession("this", toTime("2012-01-01T02:00:00")).getSessionUuid());
+                fsm.getSession(THIS, toTime("2012-01-01T02:00:00")).getSessionUuid());
         assertEquals(FS2.getSessionUuid(), 
-                fsm.getSession("this", toTime("2012-01-01T03:00:00")).getSessionUuid());
+                fsm.getSession(THIS, toTime("2012-01-01T03:00:00")).getSessionUuid());
         assertEquals(FS3.getSessionUuid(), 
-                fsm.getSession("this", toTime("2012-01-01T05:00:00")).getSessionUuid());
+                fsm.getSession(THIS, toTime("2012-01-01T05:00:00")).getSessionUuid());
         assertEquals(FS3.getSessionUuid(), 
-                fsm.getSession("this", toTime("2012-01-01T06:00:00")).getSessionUuid());
+                fsm.getSession(THIS, toTime("2012-01-01T06:00:00")).getSessionUuid());
         assertEquals(FS4.getSessionUuid(), 
-                fsm.getSession("this", toTime("2012-01-01T07:00:00")).getSessionUuid());
+                fsm.getSession(THIS, toTime("2012-01-01T07:00:00")).getSessionUuid());
         assertEquals(FS4.getSessionUuid(), 
-                fsm.getSession("this", toTime("2012-01-01T08:00:00")).getSessionUuid());
+                fsm.getSession(THIS, toTime("2012-01-01T08:00:00")).getSessionUuid());
         assertEquals(FS5.getSessionUuid(), 
-                fsm.getSession("this", toTime("2012-01-01T09:00:00")).getSessionUuid());
+                fsm.getSession(THIS, toTime("2012-01-01T09:00:00")).getSessionUuid());
         assertEquals(FS5.getSessionUuid(), 
-                fsm.getSession("this", toTime("2012-01-01T10:00:00")).getSessionUuid());
+                fsm.getSession(THIS, toTime("2012-01-01T10:00:00")).getSessionUuid());
     }
     
     @Test
     public void testGetFacilitySessionByTimestampUnknown() {
         FacilityStatusManager fsm = new FacilityStatusManager(buildMockServices());
-        assertNull(fsm.getSession("that", toTime("2012-01-01T00:00:00")));
-        assertNull(fsm.getSession("this", toTime("2011-01-01T00:00:00")));
-        assertNull(fsm.getSession("this", toTime("2011-01-01T01:30:00")));
+        assertNull(fsm.getSession(THAT, toTime("2012-01-01T00:00:00")));
+        assertNull(fsm.getSession(THIS, toTime("2011-01-01T00:00:00")));
+        assertNull(fsm.getSession(THIS, toTime("2011-01-01T01:30:00")));
     }
     
     @Test
     public void testGetFacilitySessionByTimestampCurrent() {
         FacilityStatusManager fsm = new FacilityStatusManager(buildMockServices());
-        assertNull(fsm.getSession("this", toTime("2012-01-01T09:00:00")).getLogoutTime());
+        assertNull(fsm.getSession(THIS, toTime("2012-01-01T09:00:00")).getLogoutTime());
     }
     
     private Paul buildMockServices() {
         Paul services = EasyMock.createMock(Paul.class);
         EasyMock.expect(services.getEntityManagerFactory()).andReturn(EMF);
         EasyMock.expect(services.getAclsHelper()).andReturn(null);
+        EasyMock.expect(services.getUserDetailsManager()).andReturn(null);
         EasyMock.replay(services);
         return services;
     }

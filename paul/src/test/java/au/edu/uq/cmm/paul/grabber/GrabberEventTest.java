@@ -32,7 +32,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 
@@ -44,8 +43,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import au.edu.uq.cmm.eccles.FacilitySession;
-import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.GrabberFacilityConfig;
+import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.queue.CopyingQueueFileManager;
@@ -125,7 +124,8 @@ public class GrabberEventTest {
         session.setAccount("count");
         status.setLocalDirectory(new File("/tmp"));
         EasyMock.expect(fsm.getStatus(FACILITY)).andReturn(status).anyTimes();
-        EasyMock.expect(fsm.getSession(EasyMock.eq("test"), EasyMock.anyLong())).andReturn(session).anyTimes();
+        EasyMock.expect(fsm.getSession(EasyMock.eq(FACILITY), EasyMock.anyLong())).
+        		andReturn(session).anyTimes();
         fsm.advanceHWMTimestamp(EasyMock.eq(FACILITY), EasyMock.anyObject(Date.class));
         EasyMock.expectLastCall().anyTimes();
         EasyMock.replay(fsm);

@@ -37,7 +37,6 @@ import org.codehaus.jackson.JsonGenerationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.paul.GrabberFacilityConfig.FileArrivalMode;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
@@ -121,7 +120,8 @@ class WorkEntry implements Runnable {
         LOG.debug("Processing event for file " + file);
         synchronized (this) {
             if (grabberThread != null) {
-                LOG.warn("A late file event arrived for file " + file + ": interrupting the grabber");
+                LOG.warn("A late file event arrived for file " + 
+                		file + ": interrupting the grabber");
                 grabberThread.interrupt();
             }
             boolean matched = false;
@@ -234,7 +234,8 @@ class WorkEntry implements Runnable {
         }
         // Prepare for grabbing
         LOG.debug("WorkEntry.grabFiles has " + files.size() + " files to grab");
-        FacilitySession session = statusManager.getSession(facility, timestamp.getTime());
+        SessionDetails session = statusManager.getSessionDetails(
+        		facility, timestamp.getTime(), baseFile);
         // Optionally lock the files, then grab them.
         for (GrabbedFile file : files.values()) {
             if (Thread.interrupted()) {
@@ -452,7 +453,7 @@ class WorkEntry implements Runnable {
         LOG.debug("Done grabbing "+ file.getFile() + " -> " + copiedFile);
     }
 
-    private DatasetMetadata saveMetadata(Date now, FacilitySession session, boolean regrabbing)
+    private DatasetMetadata saveMetadata(Date now, SessionDetails session, boolean regrabbing)
             throws IOException, JsonGenerationException, QueueFileException, InterruptedException {
         File metadataFile = fileManager.generateUniqueFile(".admin", regrabbing);
         DatasetMetadata dataset = assembleDatasetMetadata(now, session, metadataFile);
@@ -464,7 +465,7 @@ class WorkEntry implements Runnable {
     }
 
     public DatasetMetadata assembleDatasetMetadata(
-            Date now, FacilitySession session, File metadataFile) {
+            Date now, SessionDetails session, File metadataFile) {
         List<DatafileMetadata> list = new ArrayList<DatafileMetadata>(files.size());
         for (GrabbedFile g : files.values()) {
             String mimeType = (g.getTemplate() == null) ? 

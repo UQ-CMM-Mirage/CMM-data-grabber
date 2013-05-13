@@ -52,10 +52,7 @@ public class FacilitySession {
     private Long id;
     private String sessionUuid;
     private String emailAddress;
-
     private Date inferredLogoutTime;
-
-    private String operatorName;
     
     public FacilitySession() {
         super();
@@ -154,14 +151,6 @@ public class FacilitySession {
         this.facilityName = facilityName;
     }
 
-    public String getOperatorName() {
-        return this.operatorName;
-    }
-    
-    public void setOperatorName(String operatorName) {
-        this.operatorName = operatorName;
-    }
-
     @Transient
     public Date getInferredLogoutTime() {
         return inferredLogoutTime;
@@ -185,7 +174,7 @@ public class FacilitySession {
                 + ", facilityName=" + facilityName + ", loginTime=" + loginTime
                 + ", logoutTime=" + logoutTime + ", id=" + id
                 + ", sessionUuid=" + sessionUuid + ", emailAddress="
-                + emailAddress + ", operatorName=" + operatorName + "]";
+                + emailAddress + "]";
     }
 
 }
