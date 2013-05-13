@@ -71,7 +71,7 @@ public class UserDetailsManager {
         } catch (NoResultException ex) {
             throw new UserDetailsException(userName);
         } finally {
-            em.close();
+            emClose(em);
         }
     }
     
@@ -82,7 +82,7 @@ public class UserDetailsManager {
                     "select u.userName from UserDetails u", String.class);
             return query.getResultList();
         } finally {
-            em.close();
+            emClose(em);
         }
     }
 
@@ -93,26 +93,29 @@ public class UserDetailsManager {
                     "from UserDetails u", UserDetails.class);
             return query.getResultList();
         } finally {
-            em.close();
+            emClose(em);
         }
     }
 
 	public void addUser(String userName) throws UserDetailsException {
 		EntityManager em = emf.createEntityManager();
         try {
+            em.getTransaction().begin();
             UserDetails user = new UserDetails();
             user.setUserName(userName);
             em.persist(user);
+            em.getTransaction().commit();
         } catch (PersistenceException ex) {
         	throw new UserDetailsException("User '" + userName + "' already exists");
         } finally {
-            em.close();
+            emClose(em);
         } 
 	}
 
 	public void removeUser(String userName) throws UserDetailsException {
 		EntityManager em = emf.createEntityManager();
         try {
+            em.getTransaction().begin();
             Query query = em.createQuery(
                     "delete from UserDetails u where u.userName = :userName");
             query.setParameter("userName", userName);
@@ -120,8 +123,9 @@ public class UserDetailsManager {
             if (deleted == 0) {
             	throw new UserDetailsException("User '" + userName + "' not found");
             }
+            em.getTransaction().commit();
         } finally {
-            em.close();
+            emClose(em);
         }
 	}
 
@@ -208,5 +212,12 @@ public class UserDetailsManager {
             sb.append("0123456789ABCDEF".charAt(b & 0xf));
         }
         return sb.toString();
+    }
+    
+    private void emClose(EntityManager em) {
+        if (em.getTransaction().isActive()) {
+            em.getTransaction().rollback();
+        }
+        em.close();
     }
 }

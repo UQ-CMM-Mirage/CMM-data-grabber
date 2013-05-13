@@ -35,13 +35,11 @@ import java.nio.file.attribute.BasicFileAttributes;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.PaulException;
 
-@Ignore
 public class CopyingQueueFileManagerTest {
 
 	private static Path archiveDir;

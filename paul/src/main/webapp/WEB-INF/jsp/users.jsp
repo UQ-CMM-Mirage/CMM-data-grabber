@@ -23,10 +23,12 @@
 			</c:forEach>
 		</ul>
 		<br>
+		<b>${message}</b>
+		<br>
 		<form action="users" method="post">
 			User name:<input name="userName" type="text">
-			<button type="submit" name="action" value="add">Add User</button>
-			<button type="submit" name="action" value="remove">Remove User</button>
+			<button type="submit" name="add" value="add">Add User</button>
+			<button type="submit" name="remove" value="remove">Remove User</button>
 		</form>
 	</div>
 	<!-- /container -->

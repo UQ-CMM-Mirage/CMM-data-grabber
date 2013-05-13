@@ -32,9 +32,9 @@ import javax.persistence.EntityTransaction;
 import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
 
+import org.apache.log4j.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import au.edu.uq.cmm.aclslib.config.ConfigurationException;
@@ -47,6 +47,8 @@ import au.edu.uq.cmm.paul.status.Facility;
 
 public class ConfigurationManagerTest {
     private static EntityManagerFactory EMF;
+    
+    private static Logger LOG = Logger.getLogger(ConfigurationManagerTest.class);
 
     @BeforeClass
     public static void setup() {
@@ -445,6 +447,7 @@ public class ConfigurationManagerTest {
 	private static void emClose(EntityManager em) {
 		EntityTransaction t = em.getTransaction();
 		if (t.isActive()) {
+		    LOG.error("Rolling back a stale transaction!!");
 			t.rollback();
 		}
 		em.close();
