@@ -33,6 +33,7 @@ import javax.persistence.Persistence;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.joda.time.format.ISODateTimeFormat;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -80,6 +81,12 @@ public class SessionLookupTest {
         } finally {
             emClose(em);
         }
+    }
+    
+    @AfterClass
+    public static void teardown() {
+    	LOG.debug("closing EMF");
+    	EMF.close();
     }
 
     @Test

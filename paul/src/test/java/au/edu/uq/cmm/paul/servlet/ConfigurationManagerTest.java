@@ -69,6 +69,7 @@ public class ConfigurationManagerTest {
     
     @AfterClass
     public static void teardown() {
+    	LOG.debug("closing EMF");
     	EMF.close();
     }
 
@@ -450,6 +451,7 @@ public class ConfigurationManagerTest {
 		    LOG.error("Rolling back a stale transaction!!");
 			t.rollback();
 		}
+		LOG.debug("Closing em");
 		em.close();
 	}
 
