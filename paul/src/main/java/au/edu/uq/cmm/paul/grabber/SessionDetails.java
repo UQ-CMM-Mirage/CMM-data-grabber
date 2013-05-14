@@ -41,37 +41,66 @@ public class SessionDetails {
 	}
 
 	public SessionDetails(FacilitySession session, UserDetails forUser) {
+	    if (session == null) {
+	        throw new NullPointerException("Null session");
+	    }
 		this.session = session;
-		this.forUser = forUser;
+		if (forUser == null || forUser.getUserName().equals(session.getUserName())) {
+		    this.forUser = null;
+		} else {
+		    this.forUser = forUser;
+		}
 	}
 	
+	/**
+	 * This is the (ultimate) owner of the data.
+	 */
 	public String getUserName() {
 		return (forUser == null) ? session.getUserName() : 
 			forUser.getUserName();
 	}
 	
+	/**
+	 * This is the account to which the work was billed.  If the work was
+	 * done by a staff operator, this may be inaccurate.
+	 */
 	public String getAccount() {
-		return (forUser == null) ? session.getAccount() : 
-			forUser.getAccounts().iterator().next();
+		return session.getAccount();
 	}
 	
+	/**
+	 * This is the facility which the data was grabbed from.
+	 */
 	public String getFacilityName() {
 		return session.getFacilityName();
 	}
 
+	/**
+	 * This is the email address for the owner of the data ... as best as we can tell.
+	 */
 	public String getEmailAddress() {
 		return (forUser == null) ? session.getEmailAddress() : 
 			forUser.getEmailAddress();
 	}
 
+	/**
+	 * If the work was done by a staff operator, this will the operator's name.
+	 * Otherwise it will be null.
+	 */
 	public String getOperatorName() {
-		return session.getUserName();
+		return forUser == null ? null : session.getUserName();
 	}
 
+	/**
+	 * The session id for the user (or operator) session the work was done in.
+	 */
 	public String getSessionUuid() {
 		return session.getSessionUuid();
 	}
 
+	/**
+	 * The session start time.
+	 */
 	public Date getLoginTime() {
 		return session.getLoginTime();
 	}

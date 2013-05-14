@@ -86,7 +86,7 @@ public class Eccles implements AclsFacilityEventListener, Authenticator {
         ACLSProxyConfiguration config = EcclesProxyConfiguration.load(emf);
         FacilityMapper mapper = new EcclesFacilityMapper(config, emf);
         userDetailsMapper = new DefaultSessionDetailsMapper();
-        userDetailsManager = new UserDetailsManager(emf);
+        userDetailsManager = new EcclesUserDetailsManager(emf);
         proxy = new AclsProxy(config, 0, mapper, this);
         proxy.addListener(this);
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
