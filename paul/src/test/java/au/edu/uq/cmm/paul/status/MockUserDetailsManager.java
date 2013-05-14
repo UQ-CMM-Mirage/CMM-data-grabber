@@ -46,7 +46,7 @@ public class MockUserDetailsManager implements UserDetailsManager {
             throws UserDetailsException {
         UserDetails u = map.get(userName);
         if (u == null) {
-            throw new UserDetailsException(userName);
+            throw new UserDetailsException("User '" + userName + "' not found");
         }
         return u;
     }
@@ -62,13 +62,12 @@ public class MockUserDetailsManager implements UserDetailsManager {
     }
 
     @Override
-    public void addUser(String userName) throws UserDetailsException {
-        if (map.containsKey(userName)) {
-            throw new UserDetailsException("User '" + userName + "' already exists");
+    public void addUser(UserDetails user) throws UserDetailsException {
+        if (map.containsKey(user.getUserName())) {
+            throw new UserDetailsException(
+            		"User '" + user.getUserName() + "' already exists");
         }
-        UserDetails userDetails = new UserDetails();
-        userDetails.setUserName(userName);
-        map.put(userName, userDetails);
+        map.put(user.getUserName(), user);
     }
 
     @Override

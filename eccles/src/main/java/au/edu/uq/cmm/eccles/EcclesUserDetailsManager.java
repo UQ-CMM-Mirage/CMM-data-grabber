@@ -70,7 +70,7 @@ public class EcclesUserDetailsManager implements UserDetailsManager {
             }
             return userDetails;
         } catch (NoResultException ex) {
-            throw new UserDetailsException(userName);
+            throw new UserDetailsException("User '" + userName + "' not found");
         } finally {
             emClose(em);
         }
@@ -101,16 +101,15 @@ public class EcclesUserDetailsManager implements UserDetailsManager {
     }
 
 	@Override
-    public void addUser(String userName) throws UserDetailsException {
+    public void addUser(UserDetails user) throws UserDetailsException {
 		EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
-            UserDetails user = new UserDetails();
-            user.setUserName(userName);
             em.persist(user);
             em.getTransaction().commit();
         } catch (PersistenceException ex) {
-        	throw new UserDetailsException("User '" + userName + "' already exists");
+        	throw new UserDetailsException(
+        			"User '" + user.getUserName() + "' already exists");
         } finally {
             emClose(em);
         } 

@@ -1024,7 +1024,7 @@ public class WebUIController implements ServletContextAware {
             Model model) {
     	UserDetailsManager um = getUserDetailsManager();
     	try {
-    		um.addUser(userName);
+    		um.addUser(new UserDetails(userName));
     		model.addAttribute("message", "User '" + userName + "' added");
     	} catch (UserDetailsException ex) {
     		model.addAttribute("message", ex.getMessage());

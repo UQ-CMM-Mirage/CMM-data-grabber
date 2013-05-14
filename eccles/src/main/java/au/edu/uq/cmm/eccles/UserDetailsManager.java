@@ -34,7 +34,7 @@ public interface UserDetailsManager {
 
     List<UserDetails> getUsers();
 
-    void addUser(String userName) throws UserDetailsException;
+    void addUser(UserDetails user) throws UserDetailsException;
 
     void removeUser(String userName) throws UserDetailsException;
 

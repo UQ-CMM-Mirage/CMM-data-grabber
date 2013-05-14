@@ -193,11 +193,9 @@ public class SessionLookupTest {
     }
     
     private UserDetailsManager buildMockUserDetailsManager() {
-        UserDetails bert = new UserDetails();
-        bert.setUserName("bert");
+        UserDetails bert = new UserDetails("bert");
         bert.setEmailAddress("bert@nowhere");
-        UserDetails jim = new UserDetails();
-        jim.setUserName("jim");
+        UserDetails jim = new UserDetails("jim");
         return new MockUserDetailsManager(new UserDetails[]{bert, jim});
     }
 

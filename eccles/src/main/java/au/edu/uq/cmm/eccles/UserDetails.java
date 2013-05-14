@@ -60,6 +60,11 @@ public class UserDetails {
         super();
     }
 
+    public UserDetails(String userName) {
+        super();
+        this.userName = userName;
+    }
+
     public UserDetails(String userName, String emailAddress,
             AclsLoginDetails details, long seed, String digest) {
         super();
@@ -72,7 +77,8 @@ public class UserDetails {
         this.onsiteAssist = details.isOnsiteAssist();
         this.accounts = new HashSet<String>(details.getAccounts());
         this.certifications = new HashMap<String, String>();
-        this.certifications.put(details.getFacilityName(), details.getCertification().toString());
+        this.certifications.put(details.getFacilityName(), 
+        		details.getCertification().toString());
     }
 
     @Column(unique=true)
