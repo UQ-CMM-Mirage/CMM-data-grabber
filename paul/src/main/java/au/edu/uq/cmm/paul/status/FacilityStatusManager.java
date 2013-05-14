@@ -38,9 +38,9 @@ import au.edu.uq.cmm.aclslib.proxy.AclsAuthenticationException;
 import au.edu.uq.cmm.aclslib.proxy.AclsHelper;
 import au.edu.uq.cmm.aclslib.proxy.AclsInUseException;
 import au.edu.uq.cmm.eccles.FacilitySession;
+import au.edu.uq.cmm.eccles.UserDetailsManager;
 import au.edu.uq.cmm.eccles.UserDetails;
 import au.edu.uq.cmm.eccles.UserDetailsException;
-import au.edu.uq.cmm.eccles.UserDetailsManager;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.grabber.SessionDetails;
@@ -233,11 +233,13 @@ public class FacilityStatusManager {
     public SessionDetails getSessionDetails(Facility facility, 
     		long timestamp, File datasetBasename) {
         FacilitySession session = getSession(facility, timestamp);
+        if (session == null) {
+            session = FacilitySession.makeDummySession(facility.getFacilityName(), timestamp);
+        }
         if (facility.isUserOperated()) {
             return new SessionDetails(session);
         } else {
-            UserDetails user = intuitUser(datasetBasename);
-            return new SessionDetails(session, user);
+            return new SessionDetails(session, intuitUser(datasetBasename));
         }
     }
 
@@ -251,7 +253,7 @@ public class FacilityStatusManager {
         }
         String name = pathname.getName().toLowerCase();
         try {
-        	return userDetailsManager.lookupUser(name, true);
+        	return name.isEmpty() ? null : userDetailsManager.lookupUser(name, true);
         } catch (UserDetailsException ex) {
         	return null;
         }

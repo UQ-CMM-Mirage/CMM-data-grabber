@@ -32,6 +32,7 @@ import au.edu.uq.cmm.aclslib.proxy.AclsHelper;
 import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.aclslib.service.ServiceBase;
 import au.edu.uq.cmm.aclslib.service.ServiceException;
+import au.edu.uq.cmm.eccles.EcclesUserDetailsManager;
 import au.edu.uq.cmm.eccles.UserDetailsManager;
 import au.edu.uq.cmm.paul.queue.AtomFeed;
 import au.edu.uq.cmm.paul.queue.QueueExpirer;
@@ -98,7 +99,7 @@ public class Paul extends ServiceBase implements Lifecycle {
         this.fileWatcher = new FileWatcher(this);
         this.queueManager = new QueueManager(this);
         this.queueExpirer = new QueueExpirer(this);
-        this.userDetailsManager = new UserDetailsManager(entityManagerFactory);
+        this.userDetailsManager = new EcclesUserDetailsManager(entityManagerFactory);
         this.control = PaulControl.load(entityManagerFactory);
         this.atomFeed = new AtomFeed(control);
     }
