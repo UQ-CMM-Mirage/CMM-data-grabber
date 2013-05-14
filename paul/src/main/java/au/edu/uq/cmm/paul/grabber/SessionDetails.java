@@ -45,7 +45,11 @@ public class SessionDetails {
 	        throw new NullPointerException("Null session");
 	    }
 		this.session = session;
-		this.forUser = forUser;
+		if (forUser == null || forUser.getUserName().equals(session.getUserName())) {
+		    this.forUser = null;
+		} else {
+		    this.forUser = forUser;
+		}
 	}
 	
 	/**

@@ -165,6 +165,15 @@ public class SessionLookupTest {
         assertEquals("bert@nowhere", sd.getEmailAddress());
         assertNotNull(sd.getSessionUuid() != null);
         assertEquals("that", sd.getFacilityName());
+        
+        sd = fsm.getSessionDetails(
+                THAT, toTime("2012-01-01T09:30:00"), new File("/jim"));
+        assertEquals("jim", sd.getUserName());
+        assertEquals(null, sd.getOperatorName());
+        assertEquals("ac1", sd.getAccount());
+        assertEquals("jim@nowhere", sd.getEmailAddress());
+        assertNotNull(sd.getSessionUuid() != null);
+        assertEquals("that", sd.getFacilityName());
     }
     
     private Paul buildMockServices() {
