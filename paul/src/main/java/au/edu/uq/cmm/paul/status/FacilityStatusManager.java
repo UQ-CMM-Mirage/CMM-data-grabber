@@ -251,9 +251,12 @@ public class FacilityStatusManager {
                 return user;
             }
         }
-        String name = pathname.getName().toLowerCase();
+        String name = pathname.getName();
+        if (name == null || name.isEmpty()) {
+            return null;
+        }
         try {
-        	return name.isEmpty() ? null : userDetailsManager.lookupUser(name, true);
+        	return userDetailsManager.lookupUser(name.toLowerCase(), true);
         } catch (UserDetailsException ex) {
         	return null;
         }
