@@ -102,6 +102,7 @@ public class Paul extends ServiceBase implements Lifecycle {
         this.userDetailsManager = new EcclesUserDetailsManager(entityManagerFactory);
         this.control = PaulControl.load(entityManagerFactory);
         this.atomFeed = new AtomFeed(control);
+        LOG.debug("userDetailsManager is " + userDetailsManager);
     }
     
     @Override
