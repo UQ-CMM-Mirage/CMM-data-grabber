@@ -37,6 +37,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import au.edu.uq.cmm.aclslib.proxy.AclsHelper;
 import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.eccles.UserDetails;
 import au.edu.uq.cmm.eccles.UserDetailsManager;

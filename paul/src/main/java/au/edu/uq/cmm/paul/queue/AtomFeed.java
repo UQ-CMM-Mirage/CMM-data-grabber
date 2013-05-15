@@ -19,6 +19,8 @@
 
 package au.edu.uq.cmm.paul.queue;
 
+import java.util.Objects;
+
 import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.aclslib.service.ServiceException;
 import au.edu.uq.cmm.paul.PaulControl;
@@ -28,7 +30,7 @@ public class AtomFeed implements Service {
     private PaulControl control;
     
     public AtomFeed(PaulControl control) {
-        this.control = control;
+        this.control = Objects.requireNonNull(control);
     }
 
     @Override

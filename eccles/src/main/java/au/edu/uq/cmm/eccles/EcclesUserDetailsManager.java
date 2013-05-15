@@ -25,6 +25,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 import javax.persistence.EntityManager;
@@ -51,7 +52,7 @@ public class EcclesUserDetailsManager implements UserDetailsManager {
     
 
     public EcclesUserDetailsManager(EntityManagerFactory emf) {
-        this.emf = emf;
+        this.emf = Objects.requireNonNull(emf);
     }
     
     @Override

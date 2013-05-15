@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -68,9 +69,11 @@ public class FacilityStatusManager {
     
     
     public FacilityStatusManager(Paul services) {
-        this.emf = services.getEntityManagerFactory();
+        this.emf = Objects.requireNonNull(services.getEntityManagerFactory());
+        this.userDetailsManager = Objects.requireNonNull(services.getUserDetailsManager());
+        
+        /* No non-null check for this one because of unit test pain ... */
         this.aclsHelper = services.getAclsHelper();
-        this.userDetailsManager = services.getUserDetailsManager();
     }
 
     private Facility getFacility(EntityManager em, String facilityName) {

@@ -20,6 +20,7 @@
 package au.edu.uq.cmm.paul.queue;
 
 import java.util.Date;
+import java.util.Objects;
 
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
@@ -52,8 +53,8 @@ public class QueueExpirer extends MonitoredThreadServiceBase {
     }
 
     public QueueExpirer(PaulConfiguration config, QueueManager queueManager) {
-        this.config = config;
-        this.queueManager = queueManager;
+        this.config = Objects.requireNonNull(config);
+        this.queueManager = Objects.requireNonNull(queueManager);
     }
 
     @Override

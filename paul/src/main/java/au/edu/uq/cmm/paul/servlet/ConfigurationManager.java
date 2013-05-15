@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -56,7 +57,7 @@ public class ConfigurationManager {
     public ConfigurationManager(EntityManagerFactory entityManagerFactory,
             StaticPaulConfiguration staticConfig, 
             StaticPaulFacilities staticFacilities) {
-        this.entityManagerFactory = entityManagerFactory;
+        this.entityManagerFactory = Objects.requireNonNull(entityManagerFactory);
         this.staticConfig = staticConfig;
         this.staticFacilities =  staticFacilities;
         activeConfig = PaulConfiguration.load(entityManagerFactory, true);

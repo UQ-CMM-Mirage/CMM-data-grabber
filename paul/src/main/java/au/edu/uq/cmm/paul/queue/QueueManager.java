@@ -25,6 +25,7 @@ import java.io.StringWriter;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -92,6 +93,7 @@ public class QueueManager {
 
     public QueueManager(PaulConfiguration config, EntityManagerFactory emf) {
         this.emf = emf;
+        Objects.requireNonNull(config);
         this.fileManager = new CopyingQueueFileManager(config);
     }
 

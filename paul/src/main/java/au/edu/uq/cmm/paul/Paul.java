@@ -94,15 +94,14 @@ public class Paul extends ServiceBase implements Lifecycle {
                  */
                 AclsClient.ACLS_REQUEST_TIMEOUT * 2, 
                 false);
+        this.userDetailsManager = new EcclesUserDetailsManager(entityManagerFactory);
         this.statusManager = new FacilityStatusManager(this);
         this.uncNameMapper = uncNameMapper;
         this.fileWatcher = new FileWatcher(this);
         this.queueManager = new QueueManager(this);
         this.queueExpirer = new QueueExpirer(this);
-        this.userDetailsManager = new EcclesUserDetailsManager(entityManagerFactory);
         this.control = PaulControl.load(entityManagerFactory);
         this.atomFeed = new AtomFeed(control);
-        LOG.debug("userDetailsManager is " + userDetailsManager);
     }
     
     @Override
