@@ -56,15 +56,17 @@ public class FacilityStatusManager {
         ON, DISABLED, OFF
     }
 
-    private static final Logger LOG = LoggerFactory.getLogger(FacilityStatusManager.class);
-    private EntityManagerFactory emf;
-    private AclsHelper aclsHelper;
-    private Map<Long, FacilityStatus> facilityStatuses = 
+    private final EntityManagerFactory emf;
+    private final AclsHelper aclsHelper;
+    private final UserDetailsManager userDetailsManager;
+    private final Map<Long, FacilityStatus> facilityStatuses = 
             new HashMap<Long, FacilityStatus>();
-    private Map<String, FacilitySessionCache> facilitySessionCaches =
+    private final Map<String, FacilitySessionCache> facilitySessionCaches =
             new HashMap<String, FacilitySessionCache>();
-	private UserDetailsManager userDetailsManager;
 
+    private static final Logger LOG = LoggerFactory.getLogger(FacilityStatusManager.class);
+    
+    
     public FacilityStatusManager(Paul services) {
         this.emf = services.getEntityManagerFactory();
         this.aclsHelper = services.getAclsHelper();
@@ -256,6 +258,7 @@ public class FacilityStatusManager {
             return null;
         }
         try {
+            LOG.debug("userDetailsManager is " + userDetailsManager);
         	return userDetailsManager.lookupUser(name.toLowerCase(), true);
         } catch (UserDetailsException ex) {
         	return null;
