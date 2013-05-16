@@ -714,8 +714,8 @@ public class WebUIController implements ServletContextAware {
     }
     
     private Slice inferSlice(String sliceName) {
-        if (sliceName == null) {
-            return Slice.ALL;
+    	if (sliceName == null) {
+            return null;
         } else {
             try {
                 return Slice.valueOf(sliceName.toUpperCase());
