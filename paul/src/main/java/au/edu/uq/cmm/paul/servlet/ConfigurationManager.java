@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -35,6 +36,7 @@ import javax.persistence.TypedQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import au.edu.uq.cmm.paul.GrabberFacilityConfig;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.StaticPaulConfiguration;
 import au.edu.uq.cmm.paul.StaticPaulFacilities;
@@ -55,7 +57,7 @@ public class ConfigurationManager {
     public ConfigurationManager(EntityManagerFactory entityManagerFactory,
             StaticPaulConfiguration staticConfig, 
             StaticPaulFacilities staticFacilities) {
-        this.entityManagerFactory = entityManagerFactory;
+        this.entityManagerFactory = Objects.requireNonNull(entityManagerFactory);
         this.staticConfig = staticConfig;
         this.staticFacilities =  staticFacilities;
         activeConfig = PaulConfiguration.load(entityManagerFactory, true);
@@ -224,10 +226,19 @@ public class ConfigurationManager {
                     "the file setting time cannot be negative");
         }
         res.setCaseInsensitive(getBoolean(params, "caseInsensitive", diags));
+        res.setUserOperated(getBoolean(params, "userOperated", diags));
         res.setUseFileLocks(getBoolean(params, "useFileLocks", diags));
         res.setUseFullScreen(getBoolean(params, "useFullScreen", diags));
         res.setUseTimer(getBoolean(params, "useTimer", diags));
         res.setDisabled(getBoolean(params, "disabled", diags));
+        String arg = getNonEmptyString(params, "fileArrivalMode", diags);
+        if (arg != null) {
+            try {
+                res.setFileArrivalMode(GrabberFacilityConfig.FileArrivalMode.valueOf(arg));        
+            } catch (IllegalArgumentException ex) {
+                addDiag(diags, "fileArrivalMode", "unrecognized mode '" + arg + "'");
+            }
+        }
         
         List<DatafileTemplate> templates = new LinkedList<DatafileTemplate>();
         int last = getInteger(params, "lastTemplate", diags);

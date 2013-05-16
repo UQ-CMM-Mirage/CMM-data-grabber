@@ -23,10 +23,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 
-import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.queue.QueueFileException;
 import au.edu.uq.cmm.paul.status.Facility;
+import au.edu.uq.cmm.paul.status.FacilityStatusManager;
 
 /**
  * The file regrabber performs a limited traversal of the directory containing
@@ -85,7 +85,8 @@ public class DatasetGrabber extends AbstractFileGrabber {
             return null;
         } else {
             entry.pretendToGrabFiles();
-            FacilitySession session = getServices().getFacilityStatusManager().getSession(dataset.getSessionUuid());
+            FacilityStatusManager fsm = getServices().getFacilityStatusManager();
+            SessionDetails session = new SessionDetails(fsm.getSession(dataset.getSessionUuid()));
             DatasetMetadata metadata = entry.assembleDatasetMetadata(
                     new Date(), session, new File(dataset.getMetadataFilePathname()));
             return metadata;

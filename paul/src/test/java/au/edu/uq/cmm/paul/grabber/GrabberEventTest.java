@@ -32,10 +32,10 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 
+import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonGenerationException;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -44,6 +44,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import au.edu.uq.cmm.eccles.FacilitySession;
+import au.edu.uq.cmm.paul.GrabberFacilityConfig;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.PaulException;
@@ -61,17 +62,12 @@ public class GrabberEventTest {
     private static FacilityStatusManager FSM;
     private static Facility FACILITY;
     private static PaulConfiguration CONFIG;
+    
+    private static Logger LOG = Logger.getLogger(GrabberEventTest.class);
 
     @BeforeClass
     public static void setup() {
         EMF = Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul");
-        EntityManager em = EMF.createEntityManager();
-        try {
-            em.getTransaction().begin();
-            em.getTransaction().commit();
-        } finally {
-            em.close();
-        }
         FACILITY = buildFacility();
         CONFIG = new PaulConfiguration();
         CONFIG.setCaptureDirectory(prepareDirectory("/tmp/testSafe").toString());
@@ -82,6 +78,7 @@ public class GrabberEventTest {
     private static Facility buildFacility() {
         Facility facility = new Facility();
         facility.setFacilityName("test");
+        facility.setFileArrivalMode(GrabberFacilityConfig.FileArrivalMode.DIRECT);
         DatafileTemplate template = new DatafileTemplate();
         template.setSuffix("txt");
         template.setMimeType("text/plain");
@@ -103,6 +100,8 @@ public class GrabberEventTest {
     @AfterClass
     public static void teardown() {
         removeCaptureDirectory();
+    	LOG.debug("closing EMF");
+        EMF.close();
     }
 
     private static void removeCaptureDirectory() {
@@ -127,9 +126,14 @@ public class GrabberEventTest {
         session.setFacilityName("test");
         session.setUserName("fred");
         session.setAccount("count");
+        SessionDetails details = new SessionDetails(session);
         status.setLocalDirectory(new File("/tmp"));
         EasyMock.expect(fsm.getStatus(FACILITY)).andReturn(status).anyTimes();
-        EasyMock.expect(fsm.getSession(EasyMock.eq("test"), EasyMock.anyLong())).andReturn(session).anyTimes();
+        EasyMock.expect(fsm.getSession(EasyMock.eq(FACILITY), EasyMock.anyLong())).
+        		andReturn(session).anyTimes();
+        EasyMock.expect(fsm.getSessionDetails(EasyMock.eq(FACILITY), 
+                EasyMock.anyLong(), EasyMock.anyObject(File.class))).
+                andReturn(details).anyTimes();
         fsm.advanceHWMTimestamp(EasyMock.eq(FACILITY), EasyMock.anyObject(Date.class));
         EasyMock.expectLastCall().anyTimes();
         EasyMock.replay(fsm);

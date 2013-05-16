@@ -64,9 +64,9 @@ import au.edu.uq.cmm.aclslib.proxy.AclsAuthenticationException;
 import au.edu.uq.cmm.aclslib.proxy.AclsInUseException;
 import au.edu.uq.cmm.aclslib.service.Service.State;
 import au.edu.uq.cmm.eccles.FacilitySession;
-import au.edu.uq.cmm.eccles.UnknownUserException;
-import au.edu.uq.cmm.eccles.UserDetails;
 import au.edu.uq.cmm.eccles.UserDetailsManager;
+import au.edu.uq.cmm.eccles.UserDetails;
+import au.edu.uq.cmm.eccles.UserDetailsException;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.grabber.Analyser;
@@ -483,7 +483,9 @@ public class WebUIController implements ServletContextAware {
         }
         String userName = principal.getName();
         FacilityStatusManager fsm = getFacilityStatusManager();
-        FacilitySession session = fsm.getSession(facilityName, System.currentTimeMillis());
+        FacilitySession session = fsm.getSession(
+        		lookupFacilityByName(facilityName), 
+        		System.currentTimeMillis());
         if (session == null || !session.getUserName().equals(userName)) {
             model.addAttribute("message", "You are not logged in on '" + facilityName + "'");
             return "failed";
@@ -885,9 +887,14 @@ public class WebUIController implements ServletContextAware {
         Facility facility = lookupFacilityByName(facilityName);
         DatasetGrabber dsr = new DatasetGrabber(services, new File(pathnameBase), facility);
         DatasetMetadata grabbedDataset = dsr.grabDataset();
-        grabbedDataset.updateDatasetHash();
-        model.addAttribute("message", "Dataset grab succeeded");
-        return "ok";
+        if (grabbedDataset != null) {
+            grabbedDataset.updateDatasetHash();
+            model.addAttribute("message", "Dataset grab succeeded");
+            return "ok";
+        } else {
+            model.addAttribute("message", "Dataset grab failed");
+            return "failed";
+        }
     }
 
     @RequestMapping(value="/datasets/{entry:.+}", params={"regrabNew"},
@@ -902,6 +909,10 @@ public class WebUIController implements ServletContextAware {
             model.addAttribute("returnTo", inferReturnTo(request));
             DatasetGrabber dsr = new DatasetGrabber(services, dataset);
             DatasetMetadata grabbedDataset = dsr.regrabDataset(regrabNew.equalsIgnoreCase("yes"));
+            if (grabbedDataset == null) {
+                model.addAttribute("message", "Dataset regrab failed - see logs");
+                return "failed";
+            }
             grabbedDataset.updateDatasetHash();
             if (!hash.equals(grabbedDataset.getCombinedDatafileHash())) {
                 LOG.debug("supplied hash is " + hash);
@@ -1006,6 +1017,38 @@ public class WebUIController implements ServletContextAware {
         return "users";
     }
 
+    @RequestMapping(value="/users", params={"add"},	 
+            method=RequestMethod.POST)
+    public String userAdd(
+    		@RequestParam() String userName, 
+            Model model) {
+    	UserDetailsManager um = getUserDetailsManager();
+    	try {
+    		um.addUser(new UserDetails(userName));
+    		model.addAttribute("message", "User '" + userName + "' added");
+    	} catch (UserDetailsException ex) {
+    		model.addAttribute("message", ex.getMessage());
+    	}
+        model.addAttribute("userNames", um.getUserNames());
+        return "users";
+    }
+
+    @RequestMapping(value="/users", params={"remove"},	 
+            method=RequestMethod.POST)
+    public String userRemove(
+    		@RequestParam() String userName, 
+            Model model) {
+    	UserDetailsManager um = getUserDetailsManager();
+    	try {
+    		um.removeUser(userName);
+    		model.addAttribute("message", "User '" + userName + "' removed");
+    	} catch (UserDetailsException ex) {
+    		model.addAttribute("message", ex.getMessage());
+    	}
+        model.addAttribute("userNames", um.getUserNames());
+        return "users";
+    }
+
     @RequestMapping(value="/users/{userName:.+}", method=RequestMethod.GET)
     public String user(@PathVariable String userName, Model model,
             HttpServletResponse response) 
@@ -1013,8 +1056,7 @@ public class WebUIController implements ServletContextAware {
         try {
             UserDetails userDetails = getUserDetailsManager().lookupUser(userName, true);
             model.addAttribute("user", userDetails);
-        } catch (UnknownUserException e) {
-            LOG.debug("Rejected request for security reasons");
+        } catch (UserDetailsException e) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return null;
         }

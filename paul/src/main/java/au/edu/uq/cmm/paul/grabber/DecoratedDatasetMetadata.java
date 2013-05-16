@@ -32,6 +32,7 @@ public class DecoratedDatasetMetadata extends DatasetMetadata {
                 dataset.getFacilityId(), 
                 dataset.getAccountName(), 
                 dataset.getEmailAddress(),
+                dataset.getOperatorName(),
                 dataset.getCaptureTimestamp(), 
                 dataset.getSessionUuid(), 
                 dataset.getSessionStartTimestamp(), 

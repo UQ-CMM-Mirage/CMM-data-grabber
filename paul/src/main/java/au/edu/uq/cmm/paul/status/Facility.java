@@ -24,6 +24,8 @@ import java.util.List;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -41,6 +43,7 @@ import org.hibernate.annotations.GenericGenerator;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.paul.DatafileTemplateConfig;
 import au.edu.uq.cmm.paul.GrabberFacilityConfig;
+import au.edu.uq.cmm.paul.GrabberFacilityConfig.FileArrivalMode;
 
 /**
  * The Paul implementation of FacilityConfig persists the configuration data
@@ -75,6 +78,9 @@ public class Facility implements FacilityConfig {
     private boolean disabled;
     private FacilityStatus status;
     private boolean multiplexed = false;
+    private boolean userOperated = true;
+
+    private FileArrivalMode fileArrivalMode;
     
 
     public Facility() {
@@ -100,6 +106,8 @@ public class Facility implements FacilityConfig {
             datafileTemplates.add(new DatafileTemplate(template));
         }
         multiplexed = facility.isMultiplexed();
+        userOperated = facility.isUserOperated();
+        fileArrivalMode = facility.getFileArrivalMode();
     }
     
     public String getAddress() {
@@ -249,8 +257,6 @@ public class Facility implements FacilityConfig {
         this.id = id;
     }
 
-    
-
     @JsonIgnore
     @Transient
     public FacilityStatus getStatus() {
@@ -259,6 +265,23 @@ public class Facility implements FacilityConfig {
 
     public void setStatus(FacilityStatus status) {
         this.status = status;
+    }
+
+    @Enumerated(EnumType.STRING)
+    public FileArrivalMode getFileArrivalMode() {
+        return fileArrivalMode;
+    }
+
+    public void setFileArrivalMode(FileArrivalMode mode) {
+        this.fileArrivalMode = mode == null ? FileArrivalMode.DIRECT : mode;
+    }
+
+    public boolean isUserOperated() {
+        return userOperated;
+    }
+
+    public void setUserOperated(boolean userOperated) {
+        this.userOperated = userOperated;
     }
 
     @Override
@@ -273,6 +296,8 @@ public class Facility implements FacilityConfig {
                 + caseInsensitive + ", fileSettlingTime=" + fileSettlingTime
                 + ", address=" + address + ", datafileTemplates="
                 + datafileTemplates + ", disabled=" + disabled
+                + ", fileArrivalMode=" + fileArrivalMode
+                + ", userOperated=" + userOperated
                 + ", multiplexed=" + multiplexed + ", status=" + status + "]";
     }
 }

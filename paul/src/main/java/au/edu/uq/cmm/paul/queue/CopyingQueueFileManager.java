@@ -24,6 +24,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.Writer;
 
 import org.apache.commons.io.FilenameUtils;
@@ -31,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import au.edu.uq.cmm.paul.PaulConfiguration;
+import au.edu.uq.cmm.paul.PaulException;
 
 public class CopyingQueueFileManager implements QueueFileManager {
     private static final Logger LOG = LoggerFactory.getLogger(CopyingQueueFileManager.class);
@@ -41,10 +43,24 @@ public class CopyingQueueFileManager implements QueueFileManager {
     
     public CopyingQueueFileManager(PaulConfiguration config) {
         this.archiveDirectory = new File(config.getArchiveDirectory());
+        checkDirectory(this.archiveDirectory, "archive");
         this.captureDirectory = new File(config.getCaptureDirectory());
+        checkDirectory(this.captureDirectory, "capture");
     }
     
-    @Override
+    private void checkDirectory(File dir, String tag) {
+    	File testFile = new File(dir, "test.txt");
+		try (OutputStream os = new FileOutputStream(testFile)) {
+			os.write("1 2 3\n".getBytes());
+		} catch (IOException ex) {
+			throw new PaulException("Problem creating file in " + 
+					tag + " directory", ex);
+		} finally {
+			testFile.delete();
+		}
+	}
+
+	@Override
     public File enqueueFile(File source, String suffix, boolean regrabbing) 
                 throws QueueFileException, InterruptedException {
         // TODO - if the time taken to copy files is a problem, we could 

@@ -20,6 +20,8 @@
 package au.edu.uq.cmm.paul.grabber;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Date;
 
 import au.edu.uq.cmm.paul.status.DatafileTemplate;
@@ -38,6 +40,7 @@ class GrabbedFile {
     private Date copyTimestamp;
     private Date fileTimestamp;
     private DatafileTemplate template;
+    private String hash;
     
 
     public GrabbedFile(File baseFile, File file, DatafileTemplate template) {
@@ -92,5 +95,12 @@ class GrabbedFile {
 
     public void setTemplate(DatafileTemplate template) {
         this.template = template;
+    }
+
+    public String computeFileHash() throws FileNotFoundException, IOException {
+        if (hash == null) {
+            hash = HashUtils.fileHash(file);
+        }
+        return hash;
     }
 }

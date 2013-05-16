@@ -52,7 +52,6 @@ public class FacilitySession {
     private Long id;
     private String sessionUuid;
     private String emailAddress;
-
     private Date inferredLogoutTime;
     
     public FacilitySession() {
@@ -161,10 +160,10 @@ public class FacilitySession {
         this.inferredLogoutTime = inferredLogoutTime;
     }
 
-    public static FacilitySession makeDummySession(String facilityName, Date now) {
+    public static FacilitySession makeDummySession(String facilityName, long timestamp) {
         FacilitySession res = new FacilitySession(
                 FacilitySession.UNKNOWN, FacilitySession.UNKNOWN, 
-                facilityName, null, now);
+                facilityName, null, new Date(timestamp));
         res.setSessionUuid(FacilitySession.UNKNOWN);
         return res;
     }
@@ -177,4 +176,5 @@ public class FacilitySession {
                 + ", sessionUuid=" + sessionUuid + ", emailAddress="
                 + emailAddress + "]";
     }
+
 }
