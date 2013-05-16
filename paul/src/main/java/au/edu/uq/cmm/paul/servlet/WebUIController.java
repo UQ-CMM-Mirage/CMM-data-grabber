@@ -779,10 +779,18 @@ public class WebUIController implements ServletContextAware {
                         verbiage(nosChanged, "dataset", "datasets", "deleted"));
                 return "ok";
             case "assign":
-                nosChanged = qm.changeUser(ids, userName, true);
-                model.addAttribute("message", 
-                        verbiage(nosChanged, "dataset", "datasets", "assigned"));
-                return "ok";
+            	try {
+            		// Check the name is known
+            		getUserDetailsManager().lookupUser(userName, false);
+            		nosChanged = qm.changeUser(ids, userName, true);
+            		model.addAttribute("message", 
+            				verbiage(nosChanged, "dataset", "datasets", "assigned"));
+            		return "ok";
+            	} catch (UserDetailsException ex) {
+            		model.addAttribute("message", 
+            				"User '" + userName + "' is not known.");
+            		return "manageDatasets";
+            	}
             default:
                 LOG.debug("Rejected request with unrecognized action");
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST);
