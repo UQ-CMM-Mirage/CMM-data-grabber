@@ -759,11 +759,9 @@ public class WebUIController implements ServletContextAware {
         }
         QueueManager qm = getQueueManager();
         if (ids == null) {
-            model.addAttribute("datasets", qm.getSnapshot(s, facilityName));
-            model.addAttribute("userNames", getUserDetailsManager().getUserNames());
-            model.addAttribute("message", 
-                    "Check the checkboxes for the Datasets you want to manage");
-            return "manageDatasets";
+            return retryManage(model, 
+                    "Check the checkboxes for the Datasets you want to " + action,
+                    qm, s, facilityName);
         } 
         try {
             int nosChanged;
@@ -782,15 +780,14 @@ public class WebUIController implements ServletContextAware {
             	try {
             		// Check the name is known
             		getUserDetailsManager().lookupUser(userName, false);
-            		nosChanged = qm.changeUser(ids, userName, true);
-            		model.addAttribute("message", 
-            				verbiage(nosChanged, "dataset", "datasets", "assigned"));
-            		return "ok";
             	} catch (UserDetailsException ex) {
-            		model.addAttribute("message", 
-            				"User '" + userName + "' is not known.");
-            		return "manageDatasets";
+            		return retryManage(model, "User '" + userName + "' is not known.",
+            		        qm, s, facilityName);
             	}
+                nosChanged = qm.changeUser(ids, userName, true);
+                model.addAttribute("message", 
+                        verbiage(nosChanged, "dataset", "datasets", "assigned"));
+                return "ok";
             default:
                 LOG.debug("Rejected request with unrecognized action");
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -801,6 +798,14 @@ public class WebUIController implements ServletContextAware {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return null;
         }
+    }
+    
+    private String retryManage(Model model, String message, 
+            QueueManager qm, Slice s, String facilityName) {
+        model.addAttribute("datasets", qm.getSnapshot(s, facilityName));
+        model.addAttribute("userNames", getUserDetailsManager().getUserNames());
+        model.addAttribute("message", message);
+        return "manageDatasets";
     }
     
     private String verbiage(int count, String singular, String plural, String verbed) {
