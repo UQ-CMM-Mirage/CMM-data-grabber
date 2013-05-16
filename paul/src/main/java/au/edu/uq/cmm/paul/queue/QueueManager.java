@@ -22,8 +22,10 @@ package au.edu.uq.cmm.paul.queue;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -91,6 +93,7 @@ public class QueueManager {
 
     public QueueManager(PaulConfiguration config, EntityManagerFactory emf) {
         this.emf = emf;
+        Objects.requireNonNull(config);
         this.fileManager = new CopyingQueueFileManager(config);
     }
 
@@ -111,6 +114,7 @@ public class QueueManager {
             TypedQuery<DatasetMetadata> query;
             if (facilityName == null) {
                 query = em.createQuery("from DatasetMetadata m " +
+                    "left join fetch m.datafiles " +
                     whereClause + "order by m.id", DatasetMetadata.class);
             } else {
                 if (whereClause.isEmpty()) {
@@ -343,12 +347,30 @@ public class QueueManager {
         EntityManager entityManager = createEntityManager();
         try {
             TypedQuery<DatasetMetadata> query = entityManager.createQuery(
-                    "from DatasetMetadata d where d.id = :id", 
+                    "from DatasetMetadata m " +
+                    "left join fetch m.datafiles where m.id = :id", 
                     DatasetMetadata.class);
             query.setParameter("id", id);
             return query.getSingleResult();
         } catch (NoResultException ex) {
             return null;
+        } finally {
+            entityManager.close();
+        }
+    }
+    
+    public List<DatasetMetadata> lookupDatasets(String sourceFilePathnameBase) {
+        EntityManager entityManager = createEntityManager();
+        try {
+            TypedQuery<DatasetMetadata> query = entityManager.createQuery(
+                    "from DatasetMetadata m " +
+                    "left join fetch m.datafiles " +
+                    "where m.sourceFilePathnameBase = :pathname", 
+                    DatasetMetadata.class);
+            query.setParameter("pathname", sourceFilePathnameBase);
+            return query.getResultList();
+        } catch (NoResultException ex) {
+            return Collections.emptyList();
         } finally {
             entityManager.close();
         }

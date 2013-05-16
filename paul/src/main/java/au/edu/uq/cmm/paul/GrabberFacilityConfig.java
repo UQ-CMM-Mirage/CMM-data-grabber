@@ -59,4 +59,32 @@ public interface GrabberFacilityConfig extends FacilityConfig {
      */
     int getFileSettlingTime();
     
+    public enum FileArrivalMode {
+        /**
+         * Files are written directly from the instrument.  The file event times reflect
+         * the actual times that instrument file writes occur.
+         */
+        DIRECT,
+        /**
+         * Files are transferred by an "rsync"-like program that preserves the source
+         * file timestamps.  The file event times reflect the activity of the "rsync"
+         * program.
+         */
+        RSYNC,
+        /**
+         * Like RSYNC, except that source file timestamps are lost in the transfer.
+         */
+        RSYNC_NO_PRESERVE,
+    }
+    
+    /**
+     * The file arrival mode says how files arrive in the directory area we are watching.
+     */
+    FileArrivalMode getFileArrivalMode();
+    
+    /**
+     * If true (the default) the instrument is operated by the end user, and we can intuit
+     * the ownership of output files based on who was logged in at the time the file was created.
+     */
+    boolean isUserOperated();
 }

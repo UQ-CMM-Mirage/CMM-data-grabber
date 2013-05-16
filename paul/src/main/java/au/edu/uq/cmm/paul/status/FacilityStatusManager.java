@@ -19,11 +19,13 @@
 
 package au.edu.uq.cmm.paul.status;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -37,9 +39,12 @@ import au.edu.uq.cmm.aclslib.proxy.AclsAuthenticationException;
 import au.edu.uq.cmm.aclslib.proxy.AclsHelper;
 import au.edu.uq.cmm.aclslib.proxy.AclsInUseException;
 import au.edu.uq.cmm.eccles.FacilitySession;
+import au.edu.uq.cmm.eccles.UserDetailsManager;
+import au.edu.uq.cmm.eccles.UserDetails;
+import au.edu.uq.cmm.eccles.UserDetailsException;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
-import au.edu.uq.cmm.paul.grabber.FileGrabber;
+import au.edu.uq.cmm.paul.grabber.SessionDetails;
 
 /**
  * This class represents the session state of the facilities as 
@@ -52,16 +57,22 @@ public class FacilityStatusManager {
         ON, DISABLED, OFF
     }
 
-    private static final Logger LOG = LoggerFactory.getLogger(FileGrabber.class);
-    private EntityManagerFactory emf;
-    private AclsHelper aclsHelper;
-    private Map<Long, FacilityStatus> facilityStatuses = 
+    private final EntityManagerFactory emf;
+    private final AclsHelper aclsHelper;
+    private final UserDetailsManager userDetailsManager;
+    private final Map<Long, FacilityStatus> facilityStatuses = 
             new HashMap<Long, FacilityStatus>();
-    private Map<String, FacilitySessionCache> facilitySessionCaches =
+    private final Map<String, FacilitySessionCache> facilitySessionCaches =
             new HashMap<String, FacilitySessionCache>();
 
+    private static final Logger LOG = LoggerFactory.getLogger(FacilityStatusManager.class);
+    
+    
     public FacilityStatusManager(Paul services) {
-        this.emf = services.getEntityManagerFactory();
+        this.emf = Objects.requireNonNull(services.getEntityManagerFactory());
+        this.userDetailsManager = Objects.requireNonNull(services.getUserDetailsManager());
+        
+        /* No non-null check for this one because of unit test pain ... */
         this.aclsHelper = services.getAclsHelper();
     }
 
@@ -223,8 +234,42 @@ public class FacilityStatusManager {
             em.close();
         }
     }
+    
+    public SessionDetails getSessionDetails(Facility facility, 
+    		long timestamp, File datasetBasename) {
+        FacilitySession session = getSession(facility, timestamp);
+        if (session == null) {
+            session = FacilitySession.makeDummySession(facility.getFacilityName(), timestamp);
+        }
+        if (facility.isUserOperated()) {
+            return new SessionDetails(session);
+        } else {
+            return new SessionDetails(session, intuitUser(datasetBasename));
+        }
+    }
 
-    public FacilitySession getSession(String facilityName, long timestamp) {
+    private UserDetails intuitUser(File pathname) {
+        File parent = pathname.getParentFile();
+        if (parent != null) {
+        	UserDetails user = intuitUser(parent);
+            if (user != null) {
+                return user;
+            }
+        }
+        String name = pathname.getName();
+        if (name == null || name.isEmpty()) {
+            return null;
+        }
+        try {
+            LOG.debug("userDetailsManager is " + userDetailsManager);
+        	return userDetailsManager.lookupUser(name.toLowerCase(), true);
+        } catch (UserDetailsException ex) {
+        	return null;
+        }
+    }
+
+    public FacilitySession getSession(Facility facility, long timestamp) {
+        String facilityName = facility.getFacilityName();
         FacilitySessionCache cache = facilitySessionCaches.get(facilityName);
         if (cache == null) {
             cache = new FacilitySessionCache();
@@ -256,7 +301,7 @@ public class FacilityStatusManager {
             query.setParameter("facilityName", facilityName);
             query.setParameter("timestamp", new Date(timestamp));
             query.setMaxResults(1);
-            LOG.error("facilityName = " + facilityName + ", timestamp = " + timestamp);
+            LOG.debug("computeSession: facilityName = " + facilityName + ", timestamp = " + timestamp);
             List<FacilitySession> list = query.getResultList();
             if (list.size() == 0) {
                 LOG.debug("No session on '" + facilityName + "' matches timestamp " + timestamp);

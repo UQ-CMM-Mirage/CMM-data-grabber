@@ -37,7 +37,7 @@ import org.codehaus.jackson.JsonGenerationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import au.edu.uq.cmm.eccles.FacilitySession;
+import au.edu.uq.cmm.paul.GrabberFacilityConfig.FileArrivalMode;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulException;
 import au.edu.uq.cmm.paul.queue.QueueFileException;
@@ -73,7 +73,6 @@ class WorkEntry implements Runnable {
     private int settling;
     private Date timestamp;
     private long latestFileTimestamp = 0L;
-    private final boolean holdDatasetsWithNoUser;
     private final boolean catchup;
     
     private Thread grabberThread;
@@ -91,8 +90,6 @@ class WorkEntry implements Runnable {
         this.baseFile = baseFile;
         this.instrumentBasePath = mapToInstrumentPath(facility, baseFile);
         this.files = new ConcurrentHashMap<File, GrabbedFile>();
-        this.holdDatasetsWithNoUser = 
-                services.getConfiguration().isHoldDatasetsWithNoUser();
         long timeout = services.getConfiguration().getGrabberTimeout();
         this.grabberTimeout = timeout == 0 ? DEFAULT_GRABBER_TIMEOUT : timeout;
         this.catchup = event.isCatchup();
@@ -123,7 +120,8 @@ class WorkEntry implements Runnable {
         LOG.debug("Processing event for file " + file);
         synchronized (this) {
             if (grabberThread != null) {
-                LOG.warn("A late file event arrived for file " + file + ": interrupting the grabber");
+                LOG.warn("A late file event arrived for file " + 
+                		file + ": interrupting the grabber");
                 grabberThread.interrupt();
             }
             boolean matched = false;
@@ -200,8 +198,9 @@ class WorkEntry implements Runnable {
             if (alreadyRunning || !datasetCompleted()) {
                 return;
             }
-            grabFiles(false);
-            statusManager.advanceHWMTimestamp(facility, timestamp);
+            if (grabFiles(false) != null) {
+                statusManager.advanceHWMTimestamp(facility, timestamp);
+            }
         } catch (InterruptedException ex) {
             LOG.debug("Handling interrupt on workEntry thread", ex);
             grabAborted = true;
@@ -228,10 +227,15 @@ class WorkEntry implements Runnable {
 
     public DatasetMetadata grabFiles(boolean regrabbing) 
             throws InterruptedException, IOException, QueueFileException {
-        LOG.debug("WorkEntry.grabFiles has " + files.size() + " files to grab");
+        // Perform pre-grab checks
+        if (!regrabbing && !isGrabbable()) {
+            LOG.debug("WorkEntry is not grabbable");
+            return null;
+        }
         // Prepare for grabbing
-        FacilitySession session = statusManager.getSession(
-                facility.getFacilityName(), timestamp.getTime());
+        LOG.debug("WorkEntry.grabFiles has " + files.size() + " files to grab");
+        SessionDetails session = statusManager.getSessionDetails(
+        		facility, timestamp.getTime(), baseFile);
         // Optionally lock the files, then grab them.
         for (GrabbedFile file : files.values()) {
             if (Thread.interrupted()) {
@@ -260,6 +264,66 @@ class WorkEntry implements Runnable {
         } catch (JsonGenerationException ex) {
             throw new PaulException(ex);
         } 
+    }
+
+    private boolean isGrabbable() {
+        if (facility.getFileArrivalMode() == FileArrivalMode.DIRECT) {
+            return true;
+        }
+        if (facility.getFileArrivalMode() == FileArrivalMode.RSYNC) {
+            // If the latest file modification date in the putative dataset is
+            // before the LWM, we are not interested in it.
+            long latest = Long.MAX_VALUE;
+            for (GrabbedFile file: files.values()) {
+                long modified = file.getFile().lastModified();
+                if (modified > latest) {
+                    latest = modified;
+                }
+            }
+            FacilityStatus status = statusManager.getStatus(facility);
+            if (latest < status.getGrabberLWMTimestamp().getTime()) {
+                LOG.debug("WorkEntry falls before Grabber LWM");
+                return false;
+            }
+        }
+        // Look for existing Datasets in the queue with the same baseFile.
+        List<DatasetMetadata> possibles = 
+                    queueManager.lookupDatasets(baseFile.toString());
+        if (possibles.size() == 0) {
+            LOG.debug("WorkEntry has no possible previous Datasets");
+            return true;
+        }
+        // Trawl through the existing Datasets, knocking out any files in the 
+        // grab list that are already in a Dataset
+        for (DatasetMetadata dm: possibles) {
+            for (DatafileMetadata df: dm.getDatafiles()) {
+                for (GrabbedFile gf: files.values()) {
+                    File file = gf.getFile();
+                    LOG.debug("Comparing " + file.toString() + 
+                            " and " + df.getSourceFilePathname());
+                    try {
+                        if (!file.toString().equals(df.getSourceFilePathname())) {
+                            LOG.debug("No matching file");
+                            continue;
+                        }
+                        if (!df.getDatafileHash().equals(gf.computeFileHash())) {
+                            LOG.debug("Hashes don't match");
+                            continue;
+                        }
+                        LOG.debug("Files have same name and hash");
+                        files.remove(file);
+                        if (files.isEmpty()) {
+                            return false;
+                        }
+                        break;
+                    } catch (IOException ex) {
+                        // We ran into a problem calculating the file's hash ...
+                        LOG.warn("Unexpected exception", ex);
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     /**
@@ -389,13 +453,10 @@ class WorkEntry implements Runnable {
         LOG.debug("Done grabbing "+ file.getFile() + " -> " + copiedFile);
     }
 
-    private DatasetMetadata saveMetadata(Date now, FacilitySession session, boolean regrabbing)
+    private DatasetMetadata saveMetadata(Date now, SessionDetails session, boolean regrabbing)
             throws IOException, JsonGenerationException, QueueFileException, InterruptedException {
         File metadataFile = fileManager.generateUniqueFile(".admin", regrabbing);
         DatasetMetadata dataset = assembleDatasetMetadata(now, session, metadataFile);
-        for (DatafileMetadata d : dataset.getDatafiles()) {
-            d.updateDatafileHash();
-        }
         dataset.updateDatasetHash();
         if (!regrabbing) {
             queueManager.addEntry(dataset, false);
@@ -404,15 +465,7 @@ class WorkEntry implements Runnable {
     }
 
     public DatasetMetadata assembleDatasetMetadata(
-            Date now, FacilitySession session, File metadataFile) {
-        if (session == null && !holdDatasetsWithNoUser) {
-            session = FacilitySession.makeDummySession(facility.getFacilityName(), now);
-        }
-        String userName = session == null ? null : session.getUserName();
-        String account = session == null ? null : session.getAccount();
-        String sessionUuid = session == null ? null : session.getSessionUuid();
-        String emailAddress = session == null ? null : session.getEmailAddress();
-        Date loginTime = session == null ? null : session.getLoginTime();
+            Date now, SessionDetails session, File metadataFile) {
         List<DatafileMetadata> list = new ArrayList<DatafileMetadata>(files.size());
         for (GrabbedFile g : files.values()) {
             String mimeType = (g.getTemplate() == null) ? 
@@ -428,8 +481,10 @@ class WorkEntry implements Runnable {
         DatasetMetadata dataset = new DatasetMetadata(
                 baseFile.getAbsolutePath(), 
                 instrumentBasePath, metadataFile.getAbsolutePath(), 
-                userName, facility.getFacilityName(), facility.getId(), 
-                account, emailAddress, now, sessionUuid, loginTime, list);
+                session.getUserName(), facility.getFacilityName(), facility.getId(), 
+                session.getAccount(), session.getEmailAddress(), 
+                session.getOperatorName(), now, session.getSessionUuid(), 
+                session.getLoginTime(), list);
         return dataset;
     }
 

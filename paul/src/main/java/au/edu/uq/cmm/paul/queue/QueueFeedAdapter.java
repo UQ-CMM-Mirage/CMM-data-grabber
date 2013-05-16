@@ -302,11 +302,11 @@ public class QueueFeedAdapter extends AbstractEntityCollectionAdapter<DatasetMet
                 } else {
                     addContent(entry, record, request);
                 }
-
-                if (!record.getUserName().equals(FacilitySession.UNKNOWN)) {
-                    String sessionTitle = "Session of " + record.getUserName() + "/" +
-                            record.getAccountName() + " started on " +
-                            record.getSessionStartTimestamp();
+                String operator = record.getOperatorName() == null ?
+                        record.getUserName() : record.getOperatorName();
+                if (!operator.equals(FacilitySession.UNKNOWN)) {
+                    String sessionTitle = "Session of " + operator + "/" + record.getAccountName() + 
+                            " started on " + record.getSessionStartTimestamp();
                     entry.addCategory(
                             "http://mytardis.org/schemas/atom-import#experiment-ExperimentID",
                             record.getSessionUuid(), "experiment");

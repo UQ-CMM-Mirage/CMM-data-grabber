@@ -34,6 +34,14 @@
 					</c:otherwise>
 				</c:choose> 
 			</li>
+			<li>
+				<c:if test="${empty user.digest}"> 
+					User has never logged on
+				</c:if>
+				<c:if test="${not empty user.digest}"> 
+					User has previously logged on via Eccles
+				</c:if>
+			</li>
 		</ul>
 	</div>
 	<!-- /container -->

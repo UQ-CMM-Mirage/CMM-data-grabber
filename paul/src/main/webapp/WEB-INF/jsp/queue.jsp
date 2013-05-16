@@ -6,7 +6,6 @@
 <head>
 <%@ include file="/WEB-INF/jsp/commonHead.jspFrag"%>
 <title>Data Grabber Ingestion Queue Admin</title>
-</script>
 </head>
 <body>
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>

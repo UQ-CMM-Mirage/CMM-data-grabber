@@ -2,6 +2,7 @@
 	<ul>
 		<li>Facility : ${requestScope[entryName].facilityName}</li>
 		<li>User : ${requestScope[entryName].userName}</li>
+		<li>Operator : ${requestScope[entryName].operatorName}</li>
 		<li>Account : ${entry.accountName}</li>
 		<li>Email : ${requestScope[entryName].emailAddress}</li>
 		<li>Captured: <fmt:formatDate value="${requestScope[entryName].captureTimestamp}" 
