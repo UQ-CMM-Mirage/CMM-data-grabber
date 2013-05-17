@@ -420,10 +420,15 @@ public class Analyser extends AbstractFileGrabber {
         EntityManager em = emf.createEntityManager();
         try {
             TypedQuery<DatasetMetadata> query = em.createQuery(
-                    "from DatasetMetadata m where m.facilityName = :name", 
+                    "from DatasetMetadata m left join m.datafiles " +
+                    "where m.facilityName = :name", 
                     DatasetMetadata.class);
             query.setParameter("name", getFacility().getFacilityName());
-            inDatabase.addAll(query.getResultList());
+            for (DatasetMetadata ds : query.getResultList()) {
+                if (inDatabase.add(ds)) {
+                    ds.getDatafiles().size();
+                }
+            }
         } finally {
             em.close();
         }
@@ -431,7 +436,8 @@ public class Analyser extends AbstractFileGrabber {
     }
 
     private SortedSet<DatasetMetadata> buildInFolderMetadata() {
-        TreeSet<DatasetMetadata> inFolder = new TreeSet<DatasetMetadata>(ORDER_BY_BASE_PATH_AND_TIME);
+        TreeSet<DatasetMetadata> inFolder = 
+                new TreeSet<DatasetMetadata>(ORDER_BY_BASE_PATH_AND_TIME);
         String folderName = getFacility().getFolderName();
         if (folderName == null) {
             return inFolder;

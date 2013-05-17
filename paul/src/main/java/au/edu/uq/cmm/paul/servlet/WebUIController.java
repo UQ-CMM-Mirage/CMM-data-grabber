@@ -653,7 +653,7 @@ public class WebUIController implements ServletContextAware {
         model.addAttribute("facilityName", facilityName);
         model.addAttribute("returnTo", inferReturnTo(request));
         model.addAttribute("datasets", 
-                getQueueManager().getSnapshot(Slice.HELD, facilityName));
+                getQueueManager().getSnapshot(Slice.HELD, facilityName, true));
         return "claimDatasets";
     }
     
@@ -674,7 +674,7 @@ public class WebUIController implements ServletContextAware {
         if (ids == null) {
             model.addAttribute("facilityName", facilityName);
             model.addAttribute("datasets", 
-                    getQueueManager().getSnapshot(Slice.HELD, facilityName));
+                    getQueueManager().getSnapshot(Slice.HELD, facilityName, true));
             model.addAttribute("message", "Check the checkboxes for the " +
                     "Datasets you want to claim");
             return "claimDatasets";
@@ -708,7 +708,7 @@ public class WebUIController implements ServletContextAware {
         Slice s = inferSlice(slice);
         model.addAttribute("slice", s);
         model.addAttribute("datasets", 
-                getQueueManager().getSnapshot(s, facilityName));
+                getQueueManager().getSnapshot(s, facilityName, true));
         model.addAttribute("userNames", getUserDetailsManager().getUserNames());
         return "manageDatasets";
     }
@@ -802,7 +802,7 @@ public class WebUIController implements ServletContextAware {
     
     private String retryManage(Model model, String message, 
             QueueManager qm, Slice s, String facilityName) {
-        model.addAttribute("datasets", qm.getSnapshot(s, facilityName));
+        model.addAttribute("datasets", qm.getSnapshot(s, facilityName, true));
         model.addAttribute("userNames", getUserDetailsManager().getUserNames());
         model.addAttribute("message", message);
         return "manageDatasets";
