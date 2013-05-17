@@ -420,7 +420,7 @@ public class Analyser extends AbstractFileGrabber {
         EntityManager em = emf.createEntityManager();
         try {
             TypedQuery<DatasetMetadata> query = em.createQuery(
-                    "from DatasetMetadata m left join m.datafiles " +
+                    "from DatasetMetadata m left join fetch m.datafiles " +
                     "where m.facilityName = :name", 
                     DatasetMetadata.class);
             query.setParameter("name", getFacility().getFacilityName());
