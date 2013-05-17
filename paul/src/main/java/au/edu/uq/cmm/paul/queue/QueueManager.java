@@ -129,6 +129,10 @@ public class QueueManager {
                 query.setParameter("name", facilityName);
             }
             List<DatasetMetadata> res = query.getResultList();
+            // Eagerly fetch the DatafileMetadata from the resultset ... I hope.
+            for (DatasetMetadata ds : res) {
+                ds.getDatafiles().size();
+            }
             return res;
         } finally {
             em.close();
