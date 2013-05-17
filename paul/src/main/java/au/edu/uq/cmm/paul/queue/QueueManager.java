@@ -123,6 +123,7 @@ public class QueueManager {
                     whereClause += "and ";
                 }
                 query = em.createQuery("from DatasetMetadata m " +
+                    "left join fetch m.datafiles " +
                     whereClause + "facilityName = :name " +
                         "order by m.id", DatasetMetadata.class);
                 query.setParameter("name", facilityName);
