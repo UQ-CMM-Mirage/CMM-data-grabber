@@ -35,17 +35,19 @@ public class SessionDetails {
 	private final FacilitySession session;
 	
 	private final UserDetails forUser;
+	
+	public SessionDetails() {
+	    this(null, null);
+	}
 
 	public SessionDetails(FacilitySession session) {
 		this(session, null);
 	}
 
 	public SessionDetails(FacilitySession session, UserDetails forUser) {
-	    if (session == null) {
-	        throw new NullPointerException("Null session");
-	    }
-		this.session = session;
-		if (forUser == null || forUser.getUserName().equals(session.getUserName())) {
+	    this.session = session;
+		if (session == null || forUser == null || 
+		        forUser.getUserName().equals(session.getUserName())) {
 		    this.forUser = null;
 		} else {
 		    this.forUser = forUser;
@@ -56,8 +58,13 @@ public class SessionDetails {
 	 * This is the (ultimate) owner of the data.
 	 */
 	public String getUserName() {
-		return (forUser == null) ? session.getUserName() : 
-			forUser.getUserName();
+	    if (session == null) {
+	        return null;
+	    } else if (forUser == null) {
+	        return session.getUserName();
+	    } else {
+			return forUser.getUserName();
+	    }
 	}
 	
 	/**
@@ -65,22 +72,27 @@ public class SessionDetails {
 	 * done by a staff operator, this may be inaccurate.
 	 */
 	public String getAccount() {
-		return session.getAccount();
+		return session == null ? null : session.getAccount();
 	}
 	
 	/**
 	 * This is the facility which the data was grabbed from.
 	 */
 	public String getFacilityName() {
-		return session.getFacilityName();
+		return session == null ? null : session.getFacilityName();
 	}
 
 	/**
 	 * This is the email address for the owner of the data ... as best as we can tell.
 	 */
 	public String getEmailAddress() {
-		return (forUser == null) ? session.getEmailAddress() : 
-			forUser.getEmailAddress();
+	    if (session == null) {
+            return null;
+        } else if (forUser == null) {
+            return session.getEmailAddress(); 
+        } else {
+			return forUser.getEmailAddress();
+        }
 	}
 
 	/**
@@ -88,21 +100,21 @@ public class SessionDetails {
 	 * Otherwise it will be null.
 	 */
 	public String getOperatorName() {
-		return forUser == null ? null : session.getUserName();
+	    return (session == null || forUser == null) ? null : session.getUserName();
 	}
 
 	/**
 	 * The session id for the user (or operator) session the work was done in.
 	 */
 	public String getSessionUuid() {
-		return session.getSessionUuid();
+		return (session == null) ? null : session.getSessionUuid();
 	}
 
 	/**
 	 * The session start time.
 	 */
 	public Date getLoginTime() {
-		return session.getLoginTime();
+	    return (session == null) ? null : session.getLoginTime();
 	}
 	
 }
