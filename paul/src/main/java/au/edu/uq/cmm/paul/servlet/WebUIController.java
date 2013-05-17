@@ -653,7 +653,7 @@ public class WebUIController implements ServletContextAware {
         model.addAttribute("facilityName", facilityName);
         model.addAttribute("returnTo", inferReturnTo(request));
         model.addAttribute("datasets", 
-                getQueueManager().getSnapshot(Slice.HELD, facilityName));
+                getQueueManager().getSnapshot(Slice.HELD, facilityName, true));
         return "claimDatasets";
     }
     
@@ -674,7 +674,7 @@ public class WebUIController implements ServletContextAware {
         if (ids == null) {
             model.addAttribute("facilityName", facilityName);
             model.addAttribute("datasets", 
-                    getQueueManager().getSnapshot(Slice.HELD, facilityName));
+                    getQueueManager().getSnapshot(Slice.HELD, facilityName, true));
             model.addAttribute("message", "Check the checkboxes for the " +
                     "Datasets you want to claim");
             return "claimDatasets";
@@ -708,14 +708,14 @@ public class WebUIController implements ServletContextAware {
         Slice s = inferSlice(slice);
         model.addAttribute("slice", s);
         model.addAttribute("datasets", 
-                getQueueManager().getSnapshot(s, facilityName));
+                getQueueManager().getSnapshot(s, facilityName, true));
         model.addAttribute("userNames", getUserDetailsManager().getUserNames());
         return "manageDatasets";
     }
     
     private Slice inferSlice(String sliceName) {
-        if (sliceName == null) {
-            return Slice.ALL;
+    	if (sliceName == null) {
+            return null;
         } else {
             try {
                 return Slice.valueOf(sliceName.toUpperCase());
@@ -759,11 +759,9 @@ public class WebUIController implements ServletContextAware {
         }
         QueueManager qm = getQueueManager();
         if (ids == null) {
-            model.addAttribute("datasets", qm.getSnapshot(s, facilityName));
-            model.addAttribute("userNames", getUserDetailsManager().getUserNames());
-            model.addAttribute("message", 
-                    "Check the checkboxes for the Datasets you want to manage");
-            return "manageDatasets";
+            return retryManage(model, 
+                    "Check the checkboxes for the Datasets you want to " + action,
+                    qm, s, facilityName);
         } 
         try {
             int nosChanged;
@@ -779,6 +777,13 @@ public class WebUIController implements ServletContextAware {
                         verbiage(nosChanged, "dataset", "datasets", "deleted"));
                 return "ok";
             case "assign":
+            	try {
+            		// Check the name is known
+            		getUserDetailsManager().lookupUser(userName, false);
+            	} catch (UserDetailsException ex) {
+            		return retryManage(model, "User '" + userName + "' is not known.",
+            		        qm, s, facilityName);
+            	}
                 nosChanged = qm.changeUser(ids, userName, true);
                 model.addAttribute("message", 
                         verbiage(nosChanged, "dataset", "datasets", "assigned"));
@@ -793,6 +798,14 @@ public class WebUIController implements ServletContextAware {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return null;
         }
+    }
+    
+    private String retryManage(Model model, String message, 
+            QueueManager qm, Slice s, String facilityName) {
+        model.addAttribute("datasets", qm.getSnapshot(s, facilityName, true));
+        model.addAttribute("userNames", getUserDetailsManager().getUserNames());
+        model.addAttribute("message", message);
+        return "manageDatasets";
     }
     
     private String verbiage(int count, String singular, String plural, String verbed) {

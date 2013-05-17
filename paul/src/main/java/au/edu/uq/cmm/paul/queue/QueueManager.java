@@ -97,10 +97,11 @@ public class QueueManager {
         this.fileManager = new CopyingQueueFileManager(config);
     }
 
-    public List<DatasetMetadata> getSnapshot(Slice slice, String facilityName) {
+    public List<DatasetMetadata> getSnapshot(Slice slice, String facilityName, boolean fetchDatafiles) {
         EntityManager em = createEntityManager();
         try {
             String whereClause;
+            String joinClause = fetchDatafiles ? "left join fetch m.datafiles " : "";
             switch (slice) {
             case HELD:
                 whereClause = "where m.userName is null ";
@@ -114,8 +115,7 @@ public class QueueManager {
             TypedQuery<DatasetMetadata> query;
             if (facilityName == null) {
                 query = em.createQuery("from DatasetMetadata m " +
-                    "left join fetch m.datafiles " +
-                    whereClause + "order by m.id", DatasetMetadata.class);
+                    joinClause + whereClause + "order by m.id", DatasetMetadata.class);
             } else {
                 if (whereClause.isEmpty()) {
                     whereClause = "where ";
@@ -123,11 +123,16 @@ public class QueueManager {
                     whereClause += "and ";
                 }
                 query = em.createQuery("from DatasetMetadata m " +
-                    whereClause + "facilityName = :name " +
+                    joinClause + whereClause + "facilityName = :name " +
                         "order by m.id", DatasetMetadata.class);
                 query.setParameter("name", facilityName);
             }
             List<DatasetMetadata> res = query.getResultList();
+            if (fetchDatafiles) {
+                for (DatasetMetadata ds : res) {
+                    ds.getDatafiles().size();  // populate from resultset ...
+                }
+            }
             return res;
         } finally {
             em.close();
@@ -135,7 +140,7 @@ public class QueueManager {
     }
 
     public List<DatasetMetadata> getSnapshot(Slice slice) {
-        return getSnapshot(slice, null);
+        return getSnapshot(slice, null, true);
     }
 
     public DateRange getQueueDateRange(Facility facility) {

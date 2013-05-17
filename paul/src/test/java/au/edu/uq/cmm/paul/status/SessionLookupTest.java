@@ -41,10 +41,12 @@ import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.eccles.UserDetails;
 import au.edu.uq.cmm.eccles.UserDetailsManager;
 import au.edu.uq.cmm.paul.Paul;
+import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.grabber.SessionDetails;
 
 public class SessionLookupTest {
     private static EntityManagerFactory EMF;
+    private static PaulConfiguration CONFIG;
     private static FacilitySession FS[];
     private static Facility THIS, THAT;
     
@@ -59,6 +61,7 @@ public class SessionLookupTest {
     	THAT.setFacilityName("that");
     	THAT.setUserOperated(false);
         EMF = Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul");
+        CONFIG = new PaulConfiguration();
         EntityManager em = EMF.createEntityManager();
         try {
             em.getTransaction().begin();
@@ -181,11 +184,46 @@ public class SessionLookupTest {
         assertEquals("jim@nowhere", sd.getEmailAddress());
         assertNotNull(sd.getSessionUuid() != null);
         assertEquals("that", sd.getFacilityName());
+        
+        sd = fsm.getSessionDetails(
+                THAT, toTime("2011-01-01T09:30:00"), new File("/jim"));
+        assertNull(sd.getUserName());
+        assertNull(sd.getOperatorName());
+        assertNull(sd.getAccount());
+        assertNull(sd.getEmailAddress());
+        assertNull(sd.getSessionUuid());
+        assertNull(sd.getFacilityName());
+        
+        try {
+            CONFIG.setHoldDatasetsWithNoUser(false);
+            fsm = new FacilityStatusManager(buildMockServices());
+            
+            sd = fsm.getSessionDetails(
+                    THAT, toTime("2011-01-01T09:30:00"), new File("/weeble"));
+            assertEquals("unknown", sd.getUserName());
+            assertNull(sd.getOperatorName());
+            assertEquals("unknown", sd.getAccount());
+            assertNull(sd.getEmailAddress());
+            assertEquals("unknown", sd.getSessionUuid());
+            assertEquals("that", sd.getFacilityName());
+            
+            sd = fsm.getSessionDetails(
+                    THAT, toTime("2011-01-01T09:30:00"), new File("/jim"));
+            assertEquals("jim", sd.getUserName());
+            assertEquals("unknown", sd.getOperatorName());
+            assertEquals("unknown", sd.getAccount());
+            assertNull(sd.getEmailAddress());
+            assertEquals("unknown", sd.getSessionUuid());
+            assertEquals("that", sd.getFacilityName());
+        } finally {
+            CONFIG.setHoldDatasetsWithNoUser(true);
+        }
     }
     
     private Paul buildMockServices() {
         Paul services = EasyMock.createMock(Paul.class);
         EasyMock.expect(services.getEntityManagerFactory()).andReturn(EMF);
+        EasyMock.expect(services.getConfiguration()).andReturn(CONFIG);
         EasyMock.expect(services.getAclsHelper()).andReturn(null);
         EasyMock.expect(services.getUserDetailsManager()).andReturn(buildMockUserDetailsManager());
         EasyMock.replay(services);

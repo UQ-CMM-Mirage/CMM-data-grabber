@@ -64,13 +64,17 @@ public class FacilityStatusManager {
             new HashMap<Long, FacilityStatus>();
     private final Map<String, FacilitySessionCache> facilitySessionCaches =
             new HashMap<String, FacilitySessionCache>();
+    private final boolean makeDummySessions;
 
     private static final Logger LOG = LoggerFactory.getLogger(FacilityStatusManager.class);
     
     
     public FacilityStatusManager(Paul services) {
         this.emf = Objects.requireNonNull(services.getEntityManagerFactory());
-        this.userDetailsManager = Objects.requireNonNull(services.getUserDetailsManager());
+        this.userDetailsManager = Objects.requireNonNull(
+                services.getUserDetailsManager());
+        this.makeDummySessions = !Objects.requireNonNull(
+                services.getConfiguration()).isHoldDatasetsWithNoUser();
         
         /* No non-null check for this one because of unit test pain ... */
         this.aclsHelper = services.getAclsHelper();
@@ -238,7 +242,7 @@ public class FacilityStatusManager {
     public SessionDetails getSessionDetails(Facility facility, 
     		long timestamp, File datasetBasename) {
         FacilitySession session = getSession(facility, timestamp);
-        if (session == null) {
+        if (session == null && makeDummySessions) {
             session = FacilitySession.makeDummySession(facility.getFacilityName(), timestamp);
         }
         if (facility.isUserOperated()) {
