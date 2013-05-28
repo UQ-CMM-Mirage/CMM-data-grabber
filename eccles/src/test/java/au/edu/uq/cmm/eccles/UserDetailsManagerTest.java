@@ -79,12 +79,13 @@ public class UserDetailsManagerTest {
 
     @Test
     public void testConstructor() {
-        new EcclesUserDetailsManager(EMF);
+        new EcclesUserDetailsManager(EMF, EcclesFallbackMode.NO_FALLBACK);
     }
     
     @Test
     public void testLookup() throws UserDetailsException {
-    	EcclesUserDetailsManager udm = new EcclesUserDetailsManager(EMF);
+    	EcclesUserDetailsManager udm = 
+    			new EcclesUserDetailsManager(EMF, EcclesFallbackMode.NO_FALLBACK);
     	UserDetails ud = udm.lookupUser("jim", true);
     	assertEquals("jim", ud.getUserName());
     	assertEquals("jim@nowhere", ud.getEmailAddress());
@@ -117,7 +118,8 @@ public class UserDetailsManagerTest {
     
     @Test
     public void testUsersAndNames() throws UserDetailsException {
-    	EcclesUserDetailsManager udm = new EcclesUserDetailsManager(EMF);
+    	EcclesUserDetailsManager udm = 
+    			new EcclesUserDetailsManager(EMF, EcclesFallbackMode.NO_FALLBACK);
     	List<String> names = udm.getUserNames();
     	assertEquals(2, names.size());
     	assertTrue(names.contains("jim"));
@@ -128,7 +130,8 @@ public class UserDetailsManagerTest {
     
     @Test
     public void testAddAndRemove() throws UserDetailsException {
-    	EcclesUserDetailsManager udm = new EcclesUserDetailsManager(EMF);
+    	EcclesUserDetailsManager udm = 
+    			new EcclesUserDetailsManager(EMF, EcclesFallbackMode.NO_FALLBACK);
     	assertEquals(2, udm.getUserNames().size());
     	udm.addUser(new UserDetails("bert"));
     	assertEquals(3, udm.getUserNames().size());

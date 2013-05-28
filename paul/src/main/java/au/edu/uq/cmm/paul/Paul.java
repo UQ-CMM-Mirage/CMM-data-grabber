@@ -1,5 +1,5 @@
 /*
-* Copyright 2012, CMM, University of Queensland.
+* Copyright 2012-2013, CMM, University of Queensland.
 *
 * This file is part of Paul.
 *
@@ -85,16 +85,17 @@ public class Paul extends ServiceBase implements Lifecycle {
         this.entityManagerFactory = entityManagerFactory;
         this.configManager = new ConfigurationManager(entityManagerFactory, staticConfig, staticFacilities);
         this.facilityMapper = new PaulFacilityMapper(entityManagerFactory);
-        PaulConfiguration activeConfig = configManager.getActiveConfig();
+        PaulConfiguration config = configManager.getActiveConfig();
         this.aclsHelper = new AclsHelper(
-                activeConfig.getProxyHost(), activeConfig.getProxyPort(), 
+                config.getProxyHost(), config.getProxyPort(), 
                 /* 
                  * Use double the default timeout, because the proxy potentially
                  * has to timeout the downstream ACLS server.  (Hack)
                  */
                 AclsClient.ACLS_REQUEST_TIMEOUT * 2, 
                 false);
-        this.userDetailsManager = new EcclesUserDetailsManager(entityManagerFactory);
+        this.userDetailsManager = new EcclesUserDetailsManager(entityManagerFactory, 
+        		config.getFallbackMode());
         this.statusManager = new FacilityStatusManager(this);
         this.uncNameMapper = uncNameMapper;
         this.fileWatcher = new FileWatcher(this);

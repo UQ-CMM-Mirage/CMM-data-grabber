@@ -1,5 +1,5 @@
 /*
-* Copyright 2012, CMM, University of Queensland.
+* Copyright 2012-2013, CMM, University of Queensland.
 *
 * This file is part of Eccles.
 *
@@ -30,16 +30,19 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.hibernate.annotations.GenericGenerator;
+
 import au.edu.uq.cmm.aclslib.config.ACLSProxyConfiguration;
 
-@Entity
-@Table(name = "CONFIGURATION")
-public class EcclesProxyConfiguration implements ACLSProxyConfiguration {
+public abstract class EcclesProxyConfiguration implements ACLSProxyConfiguration {
     private Long id;
     private int proxyPort;
     private String serverHost;
@@ -51,13 +54,14 @@ public class EcclesProxyConfiguration implements ACLSProxyConfiguration {
     private boolean allowUnknownClients;
     private Set<String> trustedAddresses = Collections.emptySet();
     private Set<InetAddress> trustedInetAddresses = Collections.emptySet();
+    private EcclesFallbackMode fallbackMode = EcclesFallbackMode.USER_PASSWORD;
     
     
     public EcclesProxyConfiguration() {
         super();
     }
 
-    public static ACLSProxyConfiguration load(EntityManagerFactory emf) {
+    public static EcclesProxyConfiguration load(EntityManagerFactory emf) {
         EntityManager em = emf.createEntityManager();
         try {
             return em.createQuery("from EcclesProxyConfiguration", 
@@ -103,6 +107,8 @@ public class EcclesProxyConfiguration implements ACLSProxyConfiguration {
     }
 
     @Id
+    @GeneratedValue(generator="increment")
+    @GenericGenerator(name="increment", strategy = "increment")
     public Long getId() {
         return id;
     }
@@ -162,9 +168,95 @@ public class EcclesProxyConfiguration implements ACLSProxyConfiguration {
         }
     }
 
-    @Transient
+    @Enumerated(EnumType.STRING)
+    public EcclesFallbackMode getFallbackMode() {
+		return fallbackMode;
+	}
+
+	public void setFallbackMode(EcclesFallbackMode fallbackMode) {
+		this.fallbackMode = fallbackMode == null ? 
+				fallbackMode : EcclesFallbackMode.USER_PASSWORD;
+	}
+
+	@Transient
     public Set<InetAddress> getTrustedInetAddresses() {
         return trustedInetAddresses;
     }
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (allowUnknownClients ? 1231 : 1237);
+		result = prime
+				* result
+				+ ((dummyFacilityHostId == null) ? 0 : dummyFacilityHostId
+						.hashCode());
+		result = prime
+				* result
+				+ ((dummyFacilityName == null) ? 0 : dummyFacilityName
+						.hashCode());
+		result = prime * result
+				+ ((fallbackMode == null) ? 0 : fallbackMode.hashCode());
+		result = prime * result
+				+ ((proxyHost == null) ? 0 : proxyHost.hashCode());
+		result = prime * result + proxyPort;
+		result = prime * result
+				+ ((serverHost == null) ? 0 : serverHost.hashCode());
+		result = prime * result + serverPort;
+		result = prime
+				* result
+				+ ((trustedInetAddresses == null) ? 0 : trustedInetAddresses
+						.hashCode());
+		result = prime * result + (useProject ? 1231 : 1237);
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		EcclesProxyConfiguration other = (EcclesProxyConfiguration) obj;
+		if (allowUnknownClients != other.allowUnknownClients)
+			return false;
+		if (dummyFacilityHostId == null) {
+			if (other.dummyFacilityHostId != null)
+				return false;
+		} else if (!dummyFacilityHostId.equals(other.dummyFacilityHostId))
+			return false;
+		if (dummyFacilityName == null) {
+			if (other.dummyFacilityName != null)
+				return false;
+		} else if (!dummyFacilityName.equals(other.dummyFacilityName))
+			return false;
+		if (fallbackMode != other.fallbackMode)
+			return false;
+		if (proxyHost == null) {
+			if (other.proxyHost != null)
+				return false;
+		} else if (!proxyHost.equals(other.proxyHost))
+			return false;
+		if (proxyPort != other.proxyPort)
+			return false;
+		if (serverHost == null) {
+			if (other.serverHost != null)
+				return false;
+		} else if (!serverHost.equals(other.serverHost))
+			return false;
+		if (serverPort != other.serverPort)
+			return false;
+		if (trustedInetAddresses == null) {
+			if (other.trustedInetAddresses != null)
+				return false;
+		} else if (!trustedInetAddresses.equals(other.trustedInetAddresses))
+			return false;
+		if (useProject != other.useProject)
+			return false;
+		return true;
+	}
 
 }

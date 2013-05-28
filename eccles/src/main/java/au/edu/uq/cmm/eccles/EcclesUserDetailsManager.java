@@ -1,5 +1,5 @@
 /*
-* Copyright 2012, CMM, University of Queensland.
+* Copyright 2012-2013, CMM, University of Queensland.
 *
 * This file is part of Eccles.
 *
@@ -44,15 +44,19 @@ import au.edu.uq.cmm.aclslib.message.Certification;
 
 
 public class EcclesUserDetailsManager implements UserDetailsManager {
-    private static final Logger LOG = LoggerFactory.getLogger(EcclesUserDetailsManager.class);
+    private static final Logger LOG = 
+    		LoggerFactory.getLogger(EcclesUserDetailsManager.class);
     
     private Random random = new Random();
     private EntityManagerFactory emf;
+    private EcclesFallbackMode fallbackMode;
     private Certification defaultCertification = Certification.VALID;
     
 
-    public EcclesUserDetailsManager(EntityManagerFactory emf) {
+    public EcclesUserDetailsManager(EntityManagerFactory emf, 
+    		EcclesFallbackMode fallbackMode) {
         this.emf = Objects.requireNonNull(emf);
+        this.fallbackMode = Objects.requireNonNull(fallbackMode);
     }
     
     @Override
@@ -164,35 +168,45 @@ public class EcclesUserDetailsManager implements UserDetailsManager {
     }
     
     @Override
-    public AclsLoginDetails authenticateAgainstCachedCredentials(
+    public AclsLoginDetails authenticate(
             String userName, String password, FacilityConfig facility) {
+    	if (fallbackMode == EcclesFallbackMode.NO_FALLBACK) {
+    		return null;
+    	}
         LOG.debug("Trying to authenticate using cached user details for " + userName);
         try {
             UserDetails userDetails = lookupUser(userName, true);
-            String myDigest = createDigest(password, userDetails.getSeed());
+            if (fallbackMode == EcclesFallbackMode.USER_ONLY) {
+            	return buildDetails(userDetails, facility);
+            }
             String savedDigest = userDetails.getDigest();
             if (savedDigest == null) {
-            	return null;
+            	return (fallbackMode == EcclesFallbackMode.USER_PASSWORD_OPTIONAL) ?
+            			buildDetails(userDetails, facility) : null;
             }
-            LOG.debug("Comparing digests - " + savedDigest + " vs " + myDigest);
-            if (myDigest.equals(savedDigest)) {
-                Certification cert = Certification.parse(
-                        userDetails.getCertifications().get(facility.getFacilityName()));
-                if (cert == null) {
-                    cert = defaultCertification;
-                }
-                return new AclsLoginDetails(userName, userDetails.getHumanReadableName(),
-                        userDetails.getOrgName(), password,  facility.getFacilityName(), 
-                        new ArrayList<String>(userDetails.getAccounts()),
-                        cert, userDetails.isOnsiteAssist(), true);
-            }
-            return null;
+            String myDigest = createDigest(password, userDetails.getSeed());
+            return (myDigest.equals(savedDigest)) ?
+            		buildDetails(userDetails, facility) : null;
         } catch (UserDetailsException ex) {
             return null;
         }
     }
 
-    private String createDigest(String password, long seed) {
+    private AclsLoginDetails buildDetails(
+    		UserDetails userDetails, FacilityConfig facility) {
+    	Certification cert = Certification.parse(
+                userDetails.getCertifications().get(facility.getFacilityName()));
+        if (cert == null) {
+            cert = defaultCertification;
+        }
+        return new AclsLoginDetails(userDetails.getUserName(), 
+        		userDetails.getHumanReadableName(),
+                userDetails.getOrgName(), null,  facility.getFacilityName(), 
+                new ArrayList<String>(userDetails.getAccounts()),
+                cert, userDetails.isOnsiteAssist(), true);
+	}
+
+	private String createDigest(String password, long seed) {
         LOG.debug("Creating digest for password using seed " + seed);
         try {
             MessageDigest digester = MessageDigest.getInstance("MD5");

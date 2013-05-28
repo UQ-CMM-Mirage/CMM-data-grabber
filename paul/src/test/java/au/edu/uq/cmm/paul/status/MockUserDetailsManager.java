@@ -1,5 +1,5 @@
 /*
-* Copyright 2012, CMM, University of Queensland.
+* Copyright 2012-2013, CMM, University of Queensland.
 *
 * This file is part of Paul.
 *
@@ -85,7 +85,7 @@ public class MockUserDetailsManager implements UserDetailsManager {
     }
 
     @Override
-    public AclsLoginDetails authenticateAgainstCachedCredentials(
+    public AclsLoginDetails authenticate(
             String userName, String password, FacilityConfig facility) {
         throw new UnsupportedOperationException();
     }
