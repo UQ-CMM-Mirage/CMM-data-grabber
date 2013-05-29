@@ -7,6 +7,7 @@
 		<description>Persistent Facility Status</description>
 		<class>au.edu.uq.cmm.eccles.UserDetails</class>
 		<class>au.edu.uq.cmm.eccles.FacilitySession</class>
+		<class>au.edu.uq.cmm.eccles.EcclesStaticConfiguration</class>
 		<class>au.edu.uq.cmm.paul.PaulConfiguration</class>
 		<class>au.edu.uq.cmm.paul.status.Facility</class>
 		<class>au.edu.uq.cmm.paul.status.DatafileTemplate</class>

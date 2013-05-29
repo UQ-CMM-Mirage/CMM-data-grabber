@@ -18,47 +18,65 @@
 				</tr>
 			</thead>
 			<tbody>
+
 				<tr>
-					<td colspan="2">ACLS Proxy host</td>
-					<td>${config.proxyHost}</td>
+					<td colspan="3">ACLS Proxy (Eccles) configuration details:</td>
 				</tr>
 				<tr>
-					<td colspan="2">ACLS Proxy port</td>
-					<td>${config.proxyPort}</td>
+					<td></td>
+					<td>ACLS Proxy host</td>
+					<td>${proxyConfig.proxyHost}</td>
 				</tr>
 				<tr>
-					<td colspan="2">ACLS Server host</td>
-					<td>${config.serverHost}</td>
+					<td></td>
+					<td>ACLS Proxy port</td>
+					<td>${proxyConfig.proxyPort}</td>
 				</tr>
 				<tr>
-					<td colspan="2">ACLS Server port</td>
-					<td>${config.serverPort}</td>
+					<td></td>
+					<td>ACLS Server host</td>
+					<td>${proxyConfig.serverHost}</td>
 				</tr>
 				<tr>
-					<td colspan="3">ACLS Proxy details:</td>
+					<td></td>
+					<td>ACLS Server port</td>
+					<td>${proxyConfig.serverPort}</td>
 				</tr>
 				<tr>
 					<td></td>
 					<td>Allow unknown clients</td>
-					<td>${config.allowUnknownClients}</td>
+					<td>${proxyConfig.allowUnknownClients}</td>
 				</tr>
 				<tr>
 					<td></td>
 					<td>Trusted addresses</td>
-					<td><c:forEach var="addr" items="${config.trustedAddresses}">
+					<td><c:forEach var="addr" items="${proxyConfig.trustedAddresses}">
 			        		${addr} &nbsp;
 			        	</c:forEach></td>
 				</tr>
 				<tr>
 					<td></td>
 					<td>Dummy facility name</td>
-					<td>${config.dummyFacilityName}</td>
+					<td>${proxyConfig.dummyFacilityName}</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>ACLS consoles use 'project'</td>
+					<td>${proxyConfig.useProject}</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>ACLS fallback authentication mode</td>
+					<td>${proxyConfig.fallbackMode}</td>
 				</tr>
 				<tr>
 					<td></td>
 					<td>Dummy facility hostId</td>
-					<td>${config.dummyFacilityHostId}</td>
+					<td>${proxyConfig.dummyFacilityHostId}</td>
 					<td>
+			    <tr>
+			    	<td colspan="3">Data Grabber (Paul) configuration details:</td>
+			    </tr>
 				<tr>
 					<td colspan="2">Base file URL</td>
 					<td>${config.baseFileUrl}</td>
@@ -100,10 +118,6 @@
 					<td colspan="2">Hold datasets with no user information</td>
 					<td>${config.holdDatasetsWithNoUser}</td>
 				</tr>
-				<tr>
-					<td colspan="2">Clients use 'project'</td>
-					<td>${config.useProject}</td>
-				</tr>
 				<tr><td colspan="3">Atom parameters for the Ingestion feed:</td></tr>
 				<tr>
 					<td></td>
@@ -141,17 +155,6 @@
 					<td>Primary Downstream Repository</td>
 					<td>${config.primaryRepositoryUrl}</td>
 				</tr>
-			<!--
-			<li>Facilities:
-				<ul>
-					<c:forEach items="${facilities}" var="facility">
-						<li><a href="/paul/facilities/${facility.facilityName}">
-								${facility.facilityName} - ${facility.facilityDescription} -
-								${facility.status} </a></li>
-					</c:forEach>
-				</ul>
-			</li>
-			-->
 			</tbody>
 		</table>
 		<form action="config" method="post">
