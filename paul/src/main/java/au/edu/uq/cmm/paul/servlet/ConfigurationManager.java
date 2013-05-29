@@ -30,6 +30,7 @@ import java.util.Objects;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.NoResultException;
 import javax.persistence.RollbackException;
 import javax.persistence.TypedQuery;
 
@@ -143,14 +144,22 @@ public class ConfigurationManager {
             // into one transaction is gives constraint errors when adding the new
             // facilities.  (The fix is to version the configurations.)
             em.getTransaction().begin();
-            PaulConfiguration oldConfig = em.
-                    createQuery("from PaulConfiguration", PaulConfiguration.class).
-                    getSingleResult();
-            em.remove(oldConfig);
-            EcclesProxyConfiguration oldProxyConfig = em.
-                    createQuery("from EcclesProxyConfiguration", EcclesProxyConfiguration.class).
-                    getSingleResult();
-            em.remove(oldProxyConfig);
+            try {
+                PaulConfiguration oldConfig = em.
+                        createQuery("from PaulConfiguration", PaulConfiguration.class).
+                        getSingleResult();
+                em.remove(oldConfig);
+            } catch (NoResultException ex) {
+                // OK
+            }
+            try {
+                EcclesProxyConfiguration oldProxyConfig = em.
+                        createQuery("from EcclesProxyConfiguration", EcclesProxyConfiguration.class).
+                        getSingleResult();
+                em.remove(oldProxyConfig);  
+            } catch (NoResultException ex) {
+                // OK
+            }
             if (reloadFacilities) {
                 List<Facility> facilities = em.
                         createQuery("from Facility", Facility.class).
