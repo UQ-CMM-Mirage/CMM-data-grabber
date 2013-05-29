@@ -152,16 +152,16 @@ public class ConfigurationManager {
             em.getTransaction().commit();
             
             // Second transaction
+            em.getTransaction().begin();
+            em.persist(newConfig);
+            em.persist(newProxyConfig);
             if (reloadFacilities) {
-                em.getTransaction().begin();
-                em.persist(newConfig);
-                em.persist(newProxyConfig);
                 for (StaticPaulFacility staticFacility : staticFacilities.getFacilities()) {
                     Facility facility = new Facility(staticFacility);
                     em.persist(facility);
                 }
-                em.getTransaction().commit();
             }
+            em.getTransaction().commit();
             return new Configs(newConfig, newProxyConfig, 
                         PaulFacilityMapper.getFacilityCount(entityManagerFactory));
         } catch (UnknownHostException ex) {

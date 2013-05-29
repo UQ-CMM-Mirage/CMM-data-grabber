@@ -20,6 +20,7 @@
 package au.edu.uq.cmm.paul;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import javax.persistence.EntityManagerFactory;
 
@@ -133,7 +134,7 @@ public class Paul extends ServiceBase implements Lifecycle {
     }
 
     public PaulConfiguration getConfiguration() {
-        return configManager.getActiveConfig();
+        return Objects.requireNonNull(configManager.getActiveConfig());
     }
 
     public QueueManager getQueueManager() {
