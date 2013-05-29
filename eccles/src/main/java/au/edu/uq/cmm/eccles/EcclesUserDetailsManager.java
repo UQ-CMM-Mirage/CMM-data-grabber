@@ -1,5 +1,5 @@
 /*
-* Copyright 2012, CMM, University of Queensland.
+* Copyright 2012-2013, CMM, University of Queensland.
 *
 * This file is part of Eccles.
 *
@@ -44,15 +44,18 @@ import au.edu.uq.cmm.aclslib.message.Certification;
 
 
 public class EcclesUserDetailsManager implements UserDetailsManager {
-    private static final Logger LOG = LoggerFactory.getLogger(EcclesUserDetailsManager.class);
+    private static final Logger LOG = 
+    		LoggerFactory.getLogger(EcclesUserDetailsManager.class);
     
     private Random random = new Random();
     private EntityManagerFactory emf;
-    private Certification defaultCertification = Certification.VALID;
+    private EcclesFallbackMode fallbackMode;
     
 
-    public EcclesUserDetailsManager(EntityManagerFactory emf) {
+    public EcclesUserDetailsManager(EntityManagerFactory emf, 
+    		EcclesFallbackMode fallbackMode) {
         this.emf = Objects.requireNonNull(emf);
+        this.fallbackMode = Objects.requireNonNull(fallbackMode);
     }
     
     @Override
@@ -164,35 +167,56 @@ public class EcclesUserDetailsManager implements UserDetailsManager {
     }
     
     @Override
-    public AclsLoginDetails authenticateAgainstCachedCredentials(
+    /**
+     * Perform fallback authentication against cached user details.
+     * The actual behavior depends on the current 'fallbackMode'
+     * setting, as described by the type.  If non-null, the resulting 
+     * AclsLoginDetails object will give the user's cached certification
+     * for the Facility if available, defaulting to VALID if there
+     * is no cached certification information for the Facility.
+     */
+    public AclsLoginDetails authenticate(
             String userName, String password, FacilityConfig facility) {
+    	if (fallbackMode == EcclesFallbackMode.NO_FALLBACK) {
+    		return null;
+    	}
         LOG.debug("Trying to authenticate using cached user details for " + userName);
         try {
             UserDetails userDetails = lookupUser(userName, true);
-            String myDigest = createDigest(password, userDetails.getSeed());
+            if (fallbackMode == EcclesFallbackMode.USER_ONLY) {
+            	LOG.debug("Skipping password check for " + userName);
+            	return buildDetails(userDetails, facility);
+            }
             String savedDigest = userDetails.getDigest();
             if (savedDigest == null) {
-            	return null;
+            	LOG.debug("Skipping optional password check for " + userName);
+            	return (fallbackMode == EcclesFallbackMode.USER_PASSWORD_OPTIONAL) ?
+            			buildDetails(userDetails, facility) : null;
             }
-            LOG.debug("Comparing digests - " + savedDigest + " vs " + myDigest);
-            if (myDigest.equals(savedDigest)) {
-                Certification cert = Certification.parse(
-                        userDetails.getCertifications().get(facility.getFacilityName()));
-                if (cert == null) {
-                    cert = defaultCertification;
-                }
-                return new AclsLoginDetails(userName, userDetails.getHumanReadableName(),
-                        userDetails.getOrgName(), password,  facility.getFacilityName(), 
-                        new ArrayList<String>(userDetails.getAccounts()),
-                        cert, userDetails.isOnsiteAssist(), true);
-            }
-            return null;
+        	LOG.debug("Doing password check for " + userName);
+            String myDigest = createDigest(password, userDetails.getSeed());
+            LOG.debug("Comparing " + myDigest + " with " + savedDigest);
+            return (myDigest.equals(savedDigest)) ?
+            		buildDetails(userDetails, facility) : null;
         } catch (UserDetailsException ex) {
+        	LOG.debug("Unknown user " + userName);
             return null;
         }
     }
 
-    private String createDigest(String password, long seed) {
+    private AclsLoginDetails buildDetails(
+    		UserDetails userDetails, FacilityConfig facility) {
+    	String certString = userDetails.getCertifications().get(facility.getFacilityName());
+    	Certification cert = (certString == null) ?
+    			Certification.VALID : Certification.parse(certString);
+        return new AclsLoginDetails(userDetails.getUserName(), 
+        		userDetails.getHumanReadableName(),
+                userDetails.getOrgName(), null,  facility.getFacilityName(), 
+                new ArrayList<String>(userDetails.getAccounts()),
+                cert, userDetails.isOnsiteAssist(), true);
+	}
+
+	public static String createDigest(String password, long seed) {
         LOG.debug("Creating digest for password using seed " + seed);
         try {
             MessageDigest digester = MessageDigest.getInstance("MD5");
@@ -211,7 +235,7 @@ public class EcclesUserDetailsManager implements UserDetailsManager {
         }
     }
     
-    private String toString(byte[] bytes) {
+    private static String toString(byte[] bytes) {
         StringBuilder sb = new StringBuilder(bytes.length * 2 + 6);
         sb.append(bytes.length).append(":");
         for (byte b : bytes) {

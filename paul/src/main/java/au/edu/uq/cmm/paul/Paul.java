@@ -1,5 +1,5 @@
 /*
-* Copyright 2012, CMM, University of Queensland.
+* Copyright 2012-2013, CMM, University of Queensland.
 *
 * This file is part of Paul.
 *
@@ -20,6 +20,7 @@
 package au.edu.uq.cmm.paul;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import javax.persistence.EntityManagerFactory;
 
@@ -33,6 +34,8 @@ import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.aclslib.service.ServiceBase;
 import au.edu.uq.cmm.aclslib.service.ServiceException;
 import au.edu.uq.cmm.eccles.EcclesUserDetailsManager;
+import au.edu.uq.cmm.eccles.ProxyConfiguration;
+import au.edu.uq.cmm.eccles.StaticEcclesProxyConfiguration;
 import au.edu.uq.cmm.eccles.UserDetailsManager;
 import au.edu.uq.cmm.paul.queue.AtomFeed;
 import au.edu.uq.cmm.paul.queue.QueueExpirer;
@@ -70,31 +73,35 @@ public class Paul extends ServiceBase implements Lifecycle {
     
     
     public Paul(StaticPaulConfiguration staticConfig,
+            StaticEcclesProxyConfiguration staticProxyConfig,
             StaticPaulFacilities staticFacilities,
             EntityManagerFactory entityManagerFactory)
     throws IOException {
-        this(staticConfig, staticFacilities,
+        this(staticConfig, staticProxyConfig, staticFacilities,
                 entityManagerFactory, new SambaUncPathnameMapper());
     }
     
     public Paul(StaticPaulConfiguration staticConfig,
+            StaticEcclesProxyConfiguration staticProxyConfig,
             StaticPaulFacilities staticFacilities,
             EntityManagerFactory entityManagerFactory,
             UncPathnameMapper uncNameMapper)
     throws IOException {
         this.entityManagerFactory = entityManagerFactory;
-        this.configManager = new ConfigurationManager(entityManagerFactory, staticConfig, staticFacilities);
+        this.configManager = new ConfigurationManager(
+                entityManagerFactory, staticConfig, staticProxyConfig, staticFacilities);
         this.facilityMapper = new PaulFacilityMapper(entityManagerFactory);
-        PaulConfiguration activeConfig = configManager.getActiveConfig();
+        ProxyConfiguration proxyConfig = configManager.getActiveProxyConfig();
         this.aclsHelper = new AclsHelper(
-                activeConfig.getProxyHost(), activeConfig.getProxyPort(), 
+                proxyConfig.getProxyHost(), proxyConfig.getProxyPort(), 
                 /* 
                  * Use double the default timeout, because the proxy potentially
                  * has to timeout the downstream ACLS server.  (Hack)
                  */
                 AclsClient.ACLS_REQUEST_TIMEOUT * 2, 
                 false);
-        this.userDetailsManager = new EcclesUserDetailsManager(entityManagerFactory);
+        this.userDetailsManager = new EcclesUserDetailsManager(entityManagerFactory, 
+                proxyConfig.getFallbackMode());
         this.statusManager = new FacilityStatusManager(this);
         this.uncNameMapper = uncNameMapper;
         this.fileWatcher = new FileWatcher(this);
@@ -127,7 +134,7 @@ public class Paul extends ServiceBase implements Lifecycle {
     }
 
     public PaulConfiguration getConfiguration() {
-        return configManager.getActiveConfig();
+        return Objects.requireNonNull(configManager.getActiveConfig());
     }
 
     public QueueManager getQueueManager() {

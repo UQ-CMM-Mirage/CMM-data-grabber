@@ -1,5 +1,5 @@
 /*
-* Copyright 2012, CMM, University of Queensland.
+* Copyright 2012-2013, CMM, University of Queensland.
 *
 * This file is part of Paul.
 *
@@ -30,14 +30,18 @@ import java.util.Objects;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.NoResultException;
 import javax.persistence.RollbackException;
 import javax.persistence.TypedQuery;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import au.edu.uq.cmm.eccles.EcclesProxyConfiguration;
+import au.edu.uq.cmm.eccles.StaticEcclesProxyConfiguration;
 import au.edu.uq.cmm.paul.GrabberFacilityConfig;
 import au.edu.uq.cmm.paul.PaulConfiguration;
+import au.edu.uq.cmm.paul.PaulFacilityMapper;
 import au.edu.uq.cmm.paul.StaticPaulConfiguration;
 import au.edu.uq.cmm.paul.StaticPaulFacilities;
 import au.edu.uq.cmm.paul.StaticPaulFacility;
@@ -45,70 +49,140 @@ import au.edu.uq.cmm.paul.status.DatafileTemplate;
 import au.edu.uq.cmm.paul.status.Facility;
 
 public class ConfigurationManager {
+    private static class Configs{
+        private PaulConfiguration config;
+        private EcclesProxyConfiguration proxyConfig;
+        private int facilityCount;
+        
+        public Configs(Configs configs) {
+            this(configs.config, configs.proxyConfig, configs.facilityCount);
+        }
+        
+        public Configs(PaulConfiguration config,
+                EcclesProxyConfiguration proxyConfig,
+                int facilityCount) {
+            super();
+            this.config = config;
+            this.proxyConfig = proxyConfig;
+            this.facilityCount = facilityCount;
+        }
+        
+        public boolean incomplete() {
+            return this.config == null || this.proxyConfig == null || this.facilityCount == 0;
+        }
+
+        @Override
+        public String toString() {
+            return "Configs [config=" + config + ", proxyConfig=" + proxyConfig
+                    + ", facilityCount=" + facilityCount + "]";
+        }
+    }
+    
     private static final Logger LOG = LoggerFactory.getLogger(ConfigurationManager.class);
 
-    private PaulConfiguration activeConfig;
-    private PaulConfiguration latestConfig;
+    private Configs activeConfigs;
+    private Configs latestConfigs;
     private StaticPaulConfiguration staticConfig;
+    private StaticEcclesProxyConfiguration staticProxyConfig;
     private EntityManagerFactory entityManagerFactory;
     private StaticPaulFacilities staticFacilities;
 
     
     public ConfigurationManager(EntityManagerFactory entityManagerFactory,
             StaticPaulConfiguration staticConfig, 
+            StaticEcclesProxyConfiguration staticProxyConfig, 
             StaticPaulFacilities staticFacilities) {
         this.entityManagerFactory = Objects.requireNonNull(entityManagerFactory);
         this.staticConfig = staticConfig;
+        this.staticProxyConfig = staticProxyConfig;
         this.staticFacilities =  staticFacilities;
-        activeConfig = PaulConfiguration.load(entityManagerFactory, true);
-        if (activeConfig.isEmpty() && staticConfig != null) {
-            activeConfig = doResetConfiguration();
+        activeConfigs = loadConfigurations();
+        if (activeConfigs.incomplete()) {
+            activeConfigs = doResetConfigurations(activeConfigs.facilityCount == 0);
         }
-        latestConfig = activeConfig;
+        latestConfigs = new Configs(activeConfigs);
     }
 
     public PaulConfiguration getActiveConfig() {
-        return activeConfig;
+        return activeConfigs.config;
     }
 
     public PaulConfiguration getLatestConfig() {
-        return latestConfig;
+        return latestConfigs.config;
     }
     
-    public void resetConfiguration() {
-        latestConfig = doResetConfiguration();
+    public EcclesProxyConfiguration getActiveProxyConfig() {
+        return activeConfigs.proxyConfig;
     }
 
-    private PaulConfiguration doResetConfiguration() {
-        LOG.info("Resetting details from static Configuration");
+    public EcclesProxyConfiguration getLatestProxyConfig() {
+        return latestConfigs.proxyConfig;
+    }
+
+    public void resetConfigurations() {
+        latestConfigs = doResetConfigurations(false);
+    }
+    
+    private Configs loadConfigurations() {
+        Configs configs = new Configs(
+                PaulConfiguration.load(entityManagerFactory),
+                EcclesProxyConfiguration.load(entityManagerFactory),
+                PaulFacilityMapper.getFacilityCount(entityManagerFactory));
+        LOG.info("Loaded configs from database: " + configs);
+        return configs;
+    }
+
+    private Configs doResetConfigurations(boolean reloadFacilities) {
+        LOG.info("Resetting from static configurations");
+        LOG.info("Static grabber configs: " + staticConfig);
+        LOG.info("Static proxy configs: " + staticProxyConfig);
         EntityManager em = entityManagerFactory.createEntityManager();
         try {
             PaulConfiguration newConfig = new PaulConfiguration(staticConfig);
+            EcclesProxyConfiguration newProxyConfig = new EcclesProxyConfiguration(staticProxyConfig);
             // FIXME - we do two transactions.  Combining the two transactions 
             // into one transaction is gives constraint errors when adding the new
             // facilities.  (The fix is to version the configurations.)
             em.getTransaction().begin();
-            PaulConfiguration oldConfig = em.
-                    createQuery("from PaulConfiguration", PaulConfiguration.class).
-                    getSingleResult();
-            em.remove(oldConfig);
-            List<Facility> facilities = em.
-                    createQuery("from Facility", Facility.class).
-                    getResultList();
-            for (Facility facility : facilities) {
-                em.remove(facility);
+            try {
+                PaulConfiguration oldConfig = em.
+                        createQuery("from PaulConfiguration", PaulConfiguration.class).
+                        getSingleResult();
+                em.remove(oldConfig);
+            } catch (NoResultException ex) {
+                // OK
+            }
+            try {
+                EcclesProxyConfiguration oldProxyConfig = em.
+                        createQuery("from EcclesProxyConfiguration", EcclesProxyConfiguration.class).
+                        getSingleResult();
+                em.remove(oldProxyConfig);  
+            } catch (NoResultException ex) {
+                // OK
+            }
+            if (reloadFacilities) {
+                List<Facility> facilities = em.
+                        createQuery("from Facility", Facility.class).
+                        getResultList();
+                for (Facility facility : facilities) {
+                    em.remove(facility);
+                }
             }
             em.getTransaction().commit();
             
             // Second transaction
             em.getTransaction().begin();
             em.persist(newConfig);
-            for (StaticPaulFacility staticFacility : staticFacilities.getFacilities()) {
-                Facility facility = new Facility(staticFacility);
-                em.persist(facility);
+            em.persist(newProxyConfig);
+            if (reloadFacilities) {
+                for (StaticPaulFacility staticFacility : staticFacilities.getFacilities()) {
+                    Facility facility = new Facility(staticFacility);
+                    em.persist(facility);
+                }
             }
             em.getTransaction().commit();
-            return newConfig;
+            return new Configs(newConfig, newProxyConfig, 
+                        PaulFacilityMapper.getFacilityCount(entityManagerFactory));
         } catch (UnknownHostException ex) {
             LOG.error("Reset failed", ex);
             return null;
@@ -116,7 +190,6 @@ public class ConfigurationManager {
             em.close();
         }
     }
-
 
     public ValidationResult<Facility> createFacility(Map<?, ?> params) {
         EntityManager em = entityManagerFactory.createEntityManager();

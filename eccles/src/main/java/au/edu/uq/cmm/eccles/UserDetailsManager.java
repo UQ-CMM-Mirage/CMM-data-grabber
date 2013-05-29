@@ -1,5 +1,5 @@
 /*
-* Copyright 2013, CMM, University of Queensland.
+* Copyright 2013-2013, CMM, University of Queensland.
 *
 * This file is part of Eccles.
 *
@@ -23,9 +23,9 @@ import java.util.List;
 import javax.persistence.EntityManager;
 
 import au.edu.uq.cmm.aclslib.authenticator.AclsLoginDetails;
-import au.edu.uq.cmm.aclslib.config.FacilityConfig;
+import au.edu.uq.cmm.aclslib.authenticator.Authenticator;
 
-public interface UserDetailsManager {
+public interface UserDetailsManager extends Authenticator {
 
     UserDetails lookupUser(String userName, boolean fetchCollections)
             throws UserDetailsException;
@@ -40,8 +40,4 @@ public interface UserDetailsManager {
 
     void refreshUserDetails(EntityManager em, String userName, String email,
             AclsLoginDetails loginDetails);
-
-    AclsLoginDetails authenticateAgainstCachedCredentials(String userName,
-            String password, FacilityConfig facility);
-
 }

@@ -1,5 +1,5 @@
 /*
-* Copyright 2012, CMM, University of Queensland.
+* Copyright 2012-2013, CMM, University of Queensland.
 *
 * This file is part of Eccles.
 *
@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
 
 import au.edu.uq.cmm.aclslib.authenticator.AclsLoginDetails;
 import au.edu.uq.cmm.aclslib.authenticator.Authenticator;
-import au.edu.uq.cmm.aclslib.config.ACLSProxyConfiguration;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.config.FacilityMapper;
 import au.edu.uq.cmm.aclslib.message.AclsException;
@@ -53,6 +52,7 @@ public class Eccles implements AclsFacilityEventListener, Authenticator {
     private EntityManagerFactory emf;
     private SessionDetailMapper userDetailsMapper;
     private UserDetailsManager userDetailsManager;
+    private EcclesProxyConfiguration config;
     
     /**
      * @param args
@@ -83,11 +83,13 @@ public class Eccles implements AclsFacilityEventListener, Authenticator {
         emf = properties == null ?
                 Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul") :
                 Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul", properties);
-        ACLSProxyConfiguration config = EcclesProxyConfiguration.load(emf);
+        config = EcclesProxyConfiguration.load(emf);
         FacilityMapper mapper = new EcclesFacilityMapper(config, emf);
         userDetailsMapper = new DefaultSessionDetailsMapper();
-        userDetailsManager = new EcclesUserDetailsManager(emf);
-        proxy = new AclsProxy(config, 0, mapper, this);
+        userDetailsManager = new EcclesUserDetailsManager(emf, config.getFallbackMode());
+        proxy = new AclsProxy(config, 0, mapper, 
+        		config.getFallbackMode() == EcclesFallbackMode.NO_FALLBACK ? 
+        				null : this);
         proxy.addListener(this);
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override public void run() {
@@ -124,7 +126,8 @@ public class Eccles implements AclsFacilityEventListener, Authenticator {
             } else if (event instanceof AclsLogoutEvent) {
                 processLogoutEvent((AclsLogoutEvent) event, em, facilityName);
             } else {
-                processPasswordAcceptedEvent((AclsPasswordAcceptedEvent) event, em, facilityName);
+                processPasswordAcceptedEvent(
+                		(AclsPasswordAcceptedEvent) event, em, facilityName);
             }
             em.getTransaction().commit();
         } catch (InvalidSessionException ex) {
@@ -139,7 +142,7 @@ public class Eccles implements AclsFacilityEventListener, Authenticator {
     public AclsLoginDetails authenticate(
             String userName, String password, FacilityConfig facility)
             throws AclsException {
-        return userDetailsManager.authenticateAgainstCachedCredentials(userName, password, facility);
+        return userDetailsManager.authenticate(userName, password, facility);
     }
 
     private void processPasswordAcceptedEvent(AclsPasswordAcceptedEvent event,
@@ -147,7 +150,8 @@ public class Eccles implements AclsFacilityEventListener, Authenticator {
         String userName = userDetailsMapper.mapToUserName(event.getUserName());
         String email = userDetailsMapper.mapToEmailAddress(event.getUserName());
         if (!event.getLoginDetails().isCached()) {
-            userDetailsManager.refreshUserDetails(em, userName, email, event.getLoginDetails());
+            userDetailsManager.refreshUserDetails(
+            		em, userName, email, event.getLoginDetails());
         }
     }
 

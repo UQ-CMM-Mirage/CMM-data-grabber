@@ -270,11 +270,11 @@ public class DatasetMetadata {
         this.datafiles = datafiles;
     }
 
-    public final String getOperatorName() {
+    public String getOperatorName() {
         return operatorName;
     }
 
-    public final void setOperatorName(String operatorName) {
+    public void setOperatorName(String operatorName) {
         this.operatorName = operatorName;
     }
 

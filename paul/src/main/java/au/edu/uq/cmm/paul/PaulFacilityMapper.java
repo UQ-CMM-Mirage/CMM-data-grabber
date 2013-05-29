@@ -1,5 +1,5 @@
 /*
-* Copyright 2012, CMM, University of Queensland.
+* Copyright 2012-2013, CMM, University of Queensland.
 *
 * This file is part of Paul.
 *
@@ -34,7 +34,7 @@ import au.edu.uq.cmm.aclslib.config.FacilityMapper;
 import au.edu.uq.cmm.paul.status.Facility;
 
 public class PaulFacilityMapper implements FacilityMapper {
-
+    
     private EntityManagerFactory entityManagerFactory;
     
 
@@ -111,6 +111,19 @@ public class PaulFacilityMapper implements FacilityMapper {
             TypedQuery<Facility> query = em.createQuery(
                     "from Facility", Facility.class);
             return new ArrayList<FacilityConfig>(query.getResultList());
+        } finally {
+            em.close();
+        }
+    }
+    
+
+    public static int getFacilityCount(EntityManagerFactory emf) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            TypedQuery<Long> query = em.createQuery(
+                    "select count(facility) from Facility facility", Long.class);
+            long res = query.getSingleResult();
+            return (int) res;
         } finally {
             em.close();
         }
