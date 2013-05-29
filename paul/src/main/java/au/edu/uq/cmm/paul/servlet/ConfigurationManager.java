@@ -118,8 +118,8 @@ public class ConfigurationManager {
     
     private Configs loadConfigurations() {
         return new Configs(
-                PaulConfiguration.load(entityManagerFactory, true),
-                EcclesProxyConfiguration.load(entityManagerFactory, true),
+                PaulConfiguration.load(entityManagerFactory),
+                EcclesProxyConfiguration.load(entityManagerFactory),
                 PaulFacilityMapper.getFacilityCount(entityManagerFactory));
     }
 

@@ -312,4 +312,17 @@ public class StaticEcclesProxyConfiguration implements ACLSProxyConfiguration, P
 		return true;
 	}
 
+    @Override
+    public String toString() {
+        return "StaticEcclesProxyConfiguration [id=" + id + ", proxyPort="
+                + proxyPort + ", serverHost=" + serverHost + ", serverPort="
+                + serverPort + ", useProject=" + useProject + ", proxyHost="
+                + proxyHost + ", dummyFacilityName=" + dummyFacilityName
+                + ", dummyFacilityHostId=" + dummyFacilityHostId
+                + ", allowUnknownClients=" + allowUnknownClients
+                + ", trustedAddresses=" + trustedAddresses
+                + ", trustedInetAddresses=" + trustedInetAddresses
+                + ", fallbackMode=" + fallbackMode + "]";
+    }
+
 }

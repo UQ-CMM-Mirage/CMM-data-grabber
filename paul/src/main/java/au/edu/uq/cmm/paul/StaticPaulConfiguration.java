@@ -234,4 +234,21 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
         return new JsonConfigLoader<StaticPaulConfiguration>(StaticPaulConfiguration.class).
                 loadConfiguration(is);
     }
+
+    @Override
+    public String toString() {
+        return "StaticPaulConfiguration [captureDirectory=" + captureDirectory
+                + ", archiveDirectory=" + archiveDirectory
+                + ", grabberTimeout=" + grabberTimeout + ", baseFileUrl="
+                + baseFileUrl + ", feedId=" + feedId + ", feedTitle="
+                + feedTitle + ", feedAuthor=" + feedAuthor
+                + ", feedAuthorEmail=" + feedAuthorEmail + ", feedUrl="
+                + feedUrl + ", feedPageSize=" + feedPageSize
+                + ", queueExpiryTime=" + queueExpiryTime
+                + ", queueExpiryInterval=" + queueExpiryInterval
+                + ", expireByDeleting=" + expireByDeleting
+                + ", holdDatasetsWithNoUser=" + holdDatasetsWithNoUser
+                + ", primaryRepositoryUrl=" + primaryRepositoryUrl
+                + ", aclsUrl=" + aclsUrl + "]";
+    }
 }

@@ -222,11 +222,6 @@ public class PaulConfiguration implements GrabberConfiguration {
     }
     
     public static PaulConfiguration load(EntityManagerFactory entityManagerFactory) {
-        return load(entityManagerFactory, false);
-    }
-
-    public static PaulConfiguration load(EntityManagerFactory entityManagerFactory,
-            boolean createIfMissing) {
         EntityManager em = entityManagerFactory.createEntityManager();
         try {
             em.getTransaction().begin();
@@ -234,14 +229,7 @@ public class PaulConfiguration implements GrabberConfiguration {
                 return em.createQuery("from PaulConfiguration", 
                 		PaulConfiguration.class).getSingleResult();
             } catch (NoResultException ex) {
-                if (createIfMissing) {
-                    PaulConfiguration res = new PaulConfiguration();
-                    em.persist(res);
-                    em.getTransaction().commit();
-                    return res;
-                } else {
-                    throw new PaulException("The configuration record is missing", ex);
-                }
+                return null;
             }
         } finally {
         	if (em.getTransaction().isActive()) {

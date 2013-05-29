@@ -77,8 +77,7 @@ public class EcclesProxyConfiguration implements ACLSProxyConfiguration, ProxyCo
         super();
     }
 
-    public static EcclesProxyConfiguration load(EntityManagerFactory emf,
-            boolean createIfMissing) {
+    public static EcclesProxyConfiguration load(EntityManagerFactory emf) {
         EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
@@ -86,14 +85,7 @@ public class EcclesProxyConfiguration implements ACLSProxyConfiguration, ProxyCo
             return em.createQuery("from EcclesProxyConfiguration", 
                     EcclesProxyConfiguration.class).getSingleResult();
             } catch (NoResultException ex) {
-                if (createIfMissing) {
-                    EcclesProxyConfiguration res = new EcclesProxyConfiguration();
-                    em.persist(res);
-                    em.getTransaction().commit();
-                    return res;
-                } else {
-                    throw new EcclesException("The configuration record is missing", ex);
-                }
+                return null;
             }
         } finally {
             if (em.getTransaction().isActive()) {
