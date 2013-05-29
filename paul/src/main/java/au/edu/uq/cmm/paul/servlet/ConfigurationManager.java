@@ -69,6 +69,12 @@ public class ConfigurationManager {
         public boolean incomplete() {
             return this.config == null || this.proxyConfig == null || this.facilityCount == 0;
         }
+
+        @Override
+        public String toString() {
+            return "Configs [config=" + config + ", proxyConfig=" + proxyConfig
+                    + ", facilityCount=" + facilityCount + "]";
+        }
     }
     
     private static final Logger LOG = LoggerFactory.getLogger(ConfigurationManager.class);
@@ -117,14 +123,18 @@ public class ConfigurationManager {
     }
     
     private Configs loadConfigurations() {
-        return new Configs(
+        Configs configs = new Configs(
                 PaulConfiguration.load(entityManagerFactory),
                 EcclesProxyConfiguration.load(entityManagerFactory),
                 PaulFacilityMapper.getFacilityCount(entityManagerFactory));
+        LOG.info("Loaded configs from database: " + configs);
+        return configs;
     }
 
     private Configs doResetConfigurations(boolean reloadFacilities) {
         LOG.info("Resetting from static configurations");
+        LOG.info("Static grabber configs: " + staticConfig);
+        LOG.info("Static proxy configs: " + staticProxyConfig);
         EntityManager em = entityManagerFactory.createEntityManager();
         try {
             PaulConfiguration newConfig = new PaulConfiguration(staticConfig);

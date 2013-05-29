@@ -353,4 +353,21 @@ public class PaulConfiguration implements GrabberConfiguration {
 			return false;
 		return true;
 	}
+
+    @Override
+    public String toString() {
+        return "PaulConfiguration [id=" + id + ", captureDirectory="
+                + captureDirectory + ", archiveDirectory=" + archiveDirectory
+                + ", grabberTimeout=" + grabberTimeout + ", baseFileUrl="
+                + baseFileUrl + ", feedId=" + feedId + ", feedTitle="
+                + feedTitle + ", feedAuthor=" + feedAuthor
+                + ", feedAuthorEmail=" + feedAuthorEmail + ", feedUrl="
+                + feedUrl + ", feedPageSize=" + feedPageSize
+                + ", queueExpiryTime=" + queueExpiryTime
+                + ", queueExpiryInterval=" + queueExpiryInterval
+                + ", expireByDeleting=" + expireByDeleting
+                + ", holdDatasetsWithNoUser=" + holdDatasetsWithNoUser
+                + ", primaryRepositoryUrl=" + primaryRepositoryUrl
+                + ", aclsUrl=" + aclsUrl + "]";
+    }
 }

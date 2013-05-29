@@ -299,4 +299,17 @@ public class EcclesProxyConfiguration implements ACLSProxyConfiguration, ProxyCo
 		return true;
 	}
 
+    @Override
+    public String toString() {
+        return "EcclesProxyConfiguration [id=" + id + ", proxyPort="
+                + proxyPort + ", serverHost=" + serverHost + ", serverPort="
+                + serverPort + ", useProject=" + useProject + ", proxyHost="
+                + proxyHost + ", dummyFacilityName=" + dummyFacilityName
+                + ", dummyFacilityHostId=" + dummyFacilityHostId
+                + ", allowUnknownClients=" + allowUnknownClients
+                + ", trustedAddresses=" + trustedAddresses
+                + ", trustedInetAddresses=" + trustedInetAddresses
+                + ", fallbackMode=" + fallbackMode + "]";
+    }
+
 }
