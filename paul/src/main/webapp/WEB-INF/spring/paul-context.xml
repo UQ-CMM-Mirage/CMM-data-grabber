@@ -51,7 +51,7 @@
 	</bean>
 
 	<bean class="au.edu.uq.cmm.eccles.StaticEcclesProxyConfiguration"
-		factory-method="loadConfigurationFromUrl" name="staticConfig">
+		factory-method="loadConfigurationFromUrl" name="staticProxyConfig">
 		<constructor-arg value="classpath:eccles-config.json" />
 	</bean>
 
