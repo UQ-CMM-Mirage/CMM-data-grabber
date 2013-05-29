@@ -1152,10 +1152,6 @@ public class WebUIController implements ServletContextAware {
         return getConfigManager().getLatestProxyConfig();
     }
     
-    private EcclesProxyConfiguration getProxyConfig() {
-        return getConfigManager().getActiveProxyConfig();
-    }
-    
     private Facility lookupFacilityByName(String facilityName) {
         return (Facility) services.getFacilityMapper().lookup(null, facilityName, null);
     }

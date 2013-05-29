@@ -32,8 +32,6 @@ import javax.persistence.Transient;
 
 import org.hibernate.annotations.GenericGenerator;
 
-import au.edu.uq.cmm.eccles.EcclesProxyConfiguration;
-
 /**
  * This class represents the configuration details of a DataGrabber instance.
  * The details are persisted using Hibernate / JPA.

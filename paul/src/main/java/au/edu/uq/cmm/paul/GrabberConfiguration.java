@@ -19,7 +19,6 @@
 
 package au.edu.uq.cmm.paul;
 
-import au.edu.uq.cmm.aclslib.config.ACLSProxyConfiguration;
 
 /**
  * The combined configuration property API for ACLSProxy and the data grabber.

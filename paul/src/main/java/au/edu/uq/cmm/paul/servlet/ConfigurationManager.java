@@ -1,5 +1,5 @@
 /*
-* Copyright 2012, CMM, University of Queensland.
+* Copyright 2012-2013, CMM, University of Queensland.
 *
 * This file is part of Paul.
 *
@@ -40,6 +40,7 @@ import au.edu.uq.cmm.eccles.EcclesProxyConfiguration;
 import au.edu.uq.cmm.eccles.StaticEcclesProxyConfiguration;
 import au.edu.uq.cmm.paul.GrabberFacilityConfig;
 import au.edu.uq.cmm.paul.PaulConfiguration;
+import au.edu.uq.cmm.paul.PaulFacilityMapper;
 import au.edu.uq.cmm.paul.StaticPaulConfiguration;
 import au.edu.uq.cmm.paul.StaticPaulFacilities;
 import au.edu.uq.cmm.paul.StaticPaulFacility;
@@ -50,20 +51,23 @@ public class ConfigurationManager {
     private static class Configs{
         private PaulConfiguration config;
         private EcclesProxyConfiguration proxyConfig;
+        private int facilityCount;
         
         public Configs(Configs configs) {
-            this(configs.config, configs.proxyConfig);
+            this(configs.config, configs.proxyConfig, configs.facilityCount);
         }
         
         public Configs(PaulConfiguration config,
-                EcclesProxyConfiguration proxyConfig) {
+                EcclesProxyConfiguration proxyConfig,
+                int facilityCount) {
             super();
             this.config = config;
             this.proxyConfig = proxyConfig;
+            this.facilityCount = facilityCount;
         }
         
         public boolean incomplete() {
-            return this.config == null || this.proxyConfig == null;
+            return this.config == null || this.proxyConfig == null || this.facilityCount == 0;
         }
     }
     
@@ -86,8 +90,8 @@ public class ConfigurationManager {
         this.staticProxyConfig = staticProxyConfig;
         this.staticFacilities =  staticFacilities;
         activeConfigs = loadConfigurations();
-        if (activeConfigs.incomplete() && staticConfig != null && staticProxyConfig != null) {
-            activeConfigs = doResetConfigurations();
+        if (activeConfigs.incomplete()) {
+            activeConfigs = doResetConfigurations(activeConfigs.facilityCount == 0);
         }
         latestConfigs = new Configs(activeConfigs);
     }
@@ -109,16 +113,17 @@ public class ConfigurationManager {
     }
 
     public void resetConfigurations() {
-        latestConfigs = doResetConfigurations();
+        latestConfigs = doResetConfigurations(false);
     }
     
     private Configs loadConfigurations() {
         return new Configs(
                 PaulConfiguration.load(entityManagerFactory, true),
-                EcclesProxyConfiguration.load(entityManagerFactory, true));
+                EcclesProxyConfiguration.load(entityManagerFactory, true),
+                PaulFacilityMapper.getFacilityCount(entityManagerFactory));
     }
 
-    private Configs doResetConfigurations() {
+    private Configs doResetConfigurations(boolean reloadFacilities) {
         LOG.info("Resetting from static configurations");
         EntityManager em = entityManagerFactory.createEntityManager();
         try {
@@ -136,24 +141,29 @@ public class ConfigurationManager {
                     createQuery("from EcclesProxyConfiguration", EcclesProxyConfiguration.class).
                     getSingleResult();
             em.remove(oldProxyConfig);
-            List<Facility> facilities = em.
-                    createQuery("from Facility", Facility.class).
-                    getResultList();
-            for (Facility facility : facilities) {
-                em.remove(facility);
+            if (reloadFacilities) {
+                List<Facility> facilities = em.
+                        createQuery("from Facility", Facility.class).
+                        getResultList();
+                for (Facility facility : facilities) {
+                    em.remove(facility);
+                }
             }
             em.getTransaction().commit();
             
             // Second transaction
-            em.getTransaction().begin();
-            em.persist(newConfig);
-            em.persist(newProxyConfig);
-            for (StaticPaulFacility staticFacility : staticFacilities.getFacilities()) {
-                Facility facility = new Facility(staticFacility);
-                em.persist(facility);
+            if (reloadFacilities) {
+                em.getTransaction().begin();
+                em.persist(newConfig);
+                em.persist(newProxyConfig);
+                for (StaticPaulFacility staticFacility : staticFacilities.getFacilities()) {
+                    Facility facility = new Facility(staticFacility);
+                    em.persist(facility);
+                }
+                em.getTransaction().commit();
             }
-            em.getTransaction().commit();
-            return new Configs(newConfig, newProxyConfig);
+            return new Configs(newConfig, newProxyConfig, 
+                        PaulFacilityMapper.getFacilityCount(entityManagerFactory));
         } catch (UnknownHostException ex) {
             LOG.error("Reset failed", ex);
             return null;
