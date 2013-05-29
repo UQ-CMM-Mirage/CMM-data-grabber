@@ -36,6 +36,8 @@ import javax.persistence.TypedQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import au.edu.uq.cmm.eccles.EcclesProxyConfiguration;
+import au.edu.uq.cmm.eccles.StaticEcclesProxyConfiguration;
 import au.edu.uq.cmm.paul.GrabberFacilityConfig;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.StaticPaulConfiguration;
@@ -45,45 +47,83 @@ import au.edu.uq.cmm.paul.status.DatafileTemplate;
 import au.edu.uq.cmm.paul.status.Facility;
 
 public class ConfigurationManager {
+    private static class Configs{
+        private PaulConfiguration config;
+        private EcclesProxyConfiguration proxyConfig;
+        
+        public Configs(Configs configs) {
+            this(configs.config, configs.proxyConfig);
+        }
+        
+        public Configs(PaulConfiguration config,
+                EcclesProxyConfiguration proxyConfig) {
+            super();
+            this.config = config;
+            this.proxyConfig = proxyConfig;
+        }
+        
+        public boolean incomplete() {
+            return this.config == null || this.proxyConfig == null;
+        }
+    }
+    
     private static final Logger LOG = LoggerFactory.getLogger(ConfigurationManager.class);
 
-    private PaulConfiguration activeConfig;
-    private PaulConfiguration latestConfig;
+    private Configs activeConfigs;
+    private Configs latestConfigs;
     private StaticPaulConfiguration staticConfig;
+    private StaticEcclesProxyConfiguration staticProxyConfig;
     private EntityManagerFactory entityManagerFactory;
     private StaticPaulFacilities staticFacilities;
 
     
     public ConfigurationManager(EntityManagerFactory entityManagerFactory,
             StaticPaulConfiguration staticConfig, 
+            StaticEcclesProxyConfiguration staticProxyConfig, 
             StaticPaulFacilities staticFacilities) {
         this.entityManagerFactory = Objects.requireNonNull(entityManagerFactory);
         this.staticConfig = staticConfig;
+        this.staticProxyConfig = staticProxyConfig;
         this.staticFacilities =  staticFacilities;
-        activeConfig = PaulConfiguration.load(entityManagerFactory, true);
-        if (activeConfig.isEmpty() && staticConfig != null) {
-            activeConfig = doResetConfiguration();
+        activeConfigs = loadConfigurations();
+        if (activeConfigs.incomplete() && staticConfig != null && staticProxyConfig != null) {
+            activeConfigs = doResetConfigurations();
         }
-        latestConfig = activeConfig;
+        latestConfigs = new Configs(activeConfigs);
     }
 
     public PaulConfiguration getActiveConfig() {
-        return activeConfig;
+        return activeConfigs.config;
     }
 
     public PaulConfiguration getLatestConfig() {
-        return latestConfig;
+        return latestConfigs.config;
     }
     
-    public void resetConfiguration() {
-        latestConfig = doResetConfiguration();
+    public EcclesProxyConfiguration getActiveProxyConfig() {
+        return activeConfigs.proxyConfig;
     }
 
-    private PaulConfiguration doResetConfiguration() {
-        LOG.info("Resetting details from static Configuration");
+    public EcclesProxyConfiguration getLatestProxyConfig() {
+        return latestConfigs.proxyConfig;
+    }
+
+    public void resetConfigurations() {
+        latestConfigs = doResetConfigurations();
+    }
+    
+    private Configs loadConfigurations() {
+        return new Configs(
+                PaulConfiguration.load(entityManagerFactory, true),
+                EcclesProxyConfiguration.load(entityManagerFactory, true));
+    }
+
+    private Configs doResetConfigurations() {
+        LOG.info("Resetting from static configurations");
         EntityManager em = entityManagerFactory.createEntityManager();
         try {
             PaulConfiguration newConfig = new PaulConfiguration(staticConfig);
+            EcclesProxyConfiguration newProxyConfig = new EcclesProxyConfiguration(staticProxyConfig);
             // FIXME - we do two transactions.  Combining the two transactions 
             // into one transaction is gives constraint errors when adding the new
             // facilities.  (The fix is to version the configurations.)
@@ -92,6 +132,10 @@ public class ConfigurationManager {
                     createQuery("from PaulConfiguration", PaulConfiguration.class).
                     getSingleResult();
             em.remove(oldConfig);
+            EcclesProxyConfiguration oldProxyConfig = em.
+                    createQuery("from EcclesProxyConfiguration", EcclesProxyConfiguration.class).
+                    getSingleResult();
+            em.remove(oldProxyConfig);
             List<Facility> facilities = em.
                     createQuery("from Facility", Facility.class).
                     getResultList();
@@ -103,12 +147,13 @@ public class ConfigurationManager {
             // Second transaction
             em.getTransaction().begin();
             em.persist(newConfig);
+            em.persist(newProxyConfig);
             for (StaticPaulFacility staticFacility : staticFacilities.getFacilities()) {
                 Facility facility = new Facility(staticFacility);
                 em.persist(facility);
             }
             em.getTransaction().commit();
-            return newConfig;
+            return new Configs(newConfig, newProxyConfig);
         } catch (UnknownHostException ex) {
             LOG.error("Reset failed", ex);
             return null;
@@ -116,7 +161,6 @@ public class ConfigurationManager {
             em.close();
         }
     }
-
 
     public ValidationResult<Facility> createFacility(Map<?, ?> params) {
         EntityManager em = entityManagerFactory.createEntityManager();

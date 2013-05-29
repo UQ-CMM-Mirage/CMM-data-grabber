@@ -19,7 +19,10 @@
 
 package au.edu.uq.cmm.eccles;
 
+import java.io.InputStream;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashSet;
@@ -35,18 +38,17 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.NoResultException;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import org.hibernate.annotations.GenericGenerator;
 
 import au.edu.uq.cmm.aclslib.config.ACLSProxyConfiguration;
+import au.edu.uq.cmm.aclslib.config.ConfigurationException;
+import au.edu.uq.cmm.aclslib.config.JsonConfigLoader;
 
 
-@Entity
-@Table(name = "PROXY_CONFIGURATION")
-public class EcclesProxyConfiguration implements ACLSProxyConfiguration, ProxyConfiguration {
+public class StaticEcclesProxyConfiguration implements ACLSProxyConfiguration, ProxyConfiguration {
     private Long id;
     private int proxyPort;
     private String serverHost;
@@ -61,47 +63,54 @@ public class EcclesProxyConfiguration implements ACLSProxyConfiguration, ProxyCo
     private EcclesFallbackMode fallbackMode = EcclesFallbackMode.USER_PASSWORD;
     
     
-    public EcclesProxyConfiguration(StaticEcclesProxyConfiguration staticConfig) 
+    public StaticEcclesProxyConfiguration(StaticEcclesProxyConfiguration staticConfig) 
             throws UnknownHostException {
-        setProxyHost(staticConfig.getProxyHost());
-        setServerHost(staticConfig.getServerHost());
-        setProxyPort(staticConfig.getProxyPort());
-        setServerPort(staticConfig.getServerPort());
-        setAllowUnknownClients(staticConfig.isAllowUnknownClients());
-        setTrustedAddresses(staticConfig.getTrustedAddresses());
-        setDummyFacilityHostId(staticConfig.getDummyFacilityHostId());
-        setDummyFacilityName(staticConfig.getDummyFacilityName());
     }
     
-    public EcclesProxyConfiguration() {
+    public StaticEcclesProxyConfiguration() {
         super();
     }
 
-    public static EcclesProxyConfiguration load(EntityManagerFactory emf,
-            boolean createIfMissing) {
-        EntityManager em = emf.createEntityManager();
-        try {
-            em.getTransaction().begin();
-            try {
-            return em.createQuery("from EcclesProxyConfiguration", 
-                    EcclesProxyConfiguration.class).getSingleResult();
-            } catch (NoResultException ex) {
-                if (createIfMissing) {
-                    EcclesProxyConfiguration res = new EcclesProxyConfiguration();
-                    em.persist(res);
-                    em.getTransaction().commit();
-                    return res;
-                } else {
-                    throw new EcclesException("The configuration record is missing", ex);
-                }
-            }
-        } finally {
-            if (em.getTransaction().isActive()) {
-                em.getTransaction().rollback();
-            }
-            em.close();
-        }
+    /**
+     * Load the configuration from a file.
+     * 
+     * @param configFile
+     * @return the configuration or null if it couldn't be found / read.
+     * @throws ConfigurationException 
+     */
+    public static StaticEcclesProxyConfiguration loadConfiguration(String configFile) 
+            throws ConfigurationException {
+        return new JsonConfigLoader<StaticEcclesProxyConfiguration>(StaticEcclesProxyConfiguration.class).
+                loadConfiguration(configFile);
     }
+
+    /**
+     * Load the configuration from a URL.  This understands any URL that the
+     * JVM has a protocol handler for, and also "classpath:" URLs. 
+     * @return the configuration or null
+     * @param urlString the URL for the config file
+     * @throws URISyntaxException 
+     * @throws MalformedURLException 
+     */
+    public static StaticEcclesProxyConfiguration loadConfigurationFromUrl(String urlString) 
+            throws ConfigurationException {
+        return new JsonConfigLoader<StaticEcclesProxyConfiguration>(StaticEcclesProxyConfiguration.class).
+                loadConfigurationFromUrl(urlString);
+    }
+
+    /**
+     * Load the configuration from a stream.   
+     * @return the configuration or null
+     * @param urlString the URL for the config file
+     * @throws URISyntaxException 
+     * @throws MalformedURLException 
+     */
+    public static StaticEcclesProxyConfiguration loadConfiguration(InputStream is) 
+            throws ConfigurationException {
+        return new JsonConfigLoader<StaticEcclesProxyConfiguration>(StaticEcclesProxyConfiguration.class).
+                loadConfiguration(is);
+    }
+
     
     @Override
     public int getProxyPort() {
@@ -268,7 +277,7 @@ public class EcclesProxyConfiguration implements ACLSProxyConfiguration, ProxyCo
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		EcclesProxyConfiguration other = (EcclesProxyConfiguration) obj;
+		StaticEcclesProxyConfiguration other = (StaticEcclesProxyConfiguration) obj;
 		if (allowUnknownClients != other.allowUnknownClients)
 			return false;
 		if (dummyFacilityHostId == null) {

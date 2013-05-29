@@ -24,9 +24,13 @@ import java.net.UnknownHostException;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
 import javax.persistence.NoResultException;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+
+import org.hibernate.annotations.GenericGenerator;
 
 import au.edu.uq.cmm.eccles.EcclesProxyConfiguration;
 
@@ -38,8 +42,8 @@ import au.edu.uq.cmm.eccles.EcclesProxyConfiguration;
  */
 @Entity
 @Table(name = "CONFIGURATION")
-public class PaulConfiguration extends EcclesProxyConfiguration implements GrabberConfiguration {
-    
+public class PaulConfiguration implements GrabberConfiguration {
+    private Long id;
     private String captureDirectory;
     private String archiveDirectory;
     private int grabberTimeout;
@@ -62,14 +66,6 @@ public class PaulConfiguration extends EcclesProxyConfiguration implements Grabb
     }
     
     public PaulConfiguration(StaticPaulConfiguration staticConfig) throws UnknownHostException {
-        setProxyHost(staticConfig.getProxyHost());
-        setServerHost(staticConfig.getServerHost());
-        setProxyPort(staticConfig.getProxyPort());
-        setServerPort(staticConfig.getServerPort());
-        setAllowUnknownClients(staticConfig.isAllowUnknownClients());
-        setTrustedAddresses(staticConfig.getTrustedAddresses());
-        setDummyFacilityHostId(staticConfig.getDummyFacilityHostId());
-        setDummyFacilityName(staticConfig.getDummyFacilityName());
         setBaseFileUrl(staticConfig.getBaseFileUrl());
         setCaptureDirectory(staticConfig.getCaptureDirectory());
         setArchiveDirectory(staticConfig.getArchiveDirectory());
@@ -88,7 +84,16 @@ public class PaulConfiguration extends EcclesProxyConfiguration implements Grabb
         setAclsUrl(staticConfig.getAclsUrl());
     }
 
-    
+    @Id
+    @GeneratedValue(generator="increment")
+    @GenericGenerator(name="increment", strategy = "increment")
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getCaptureDirectory() {
         return captureDirectory;

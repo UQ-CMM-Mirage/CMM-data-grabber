@@ -33,6 +33,8 @@ import au.edu.uq.cmm.aclslib.service.Service;
 import au.edu.uq.cmm.aclslib.service.ServiceBase;
 import au.edu.uq.cmm.aclslib.service.ServiceException;
 import au.edu.uq.cmm.eccles.EcclesUserDetailsManager;
+import au.edu.uq.cmm.eccles.ProxyConfiguration;
+import au.edu.uq.cmm.eccles.StaticEcclesProxyConfiguration;
 import au.edu.uq.cmm.eccles.UserDetailsManager;
 import au.edu.uq.cmm.paul.queue.AtomFeed;
 import au.edu.uq.cmm.paul.queue.QueueExpirer;
@@ -70,24 +72,27 @@ public class Paul extends ServiceBase implements Lifecycle {
     
     
     public Paul(StaticPaulConfiguration staticConfig,
+            StaticEcclesProxyConfiguration staticProxyConfig,
             StaticPaulFacilities staticFacilities,
             EntityManagerFactory entityManagerFactory)
     throws IOException {
-        this(staticConfig, staticFacilities,
+        this(staticConfig, staticProxyConfig, staticFacilities,
                 entityManagerFactory, new SambaUncPathnameMapper());
     }
     
     public Paul(StaticPaulConfiguration staticConfig,
+            StaticEcclesProxyConfiguration staticProxyConfig,
             StaticPaulFacilities staticFacilities,
             EntityManagerFactory entityManagerFactory,
             UncPathnameMapper uncNameMapper)
     throws IOException {
         this.entityManagerFactory = entityManagerFactory;
-        this.configManager = new ConfigurationManager(entityManagerFactory, staticConfig, staticFacilities);
+        this.configManager = new ConfigurationManager(
+                entityManagerFactory, staticConfig, staticProxyConfig, staticFacilities);
         this.facilityMapper = new PaulFacilityMapper(entityManagerFactory);
-        PaulConfiguration config = configManager.getActiveConfig();
+        ProxyConfiguration proxyConfig = configManager.getActiveProxyConfig();
         this.aclsHelper = new AclsHelper(
-                config.getProxyHost(), config.getProxyPort(), 
+                proxyConfig.getProxyHost(), proxyConfig.getProxyPort(), 
                 /* 
                  * Use double the default timeout, because the proxy potentially
                  * has to timeout the downstream ACLS server.  (Hack)
@@ -95,7 +100,7 @@ public class Paul extends ServiceBase implements Lifecycle {
                 AclsClient.ACLS_REQUEST_TIMEOUT * 2, 
                 false);
         this.userDetailsManager = new EcclesUserDetailsManager(entityManagerFactory, 
-        		config.getFallbackMode());
+                proxyConfig.getFallbackMode());
         this.statusManager = new FacilityStatusManager(this);
         this.uncNameMapper = uncNameMapper;
         this.fileWatcher = new FileWatcher(this);

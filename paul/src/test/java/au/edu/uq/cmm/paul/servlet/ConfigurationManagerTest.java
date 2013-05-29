@@ -39,6 +39,7 @@ import org.junit.Test;
 
 import au.edu.uq.cmm.aclslib.config.ConfigurationException;
 import au.edu.uq.cmm.eccles.FacilitySession;
+import au.edu.uq.cmm.eccles.StaticEcclesProxyConfiguration;
 import au.edu.uq.cmm.paul.GrabberFacilityConfig;
 import au.edu.uq.cmm.paul.StaticPaulConfiguration;
 import au.edu.uq.cmm.paul.StaticPaulFacilities;
@@ -75,8 +76,7 @@ public class ConfigurationManagerTest {
 
     @Test
     public void testConstructor() throws ConfigurationException {
-        new ConfigurationManager(EMF, buildStaticConfig(),
-        		buildStaticFacilities());
+        buildConfigurationManager();
     }
 	
 	@Test 
@@ -92,9 +92,7 @@ public class ConfigurationManagerTest {
 	@Test
 	public void testBuildFacility1() throws ConfigurationException {
 		Facility f = new Facility();
-		ConfigurationManager cm = new ConfigurationManager(
-					EMF, buildStaticConfig(),
-					buildStaticFacilities());
+		ConfigurationManager cm = buildConfigurationManager();
 		EntityManager em = EMF.createEntityManager();
 		try {
 			Map<?, ?> params = buildParamMap(
@@ -113,9 +111,7 @@ public class ConfigurationManagerTest {
 	@Test
 	public void testBuildFacility2() throws ConfigurationException {
 		Facility f = new Facility();
-		ConfigurationManager cm = new ConfigurationManager(
-					EMF, buildStaticConfig(),
-					buildStaticFacilities());
+		ConfigurationManager cm = buildConfigurationManager();
 		EntityManager em = EMF.createEntityManager();
 		try {
 			Map<?, ?> params = buildParamMap(
@@ -136,9 +132,7 @@ public class ConfigurationManagerTest {
 	@Test
 	public void testBuildFacility3() throws ConfigurationException {
 		Facility f = new Facility();
-		ConfigurationManager cm = new ConfigurationManager(
-					EMF, buildStaticConfig(),
-					buildStaticFacilities());
+		ConfigurationManager cm = buildConfigurationManager();
 		EntityManager em = EMF.createEntityManager();
 		try {
 			Map<?, ?> params = buildParamMap(
@@ -159,9 +153,7 @@ public class ConfigurationManagerTest {
 	@Test
 	public void testBuildFacility4() throws ConfigurationException {
 		Facility f = new Facility();
-		ConfigurationManager cm = new ConfigurationManager(
-					EMF, buildStaticConfig(),
-					buildStaticFacilities());
+		ConfigurationManager cm = buildConfigurationManager();
 		EntityManager em = EMF.createEntityManager();
 		try {
 			Map<?, ?> params = buildParamMap(
@@ -182,9 +174,7 @@ public class ConfigurationManagerTest {
 	@Test
 	public void testBuildFacility5() throws ConfigurationException {
 		Facility f = new Facility();
-		ConfigurationManager cm = new ConfigurationManager(
-					EMF, buildStaticConfig(),
-					buildStaticFacilities());
+		ConfigurationManager cm = buildConfigurationManager();
 		EntityManager em = EMF.createEntityManager();
 		try {
 			Map<?, ?> params = buildParamMap(
@@ -205,9 +195,7 @@ public class ConfigurationManagerTest {
 	@Test
 	public void testBuildFacility6() throws ConfigurationException {
 		Facility f = new Facility();
-		ConfigurationManager cm = new ConfigurationManager(
-					EMF, buildStaticConfig(),
-					buildStaticFacilities());
+		ConfigurationManager cm = buildConfigurationManager();
 		EntityManager em = EMF.createEntityManager();
 		try {
 			Map<?, ?> params = buildParamMap(
@@ -228,9 +216,7 @@ public class ConfigurationManagerTest {
 	@Test
 	public void testBuildFacility7() throws ConfigurationException {
 		Facility f = new Facility();
-		ConfigurationManager cm = new ConfigurationManager(
-					EMF, buildStaticConfig(),
-					buildStaticFacilities());
+		ConfigurationManager cm = buildConfigurationManager();
 		EntityManager em = EMF.createEntityManager();
 		try {
 			Map<?, ?> params = buildParamMap(
@@ -251,9 +237,7 @@ public class ConfigurationManagerTest {
 	@Test
 	public void testBuildFacility8() throws ConfigurationException {
 		Facility f = new Facility();
-		ConfigurationManager cm = new ConfigurationManager(
-					EMF, buildStaticConfig(),
-					buildStaticFacilities());
+		ConfigurationManager cm = buildConfigurationManager();
 		EntityManager em = EMF.createEntityManager();
 		try {
 			Map<?, ?> params = buildParamMap(
@@ -274,9 +258,7 @@ public class ConfigurationManagerTest {
 	@Test
 	public void testBuildFacility9() throws ConfigurationException {
 		Facility f = new Facility();
-		ConfigurationManager cm = new ConfigurationManager(
-					EMF, buildStaticConfig(),
-					buildStaticFacilities());
+		ConfigurationManager cm = buildConfigurationManager();
 		EntityManager em = EMF.createEntityManager();
 		try {
 			Map<?, ?> params = buildParamMap(
@@ -297,9 +279,7 @@ public class ConfigurationManagerTest {
 	@Test
 	public void testBuildFacility10() throws ConfigurationException {
 		Facility f = new Facility();
-		ConfigurationManager cm = new ConfigurationManager(
-					EMF, buildStaticConfig(),
-					buildStaticFacilities());
+		ConfigurationManager cm = buildConfigurationManager();
 		EntityManager em = EMF.createEntityManager();
 		try {
 			Map<?, ?> params = buildParamMap(
@@ -320,9 +300,7 @@ public class ConfigurationManagerTest {
 	@Test
 	public void testBuildFacility11() throws ConfigurationException {
 		Facility f = new Facility();
-		ConfigurationManager cm = new ConfigurationManager(
-					EMF, buildStaticConfig(),
-					buildStaticFacilities());
+		ConfigurationManager cm = buildConfigurationManager();
 		EntityManager em = EMF.createEntityManager();
 		try {
 			Map<?, ?> params = buildParamMap(
@@ -343,9 +321,7 @@ public class ConfigurationManagerTest {
 	@Test
 	public void testBuildFacility12() throws ConfigurationException {
 		Facility f = new Facility();
-		ConfigurationManager cm = new ConfigurationManager(
-					EMF, buildStaticConfig(),
-					buildStaticFacilities());
+		ConfigurationManager cm = buildConfigurationManager();
 		EntityManager em = EMF.createEntityManager();
 		ValidationResult<Facility> vr = null;
 		try {
@@ -379,9 +355,7 @@ public class ConfigurationManagerTest {
 	@Test
 	public void testBuildFacility13() throws ConfigurationException {
 		Facility f = new Facility();
-		ConfigurationManager cm = new ConfigurationManager(
-					EMF, buildStaticConfig(),
-					buildStaticFacilities());
+		ConfigurationManager cm = buildConfigurationManager();
 		EntityManager em = EMF.createEntityManager();
 		ValidationResult<Facility> vr = null;
 		try {
@@ -413,13 +387,11 @@ public class ConfigurationManagerTest {
 			emClose(em);
 		}
 	}
-	
-	@Test
+
+    @Test
     public void testBuildFacility14() throws ConfigurationException {
         Facility f = new Facility();
-        ConfigurationManager cm = new ConfigurationManager(
-                    EMF, buildStaticConfig(),
-                    buildStaticFacilities());
+        ConfigurationManager cm = buildConfigurationManager();
         EntityManager em = EMF.createEntityManager();
         try {
             Map<?, ?> params = buildParamMap(
@@ -437,7 +409,13 @@ public class ConfigurationManagerTest {
         }
     }
 	
-	private Map<?, ?> buildParamMap(String ... args) {
+	private ConfigurationManager buildConfigurationManager() throws ConfigurationException {
+	    return new ConfigurationManager(
+                EMF, buildStaticConfig(), buildStaticProxyConfig(),
+                buildStaticFacilities());
+    }
+
+    private Map<?, ?> buildParamMap(String ... args) {
 		Map<String, String[]> res = new HashMap<>();
 		for (int i = 0; i < args.length; i += 2) {
 			res.put(args[i], new String[]{args[i + 1]});
@@ -466,4 +444,10 @@ public class ConfigurationManagerTest {
 		return StaticPaulConfiguration.loadConfiguration(
 				getClass().getResourceAsStream("/test-config.json"));
 	}
+	
+    private StaticEcclesProxyConfiguration buildStaticProxyConfig()
+            throws ConfigurationException {
+        return StaticEcclesProxyConfiguration.loadConfiguration(
+                getClass().getResourceAsStream("/test-proxy-config.json"));
+    }
 }

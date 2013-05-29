@@ -63,6 +63,7 @@ import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.proxy.AclsAuthenticationException;
 import au.edu.uq.cmm.aclslib.proxy.AclsInUseException;
 import au.edu.uq.cmm.aclslib.service.Service.State;
+import au.edu.uq.cmm.eccles.EcclesProxyConfiguration;
 import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.eccles.UserDetailsManager;
 import au.edu.uq.cmm.eccles.UserDetails;
@@ -240,8 +241,7 @@ public class WebUIController implements ServletContextAware {
     
     @RequestMapping(value="/facilities/{facilityName:.+}", method=RequestMethod.POST,
             params={"update"})
-    public String updateFacilityConfig(
-            @PathVariable String facilityName, Model model,
+    public String updateFacilityConfig(@PathVariable String facilityName, Model model,
             HttpServletRequest request) 
             throws ConfigurationException {
         ValidationResult<Facility> res = getConfigManager().
@@ -613,6 +613,7 @@ public class WebUIController implements ServletContextAware {
     @RequestMapping(value="/config", method=RequestMethod.GET)
     public String config(Model model) {
         model.addAttribute("config", getLatestConfig());
+        model.addAttribute("proxyConfig", getLatestProxyConfig());
         return "config";
     }
     
@@ -623,7 +624,7 @@ public class WebUIController implements ServletContextAware {
         if (confirmed == null) {
             return "resetConfirmation";
         } else {
-            getConfigManager().resetConfiguration();
+            getConfigManager().resetConfigurations();
             model.addAttribute("message", 
                     "Configuration reset succeeded.  " +
                     "Please restart the webapp to use the updated configs");
@@ -1145,6 +1146,14 @@ public class WebUIController implements ServletContextAware {
     
     private PaulConfiguration getConfig() {
         return getConfigManager().getActiveConfig();
+    }
+    
+    private EcclesProxyConfiguration getLatestProxyConfig() {
+        return getConfigManager().getLatestProxyConfig();
+    }
+    
+    private EcclesProxyConfiguration getProxyConfig() {
+        return getConfigManager().getActiveProxyConfig();
     }
     
     private Facility lookupFacilityByName(String facilityName) {
