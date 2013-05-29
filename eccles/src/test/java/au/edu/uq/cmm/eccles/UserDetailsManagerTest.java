@@ -21,9 +21,12 @@ package au.edu.uq.cmm.eccles;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.persistence.EntityManager;
@@ -39,37 +42,62 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import au.edu.uq.cmm.aclslib.authenticator.AclsLoginDetails;
+import au.edu.uq.cmm.aclslib.message.Certification;
+
 public class UserDetailsManagerTest {
     private static EntityManagerFactory EMF;
+    private static EcclesFacility[] FACILITIES;
     
     private static final Logger LOG = 
     		LoggerFactory.getLogger(UserDetailsManagerTest.class);
 
     
-    @BeforeClass
+    @SuppressWarnings("serial")
+	@BeforeClass
     public static void setup() {
-    	EMF = Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul");
+        FACILITIES = new EcclesFacility[]{
+        		buildFacility("test0"), 
+        		buildFacility("test1"), 
+        		buildFacility("test2")};
+        EMF = Persistence.createEntityManagerFactory("au.edu.uq.cmm.paul");
         EntityManager em = EMF.createEntityManager();
         try {
             em.getTransaction().begin();
             Query query = em.createQuery("delete from UserDetails");
             query.executeUpdate();
+            UserDetails ud = buildUserDetails(
+            		"jim", "jim", "jim@nowhere", "Jim Spriggs", "CMMMM");
+            ud.setCertifications(new HashMap<String, String>(){{
+            	put("test1", Certification.VALID.toString());
+            	put("test2", Certification.NONE.toString());
+            }});
+            em.persist(ud);
             em.persist(buildUserDetails(
-            		"jim", "jim@nowhere", "Jim Spriggs", "CMMMM"));
-            em.persist(buildUserDetails(
-            		"neddy", "neddy@nowhere", "Neddy Seagoon", "CMMMM"));
+            		"neddy", null, "neddy@nowhere", "Neddy Seagoon", "CMMMM"));
             em.getTransaction().commit();
         } finally {
             emClose(em);
         }
     }
     
-    private static UserDetails buildUserDetails(String userName, String emailAddress,
+    private static EcclesFacility buildFacility(String name) {
+		EcclesFacility res = new EcclesFacility();
+		res.setFacilityName(name);
+		return res;
+	}
+
+	private static UserDetails buildUserDetails(
+    		String userName, String password, String emailAddress,
 			String humanReadable, String organization) {
     	UserDetails ud = new UserDetails(userName);
     	ud.setEmailAddress(emailAddress);
     	ud.setHumanReadableName(humanReadable);
     	ud.setOrgName(organization);
+    	if (password != null) {
+    		ud.setDigest(EcclesUserDetailsManager.createDigest(password, 42));
+    		ud.setSeed(42);
+    	}
     	return ud;
 	}
 
@@ -94,7 +122,7 @@ public class UserDetailsManagerTest {
     	assertEquals("CMMMM", ud.getOrgName());
     	assertEquals("Jim Spriggs", ud.getHumanReadableName());
     	assertEquals(Collections.emptySet(), ud.getAccounts());
-    	assertEquals(Collections.emptyMap(), ud.getCertifications());
+    	assertEquals(2, ud.getCertifications().size());
     	ud = udm.lookupUser("jim", false);
     	assertEquals("jim", ud.getUserName());
     	assertEquals("jim@nowhere", ud.getEmailAddress());
@@ -139,6 +167,51 @@ public class UserDetailsManagerTest {
     	assertEquals(3, udm.getUserNames().size());
     	udm.removeUser("bert");
     	assertEquals(2, udm.getUserNames().size());
+    }
+    
+    @Test
+    public void testAuthenticate1() {
+    	EcclesUserDetailsManager udm = 
+    			new EcclesUserDetailsManager(EMF, EcclesFallbackMode.NO_FALLBACK);
+        assertNull(udm.authenticate("jim", "jim", FACILITIES[0]));
+    }
+    
+    @Test
+    public void testAuthenticate2() {
+    	EcclesUserDetailsManager udm = 
+    			new EcclesUserDetailsManager(EMF, EcclesFallbackMode.USER_PASSWORD);
+        assertNull(udm.authenticate("eric", "eric", FACILITIES[0]));
+        assertNull(udm.authenticate("jim", "eric", FACILITIES[0]));
+        assertNull(udm.authenticate("neddy", "eric", FACILITIES[0]));
+        AclsLoginDetails ud = udm.authenticate("jim", "jim", FACILITIES[0]);
+        assertNotNull(ud);
+        assertEquals("jim", ud.getUserName());
+        assertEquals("Jim Spriggs", ud.getHumanReadableName());
+        assertEquals(Certification.VALID, ud.getCertification());
+        ud = udm.authenticate("jim", "jim", FACILITIES[1]);
+        assertEquals(Certification.VALID, ud.getCertification());
+        ud = udm.authenticate("jim", "jim", FACILITIES[2]);
+        assertEquals(Certification.NONE, ud.getCertification());
+    }
+    
+    @Test
+    public void testAuthenticate3() {
+    	EcclesUserDetailsManager udm = 
+    			new EcclesUserDetailsManager(EMF, EcclesFallbackMode.USER_PASSWORD_OPTIONAL);
+        assertNull(udm.authenticate("eric", "eric", FACILITIES[0]));
+        assertNull(udm.authenticate("jim", "eric", FACILITIES[0]));
+        assertNotNull(udm.authenticate("jim", "jim", FACILITIES[0]));
+        assertNotNull(udm.authenticate("neddy", "eric", FACILITIES[0]));
+    }
+    
+    @Test
+    public void testAuthenticate4() {
+    	EcclesUserDetailsManager udm = 
+    			new EcclesUserDetailsManager(EMF, EcclesFallbackMode.USER_ONLY);
+        assertNull(udm.authenticate("eric", "eric", FACILITIES[0]));
+        assertNotNull(udm.authenticate("jim", "eric", FACILITIES[0]));
+        assertNotNull(udm.authenticate("jim", "jim", FACILITIES[0]));
+        assertNotNull(udm.authenticate("neddy", "eric", FACILITIES[0]));
     }
     
     private static void emClose(EntityManager em) {
