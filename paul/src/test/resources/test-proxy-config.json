@@ -1,0 +1,11 @@
+{
+  "proxyPort" : 1024,
+  "serverPort" : 1024,
+  "proxyHost" : "test",
+  "serverHost" : "acls-uat.cmm.uq.edu.au",
+  "allowUnknownClients" : false,
+  "trustedAddresses" : ["example.com", "127.0.0.1"],
+  "useProject" : false,
+  "dummyFacilityName" : "MIRAGE ACCESS CONTROL",
+  "dummyFacilityHostId" : "PAUL"
+}

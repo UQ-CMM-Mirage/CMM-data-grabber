@@ -19,7 +19,6 @@
 
 package au.edu.uq.cmm.paul;
 
-import au.edu.uq.cmm.aclslib.config.ACLSProxyConfiguration;
 
 /**
  * The combined configuration property API for ACLSProxy and the data grabber.
@@ -27,7 +26,7 @@ import au.edu.uq.cmm.aclslib.config.ACLSProxyConfiguration;
  * 
  * @author scrawley
  */
-public interface GrabberConfiguration extends ACLSProxyConfiguration {
+public interface GrabberConfiguration {
     
     /**
      * Get the base URL that will be used for the URLs of files

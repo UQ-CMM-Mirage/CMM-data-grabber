@@ -20,15 +20,8 @@
 package au.edu.uq.cmm.paul;
 
 import java.io.InputStream;
-import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
-import java.net.UnknownHostException;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
-import org.codehaus.jackson.annotate.JsonIgnore;
 
 import au.edu.uq.cmm.aclslib.config.ConfigurationException;
 import au.edu.uq.cmm.aclslib.config.JsonConfigLoader;
@@ -40,18 +33,7 @@ import au.edu.uq.cmm.aclslib.config.JsonConfigLoader;
  * @author scrawley
  */
 public class StaticPaulConfiguration implements GrabberConfiguration {
-
-    private int proxyPort = 1024;
-    private int serverPort = 1024;
-    private String serverHost;
-    private String proxyHost;
-    private boolean allowUnknownClients;
-    private Set<String> trustedAddresses = Collections.emptySet();
-    private Set<InetAddress> trustedInetAddresses = Collections.emptySet();
     
-    private boolean useProject;
-    private String dummyFacilityName;
-    private String dummyFacilityHostId;
     private String captureDirectory;
     private String archiveDirectory;
     private int grabberTimeout;
@@ -69,46 +51,7 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
     private String primaryRepositoryUrl;
     private String aclsUrl;
 
-    public final int getProxyPort() {
-        return proxyPort;
-    }
-
-    public final String getServerHost() {
-        return serverHost;
-    }
-
-    public final int getServerPort() {
-        return serverPort;
-    }
-
-    public final boolean isUseProject() {
-        return useProject;
-    }
-
-    public final void setProxyPort(int proxyPort) {
-        this.proxyPort = proxyPort;
-    }
-
-    public final void setServerHost(String serverHost) {
-        this.serverHost = serverHost;
-    }
-
-    public final void setServerPort(int serverPort) {
-        this.serverPort = serverPort;
-    }
-
-    public final void setUseProject(boolean useProject) {
-        this.useProject = useProject;
-    }
-
-    public final String getProxyHost() {
-        return proxyHost;
-    }
-
-    public final void setProxyHost(String proxyHost) {
-        this.proxyHost = proxyHost;
-    }
-
+    @Override
     public String getCaptureDirectory() {
         return captureDirectory;
     }
@@ -117,6 +60,7 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
         this.captureDirectory = captureDirectory;
     }
 
+    @Override
     public String getArchiveDirectory() {
         return archiveDirectory;
     }
@@ -125,6 +69,7 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
         this.archiveDirectory = archiveDirectory;
     }
 
+    @Override
     public int getGrabberTimeout() {
         return grabberTimeout;
     }
@@ -133,6 +78,7 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
         this.grabberTimeout = grabberTimeout;
     }
 
+    @Override
     public String getBaseFileUrl() {
         return baseFileUrl;
     }
@@ -141,6 +87,7 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
         this.baseFileUrl = baseFileUrl;
     }
 
+    @Override
     public String getFeedId() {
         return feedId;
     }
@@ -149,6 +96,7 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
         this.feedId = feedId;
     }
 
+    @Override
     public String getFeedTitle() {
         return feedTitle;
     }
@@ -157,6 +105,7 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
         this.feedTitle = feedTitle;
     }
 
+    @Override
     public String getFeedAuthor() {
         return feedAuthor;
     }
@@ -165,6 +114,7 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
         this.feedAuthor = feedAuthor;
     }
 
+    @Override
     public String getFeedAuthorEmail() {
         return feedAuthorEmail;
     }
@@ -172,7 +122,8 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
     public void setFeedAuthorEmail(String feedAuthorEmail) {
         this.feedAuthorEmail = feedAuthorEmail;
     }
-    
+
+    @Override
     public String getFeedUrl() {
         return feedUrl;
     }
@@ -180,7 +131,8 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
     public void setFeedUrl(String feedUrl) {
         this.feedUrl = feedUrl;
     }
-    
+
+    @Override
     public int getFeedPageSize() {
         return feedPageSize ;
     }
@@ -189,6 +141,7 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
         this.feedPageSize = feedPageSize;
     }
 
+    @Override
     public long getQueueExpiryTime() {
         return queueExpiryTime;
     }
@@ -197,6 +150,7 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
         this.queueExpiryTime = queueExpiryTime;
     }
 
+    @Override
     public long getQueueExpiryInterval() {
         return queueExpiryInterval;
     }
@@ -205,6 +159,7 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
         this.queueExpiryInterval = queueExpiryInterval;
     }
 
+    @Override
     public boolean isExpireByDeleting() {
         return expireByDeleting;
     }
@@ -213,6 +168,7 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
         this.expireByDeleting = expireByDeleting;
     }
 
+    @Override
     public String getPrimaryRepositoryUrl() {
         return primaryRepositoryUrl;
     }
@@ -221,6 +177,7 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
         this.primaryRepositoryUrl = primaryRepositoryUrl;
     }
 
+    @Override
     public String getAclsUrl() {
         return aclsUrl;
     }
@@ -229,6 +186,7 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
         this.aclsUrl = aclsUrl;
     }
 
+    @Override
     public boolean isHoldDatasetsWithNoUser() {
         return holdDatasetsWithNoUser;
     }
@@ -236,49 +194,6 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
     public void setHoldDatasetsWithNoUser(boolean holdDatasetsWithNoUser) {
         this.holdDatasetsWithNoUser = holdDatasetsWithNoUser;
     }
-    
-    public String getDummyFacilityName() {
-        return dummyFacilityName;
-    }
-
-    public void setDummyFacilityName(String dummyFacilityName) {
-        this.dummyFacilityName = dummyFacilityName;
-    }
-
-    public String getDummyFacilityHostId() {
-        return dummyFacilityHostId;
-    }
-
-    public void setDummyFacilityHostId(String dummyFacilityHostId) {
-        this.dummyFacilityHostId = dummyFacilityHostId;
-    }
-
-    public boolean isAllowUnknownClients() {
-        return allowUnknownClients;
-    }
-
-    public void setAllowUnknownClients(boolean allowUnknownClients) {
-        this.allowUnknownClients = allowUnknownClients;
-    }
-
-    public Set<String> getTrustedAddresses() {
-        return trustedAddresses;
-    }
-
-    public void setTrustedAddresses(Set<String> trustedAddresses) 
-            throws UnknownHostException {
-        this.trustedAddresses = trustedAddresses;
-        this.trustedInetAddresses = new HashSet<InetAddress>(trustedAddresses.size());
-        for (String address : trustedAddresses) {
-            trustedInetAddresses.add(InetAddress.getByName(address));
-        }
-    }
-
-    @JsonIgnore
-    public Set<InetAddress> getTrustedInetAddresses() {
-        return trustedInetAddresses;
-    }
-
 
     /**
      * Load the configuration from a file.
@@ -318,5 +233,22 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
             throws ConfigurationException {
         return new JsonConfigLoader<StaticPaulConfiguration>(StaticPaulConfiguration.class).
                 loadConfiguration(is);
+    }
+
+    @Override
+    public String toString() {
+        return "StaticPaulConfiguration [captureDirectory=" + captureDirectory
+                + ", archiveDirectory=" + archiveDirectory
+                + ", grabberTimeout=" + grabberTimeout + ", baseFileUrl="
+                + baseFileUrl + ", feedId=" + feedId + ", feedTitle="
+                + feedTitle + ", feedAuthor=" + feedAuthor
+                + ", feedAuthorEmail=" + feedAuthorEmail + ", feedUrl="
+                + feedUrl + ", feedPageSize=" + feedPageSize
+                + ", queueExpiryTime=" + queueExpiryTime
+                + ", queueExpiryInterval=" + queueExpiryInterval
+                + ", expireByDeleting=" + expireByDeleting
+                + ", holdDatasetsWithNoUser=" + holdDatasetsWithNoUser
+                + ", primaryRepositoryUrl=" + primaryRepositoryUrl
+                + ", aclsUrl=" + aclsUrl + "]";
     }
 }

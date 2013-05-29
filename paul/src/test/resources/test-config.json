@@ -1,13 +1,6 @@
 {
-  "proxyPort" : 1024,
-  "serverPort" : 1024,
-  "proxyHost" : "test",
-  "serverHost" : "acls-uat.cmm.uq.edu.au",
-  "allowUnknownClients" : false,
-  "trustedAddresses" : ["example.com", "127.0.0.1"],
   "primaryRepositoryUrl" : "http://test",
   "aclsUrl" : "https://acls-uat.cmm.uq.edu.au/cmm/book.dll",
-  "useProject" : false,
   "captureDirectory" : "/data/paul/grabbed",
   "archiveDirectory" : "/data/paul/archived",
   "baseFileUrl" : "http://test/paul/files/",
@@ -16,7 +9,5 @@
   "feedTitle" : "Data grabber data set feed",
   "feedAuthor" : "Centre for Microscopy and Microanalysis, University of Queensland",
   "feedAuthorEmail" : "nobody@cmm.uq.edu.au",
-  "feedPageSize" : 10,
-  "dummyFacilityName" : "MIRAGE ACCESS CONTROL",
-  "dummyFacilityHostId" : "PAUL"
+  "feedPageSize" : 10
 }
