@@ -23,6 +23,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -206,14 +207,21 @@ public class EcclesUserDetailsManager implements UserDetailsManager {
 
     private AclsLoginDetails buildDetails(
     		UserDetails userDetails, FacilityConfig facility) {
+        // The default certification is 'VALID'
     	String certString = userDetails.getCertifications().get(facility.getFacilityName());
     	Certification cert = (certString == null) ?
     			Certification.VALID : Certification.parse(certString);
+    	// The default account is 'unknown account'
+    	List<String> accounts;
+    	if (userDetails.getAccounts().isEmpty()) {
+    	    accounts = Collections.singletonList("unknown account");
+    	} else {
+    	    accounts = new ArrayList<>(userDetails.getAccounts());
+    	}
         return new AclsLoginDetails(userDetails.getUserName(), 
         		userDetails.getHumanReadableName(),
                 userDetails.getOrgName(), null,  facility.getFacilityName(), 
-                new ArrayList<String>(userDetails.getAccounts()),
-                cert, userDetails.isOnsiteAssist(), true);
+                accounts, cert, userDetails.isOnsiteAssist(), true);
 	}
 
 	public static String createDigest(String password, long seed) {
