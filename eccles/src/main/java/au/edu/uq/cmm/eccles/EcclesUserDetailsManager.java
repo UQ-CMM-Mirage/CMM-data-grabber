@@ -178,23 +178,27 @@ public class EcclesUserDetailsManager implements UserDetailsManager {
      */
     public AclsLoginDetails authenticate(
             String userName, String password, FacilityConfig facility) {
+        LOG.debug("Called fallback authenticator (" + fallbackMode + ") for " + userName);
     	if (fallbackMode == EcclesFallbackMode.NO_FALLBACK) {
     		return null;
     	}
-        LOG.debug("Trying to authenticate using cached user details for " + userName);
         try {
             UserDetails userDetails = lookupUser(userName, true);
             if (fallbackMode == EcclesFallbackMode.USER_ONLY) {
-            	LOG.debug("Skipping password check for " + userName);
+            	LOG.debug("Skipping the password check for " + userName);
             	return buildDetails(userDetails, facility);
             }
             String savedDigest = userDetails.getDigest();
             if (savedDigest == null) {
-            	LOG.debug("Skipping optional password check for " + userName);
-            	return (fallbackMode == EcclesFallbackMode.USER_PASSWORD_OPTIONAL) ?
-            			buildDetails(userDetails, facility) : null;
+                if (fallbackMode == EcclesFallbackMode.USER_PASSWORD_OPTIONAL) {
+                    LOG.debug("Skipping the optional password check for " + userName);
+                    return buildDetails(userDetails, facility);
+                } else {
+                    LOG.debug("User " + userName + " has no cached password");
+                    return null;
+                }
             }
-        	LOG.debug("Doing password check for " + userName);
+        	LOG.debug("Doing the password check for " + userName);
             String myDigest = createDigest(password, userDetails.getSeed());
             LOG.debug("Comparing " + myDigest + " with " + savedDigest);
             return (myDigest.equals(savedDigest)) ?
