@@ -224,18 +224,12 @@ public class PaulConfiguration implements GrabberConfiguration {
     public static PaulConfiguration load(EntityManagerFactory entityManagerFactory) {
         EntityManager em = entityManagerFactory.createEntityManager();
         try {
-            em.getTransaction().begin();
-            try {
-                return em.createQuery("from PaulConfiguration", 
-                		PaulConfiguration.class).getSingleResult();
-            } catch (NoResultException ex) {
-                return null;
-            }
+        	return em.createQuery("from PaulConfiguration", 
+        			PaulConfiguration.class).getSingleResult();
+        } catch (NoResultException ex) {
+        	return null;
         } finally {
-        	if (em.getTransaction().isActive()) {
-        		em.getTransaction().rollback();
-        	}
-            em.close();
+        	em.close();
         }
     }
 
