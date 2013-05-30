@@ -58,6 +58,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.context.ServletContextAware;
 
+import au.edu.uq.cmm.aclslib.config.BuildInfo;
 import au.edu.uq.cmm.aclslib.config.ConfigurationException;
 import au.edu.uq.cmm.aclslib.config.FacilityConfig;
 import au.edu.uq.cmm.aclslib.proxy.AclsAuthenticationException;
@@ -143,6 +144,14 @@ public class WebUIController implements ServletContextAware {
         model.addAttribute("atomFeedState", as);
         model.addAttribute("atomFeedStatus", Status.forState(as));
         model.addAttribute("resetRequired", getLatestConfig() != getConfig());
+    }
+    
+    @RequestMapping(value="/versions", method=RequestMethod.GET)
+    public String versions(Model model) {
+    	model.addAttribute("aclslib", BuildInfo.readBuildInfo("au.edu.uq.cmm", "aclslib"));
+    	model.addAttribute("eccles", BuildInfo.readBuildInfo("au.edu.uq.cmm", "eccles"));
+    	model.addAttribute("paul", BuildInfo.readBuildInfo("au.edu.uq.cmm", "paul"));
+    	return "versions";
     }
     
     @RequestMapping(value="/sessions", method=RequestMethod.GET)
