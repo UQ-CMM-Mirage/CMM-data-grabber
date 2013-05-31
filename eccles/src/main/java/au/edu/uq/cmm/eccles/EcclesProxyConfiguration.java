@@ -71,6 +71,7 @@ public class EcclesProxyConfiguration implements ACLSProxyConfiguration, ProxyCo
         setTrustedAddresses(staticConfig.getTrustedAddresses());
         setDummyFacilityHostId(staticConfig.getDummyFacilityHostId());
         setDummyFacilityName(staticConfig.getDummyFacilityName());
+        setFallbackMode(staticConfig.getFallbackMode());
     }
     
     public EcclesProxyConfiguration() {
@@ -207,7 +208,7 @@ public class EcclesProxyConfiguration implements ACLSProxyConfiguration, ProxyCo
 
 	@Override
     public void setFallbackMode(EcclesFallbackMode fallbackMode) {
-		this.fallbackMode = fallbackMode == null ? 
+		this.fallbackMode = fallbackMode != null ? 
 				fallbackMode : EcclesFallbackMode.USER_PASSWORD;
 	}
 
