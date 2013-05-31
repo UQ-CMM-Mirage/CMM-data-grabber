@@ -222,13 +222,20 @@ public class EcclesUserDetailsManager implements UserDetailsManager {
     	} else {
     	    accounts = new ArrayList<>(userDetails.getAccounts());
     	}
+    	String hrName = userDetails.getHumanReadableName();
+    	if (hrName == null) {
+    	    hrName = "";
+    	}
+    	String orgName = userDetails.getOrgName();
+    	if (orgName == null) {
+    	    orgName = "";
+    	}
         return new AclsLoginDetails(userDetails.getUserName(), 
-        		userDetails.getHumanReadableName(),
-                userDetails.getOrgName(), null,  facility.getFacilityName(), 
+        		hrName, orgName, null, facility.getFacilityName(), 
                 accounts, cert, userDetails.isOnsiteAssist(), true);
 	}
 
-	public static String createDigest(String password, long seed) {
+    public static String createDigest(String password, long seed) {
         LOG.debug("Creating digest for password using seed " + seed);
         try {
             MessageDigest digester = MessageDigest.getInstance("MD5");
