@@ -20,9 +20,9 @@ package au.edu.uq.cmm.eccles;
 
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.Collections;
@@ -34,7 +34,7 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 import javax.persistence.Persistence;
 import javax.persistence.PersistenceException;
-import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -64,8 +64,12 @@ public class UserDetailsManagerTest {
         EntityManager em = EMF.createEntityManager();
         try {
             em.getTransaction().begin();
-            Query query = em.createQuery("delete from UserDetails");
-            query.executeUpdate();
+            TypedQuery<UserDetails> query = em.createQuery("from UserDetails", UserDetails.class);
+            for (UserDetails ud : query.getResultList()) {
+               em.remove(ud);
+            }
+            em.getTransaction().commit();
+            em.getTransaction().begin();
             UserDetails ud = buildUserDetails(
             		"jim", "jim", "jim@nowhere", "Jim Spriggs", "CMMMM");
             ud.setCertifications(new HashMap<String, String>(){{
@@ -73,8 +77,10 @@ public class UserDetailsManagerTest {
             	put("test2", Certification.NONE.toString());
             }});
             em.persist(ud);
-            em.persist(buildUserDetails(
-            		"neddy", null, "neddy@nowhere", "Neddy Seagoon", "CMMMM"));
+            ud = buildUserDetails(
+            		"neddy", null, "neddy@nowhere", "Neddy Seagoon", "CMMMM");
+            ud.setAccounts(Collections.singleton("buy all"));
+            em.persist(ud);
             em.getTransaction().commit();
         } finally {
             emClose(em);
@@ -192,6 +198,7 @@ public class UserDetailsManagerTest {
         assertEquals(Certification.VALID, ud.getCertification());
         ud = udm.authenticate("jim", "jim", FACILITIES[2]);
         assertEquals(Certification.NONE, ud.getCertification());
+        assertEquals(Collections.singletonList("unknown account"), ud.getAccounts());
     }
     
     @Test
@@ -201,7 +208,9 @@ public class UserDetailsManagerTest {
         assertNull(udm.authenticate("eric", "eric", FACILITIES[0]));
         assertNull(udm.authenticate("jim", "eric", FACILITIES[0]));
         assertNotNull(udm.authenticate("jim", "jim", FACILITIES[0]));
-        assertNotNull(udm.authenticate("neddy", "eric", FACILITIES[0]));
+        AclsLoginDetails ud = udm.authenticate("neddy", "eric", FACILITIES[0]);
+        assertNotNull(ud);
+        assertEquals(Collections.singletonList("buy all"), ud.getAccounts());
     }
     
     @Test
