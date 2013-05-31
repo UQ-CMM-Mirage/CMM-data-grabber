@@ -142,7 +142,7 @@ public class UserDetails {
     }
 
     @CollectionTable(name="accounts",joinColumns=@JoinColumn(name="account_id"))
-    @ElementCollection()
+    @ElementCollection
     public Set<String> getAccounts() {
         return accounts;
     }

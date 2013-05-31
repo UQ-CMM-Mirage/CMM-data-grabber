@@ -120,7 +120,7 @@ class WorkEntry implements Runnable {
         LOG.debug("Processing event for file " + file);
         synchronized (this) {
             if (grabberThread != null) {
-                LOG.warn("A late file event arrived for file " + 
+                LOG.debug("A late file event arrived for file " + 
                 		file + ": interrupting the grabber");
                 grabberThread.interrupt();
             }
@@ -186,16 +186,18 @@ class WorkEntry implements Runnable {
     public void run() {
         LOG.debug("Processing workEntry for " + baseFile);
         try {
-            boolean alreadyRunning = false;
             synchronized (this) {
                 if (grabberThread == null) {
                     grabAborted = false;
                     grabberThread = Thread.currentThread();
                 } else {
-                    alreadyRunning = true;
+                    LOG.debug("WorkEntry already being processed by " + 
+                            grabberThread.getName());
+                    return;
                 }
             }
-            if (alreadyRunning || !datasetCompleted()) {
+            // Wait for events to settle, and all mandatory files to appear
+            if (!datasetCompleted()) {
                 return;
             }
             if (grabFiles(false) != null) {
@@ -366,8 +368,8 @@ class WorkEntry implements Runnable {
     private boolean datasetCompleted() throws InterruptedException {
         // Wait until the dataset is completed.
         boolean incomplete = true;
-        long limit = grabberTimeout < 0 ? Long.MAX_VALUE :
-            System.currentTimeMillis() + grabberTimeout;
+        long start = System.currentTimeMillis();
+        long limit = grabberTimeout < 0 ? Long.MAX_VALUE : start + grabberTimeout;
         do {
             if (!catchup) {
                 // Wait for the file modification interrupts stop arriving ... plus
@@ -413,6 +415,8 @@ class WorkEntry implements Runnable {
                 }
             } 
         } while (incomplete && !catchup && limit > System.currentTimeMillis());
+        LOG.info("Total waiting time for baseFile: " + 
+                ((System.currentTimeMillis() - start) / 1000.0) + " seconds");
         if (incomplete) {
             LOG.info("Dataset for baseFile " + baseFile + 
                     (catchup ? " is incomplete" : " did not complete within timeout") +

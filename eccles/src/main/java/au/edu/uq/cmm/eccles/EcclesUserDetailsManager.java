@@ -23,6 +23,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -177,23 +178,27 @@ public class EcclesUserDetailsManager implements UserDetailsManager {
      */
     public AclsLoginDetails authenticate(
             String userName, String password, FacilityConfig facility) {
+        LOG.debug("Called fallback authenticator (" + fallbackMode + ") for " + userName);
     	if (fallbackMode == EcclesFallbackMode.NO_FALLBACK) {
     		return null;
     	}
-        LOG.debug("Trying to authenticate using cached user details for " + userName);
         try {
             UserDetails userDetails = lookupUser(userName, true);
             if (fallbackMode == EcclesFallbackMode.USER_ONLY) {
-            	LOG.debug("Skipping password check for " + userName);
+            	LOG.debug("Skipping the password check for " + userName);
             	return buildDetails(userDetails, facility);
             }
             String savedDigest = userDetails.getDigest();
             if (savedDigest == null) {
-            	LOG.debug("Skipping optional password check for " + userName);
-            	return (fallbackMode == EcclesFallbackMode.USER_PASSWORD_OPTIONAL) ?
-            			buildDetails(userDetails, facility) : null;
+                if (fallbackMode == EcclesFallbackMode.USER_PASSWORD_OPTIONAL) {
+                    LOG.debug("Skipping the optional password check for " + userName);
+                    return buildDetails(userDetails, facility);
+                } else {
+                    LOG.debug("User " + userName + " has no cached password");
+                    return null;
+                }
             }
-        	LOG.debug("Doing password check for " + userName);
+        	LOG.debug("Doing the password check for " + userName);
             String myDigest = createDigest(password, userDetails.getSeed());
             LOG.debug("Comparing " + myDigest + " with " + savedDigest);
             return (myDigest.equals(savedDigest)) ?
@@ -206,17 +211,31 @@ public class EcclesUserDetailsManager implements UserDetailsManager {
 
     private AclsLoginDetails buildDetails(
     		UserDetails userDetails, FacilityConfig facility) {
+        // The default certification is 'VALID'
     	String certString = userDetails.getCertifications().get(facility.getFacilityName());
     	Certification cert = (certString == null) ?
     			Certification.VALID : Certification.parse(certString);
+    	// The default account is 'unknown account'
+    	List<String> accounts;
+    	if (userDetails.getAccounts().isEmpty()) {
+    	    accounts = Collections.singletonList("unknown account");
+    	} else {
+    	    accounts = new ArrayList<>(userDetails.getAccounts());
+    	}
+    	String hrName = userDetails.getHumanReadableName();
+    	if (hrName == null) {
+    	    hrName = "";
+    	}
+    	String orgName = userDetails.getOrgName();
+    	if (orgName == null) {
+    	    orgName = "";
+    	}
         return new AclsLoginDetails(userDetails.getUserName(), 
-        		userDetails.getHumanReadableName(),
-                userDetails.getOrgName(), null,  facility.getFacilityName(), 
-                new ArrayList<String>(userDetails.getAccounts()),
-                cert, userDetails.isOnsiteAssist(), true);
+        		hrName, orgName, null, facility.getFacilityName(), 
+                accounts, cert, userDetails.isOnsiteAssist(), true);
 	}
 
-	public static String createDigest(String password, long seed) {
+    public static String createDigest(String password, long seed) {
         LOG.debug("Creating digest for password using seed " + seed);
         try {
             MessageDigest digester = MessageDigest.getInstance("MD5");
