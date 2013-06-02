@@ -10,7 +10,7 @@
 	<%@ include file="/WEB-INF/jsp/commonHeader.jspFrag"%>
 	<div class="container-fluid">
 		<h1>Data Grabber Version Info</h1>
-		<table>
+		<table class="table table-striped table-condensed">
 			<thead>
 				<tr>
 					<td>Group id</td>
@@ -20,24 +20,14 @@
 				</tr>
 			</thead>
 			<tbody>
-				<tr>
-					<td><c:out>${paul.groupId}</c:out></td>
-					<td><c:out>${paul.artifactId}</c:out></td>
-					<td><c:out>${paul.versionId}</c:out></td>
-					<td><c:out>${paul.buildTimestamp}</c:out></td>
-				</tr>
-				<tr>
-					<td><c:out>${eccles.groupId}</c:out></td>
-					<td><c:out>${eccles.artifactId}</c:out></td>
-					<td><c:out>${eccles.versionId}</c:out></td>
-					<td><c:out>${eccles.buildTimestamp}</c:out></td>
-				</tr>
-				<tr>
-					<td><c:out>${acslib.groupId}</c:out></td>
-					<td><c:out>${acslib.artifactId}</c:out></td>
-					<td><c:out>${acslib.versionId}</c:out></td>
-					<td><c:out>${acslib.buildTimestamp}</c:out></td>
-				</tr>
+				<c:forEach items="${buildInfo}" var="bi">
+					<tr>
+						<td><c:out value="${bi.groupId}" /></td>
+						<td><c:out value="${bi.artifactId}" /></td>
+						<td><c:out value="${bi.version}" /></td>
+						<td><c:out value="${bi.buildTimestamp}" /></td>
+					</tr>
+				</c:forEach>
 			</tbody>
 		</table>
 	</div>

@@ -20,9 +20,18 @@
 package au.edu.uq.cmm.paul.servlet;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -106,6 +115,33 @@ public class WebUIController implements ServletContextAware {
     
     @Autowired(required=true)
     Paul services;
+    
+    private ArrayList<BuildInfo> buildInfo;
+
+    private ArrayList<BuildInfo> loadBuildInfo(ServletContext servletContext) {
+    	final ArrayList<BuildInfo> res = new ArrayList<>();
+		res.add(BuildInfo.readBuildInfo("au.edu.uq.cmm", "aclslib"));
+		res.add(BuildInfo.readBuildInfo("au.edu.uq.cmm", "eccles"));
+		try {
+    		Path start = FileSystems.getDefault().getPath(
+    				servletContext.getRealPath("/META-INF/maven"));
+    		Files.walkFileTree(start, new SimpleFileVisitor<Path>() {
+				@Override
+				public FileVisitResult visitFile(Path file,
+						BasicFileAttributes attrs) throws IOException {
+					if (file.getFileName().toString().equals("pom.properties")) {
+						try (InputStream is = new FileInputStream(file.toFile())) {
+							res.add(BuildInfo.readBuildInfo(is));
+						}
+					}
+					return FileVisitResult.CONTINUE;
+				}
+			});	
+    	} catch (IOException ex) {
+    		LOG.error("Problem loading build info");
+    	}
+    	return res;
+    }
 
     
     @Override
@@ -114,6 +150,7 @@ public class WebUIController implements ServletContextAware {
                 ") in the servlet context");
         servletContext.setAttribute("javax.servlet.jsp.jstl.fmt.timeZone", 
                 TimeZone.getDefault());
+        buildInfo = loadBuildInfo(servletContext);
     }
 
     @RequestMapping(value="/control", method=RequestMethod.GET)
@@ -148,9 +185,7 @@ public class WebUIController implements ServletContextAware {
     
     @RequestMapping(value="/versions", method=RequestMethod.GET)
     public String versions(Model model) {
-    	model.addAttribute("aclslib", BuildInfo.readBuildInfo("au.edu.uq.cmm", "aclslib"));
-    	model.addAttribute("eccles", BuildInfo.readBuildInfo("au.edu.uq.cmm", "eccles"));
-    	model.addAttribute("paul", BuildInfo.readBuildInfo("au.edu.uq.cmm", "paul"));
+    	model.addAttribute("buildInfo", buildInfo);
     	return "versions";
     }
     
