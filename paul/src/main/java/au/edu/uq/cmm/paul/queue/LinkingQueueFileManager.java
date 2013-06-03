@@ -99,7 +99,21 @@ public class LinkingQueueFileManager extends AbstractQueueFileManager implements
         if (dest.exists()) {
             throw new QueueFileException("Archived file " + dest + " already exists");
         }
-        return copyFile(file, dest, "archive");
+
+        if (Files.isSymbolicLink(file.toPath())) {
+            dest = copyFile(file, dest, "archive");
+            try {
+                Files.delete(file.toPath());
+            } catch (IOException ex) {
+                throw new QueueFileException("Could not remove symlink " + file);
+            }
+        } else {
+            if (!file.renameTo(dest)) {
+                throw new QueueFileException("File " + file + " could not be renamed to " + dest);
+            }
+        }
+        LOG.info("File " + file + " archived as " + dest);
+        return dest;
     }
 
     @Override
@@ -124,11 +138,15 @@ public class LinkingQueueFileManager extends AbstractQueueFileManager implements
     @Override
     public boolean isCopiedFile(File file) throws QueueFileException {
         Path target = file.toPath();
-        if (Files.isSymbolicLink(target)) {
+        if (!Files.exists(target)) {
+            LOG.info("File " + file + " does not exist");
+            return false;
+        } else if (Files.isSymbolicLink(target)) {
             try {
                 target = Files.readSymbolicLink(target);
             } catch (IOException ex) {
-                throw new QueueFileException("Problem with symlink " + file, ex);
+                LOG.info("Symlink " + file + " can't be read: " + ex.getMessage());
+                return false;
             }
         }
         return target.getParent().toFile().equals(captureDirectory) ||

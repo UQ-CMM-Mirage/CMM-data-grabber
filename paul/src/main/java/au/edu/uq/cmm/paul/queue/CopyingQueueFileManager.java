@@ -20,6 +20,7 @@
 package au.edu.uq.cmm.paul.queue;
 
 import java.io.File;
+import java.nio.file.Files;
 
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
@@ -107,7 +108,12 @@ public class CopyingQueueFileManager extends AbstractQueueFileManager implements
 
     @Override
     public boolean isCopiedFile(File file) {
-        return file.getParentFile().equals(captureDirectory) ||
+        if (!Files.exists(file.toPath())) {
+            LOG.info("File " + file + " does not exist");
+            return false;
+        } else {
+            return file.getParentFile().equals(captureDirectory) ||
                 file.getParentFile().equals(archiveDirectory);
+        }
     }
 }

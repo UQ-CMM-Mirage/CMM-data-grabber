@@ -30,15 +30,15 @@ import org.junit.Test;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.PaulException;
 
-public class CopyingQueueFileManagerTest extends QueueFileManagerTestBase {
+public class LinkingQueueFileManagerTest extends QueueFileManagerTestBase {
 
 	@Test
 	public void instantiateTest() {
 		PaulConfiguration config = buildConfig();
-		new CopyingQueueFileManager(config);
+		new LinkingQueueFileManager(config);
 		try {
 			config.setArchiveDirectory("/fubar");
-			new CopyingQueueFileManager(config);
+			new LinkingQueueFileManager(config);
 			fail("Missing directory not diagnosed");
 		} catch (PaulException ex) {
 			assertTrue(ex.getMessage().contains("archive"));
@@ -47,7 +47,7 @@ public class CopyingQueueFileManagerTest extends QueueFileManagerTestBase {
 		}
 		try {
 			config.setCaptureDirectory("/fubar");
-			new CopyingQueueFileManager(config);
+			new LinkingQueueFileManager(config);
 			fail("Missing directory not diagnosed");
 		} catch (PaulException ex) {
 			assertTrue(ex.getMessage().contains("capture"));
@@ -58,7 +58,7 @@ public class CopyingQueueFileManagerTest extends QueueFileManagerTestBase {
 	
 	@Test 
 	public void testPredicates() throws QueueFileException {
-		QueueFileManager qfm = new CopyingQueueFileManager(buildConfig());
+		QueueFileManager qfm = new LinkingQueueFileManager(buildConfig());
 		assertTrue(!qfm.isQueuedFile(sourceFiles[0]));
 		assertTrue(!qfm.isCopiedFile(sourceFiles[0]));
 		assertTrue(!qfm.isArchivedFile(sourceFiles[0]));
@@ -66,10 +66,10 @@ public class CopyingQueueFileManagerTest extends QueueFileManagerTestBase {
 
 	@Test 
 	public void testEnqueueFile() throws QueueFileException, InterruptedException {
-		QueueFileManager qfm = new CopyingQueueFileManager(buildConfig());
+		QueueFileManager qfm = new LinkingQueueFileManager(buildConfig());
 		File enqueued = qfm.enqueueFile(sourceFiles[0], ".txt", false);
 		assertTrue(qfm.isQueuedFile(enqueued));
-		assertTrue(qfm.isCopiedFile(enqueued));
+		assertTrue(!qfm.isCopiedFile(enqueued));
 		assertTrue(!qfm.isArchivedFile(enqueued));
 		assertTrue(enqueued.exists());
 		assertEquals(13L, enqueued.length());
@@ -82,7 +82,7 @@ public class CopyingQueueFileManagerTest extends QueueFileManagerTestBase {
 
 	@Test 
 	public void testEnqueueText() throws QueueFileException, InterruptedException {
-		QueueFileManager qfm = new CopyingQueueFileManager(buildConfig());
+		QueueFileManager qfm = new LinkingQueueFileManager(buildConfig());
 		File file = qfm.generateUniqueFile("foop", false);
 		qfm.enqueueFile("content\n", file, false);
 		assertTrue(qfm.isQueuedFile(file));
@@ -105,9 +105,14 @@ public class CopyingQueueFileManagerTest extends QueueFileManagerTestBase {
 
 	@Test 
 	public void testArchiveFile() throws QueueFileException, InterruptedException {
-		QueueFileManager qfm = new CopyingQueueFileManager(buildConfig());
+		QueueFileManager qfm = new LinkingQueueFileManager(buildConfig());
 		File enqueued = qfm.enqueueFile(sourceFiles[1], ".txt", false);
-		File archived = qfm.archiveFile(enqueued);
+        assertTrue(qfm.isQueuedFile(enqueued));
+        assertTrue(!qfm.isCopiedFile(enqueued));
+        assertTrue(!qfm.isArchivedFile(enqueued));
+        assertTrue(enqueued.exists());
+
+        File archived = qfm.archiveFile(enqueued);
 		assertTrue(!qfm.isQueuedFile(archived));
 		assertTrue(qfm.isCopiedFile(archived));
 		assertTrue(qfm.isArchivedFile(archived));
@@ -122,7 +127,7 @@ public class CopyingQueueFileManagerTest extends QueueFileManagerTestBase {
 
 	@Test 
 	public void testRemoveFile() throws QueueFileException, InterruptedException {
-		QueueFileManager qfm = new CopyingQueueFileManager(buildConfig());
+		QueueFileManager qfm = new LinkingQueueFileManager(buildConfig());
 		File enqueued = qfm.enqueueFile(sourceFiles[2], ".txt", false);
 		qfm.removeFile(enqueued);
 		assertTrue(!enqueued.exists());
