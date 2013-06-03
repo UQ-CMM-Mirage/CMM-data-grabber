@@ -35,7 +35,7 @@ public interface QueueFileManager {
     void removeFile(File file) 
             throws QueueFileException, InterruptedException;
     
-    boolean isCopiedFile(File file);
+    boolean isCopiedFile(File file) throws QueueFileException;
     
     boolean isQueuedFile(File file);
     

@@ -112,7 +112,7 @@ public class CopyingQueueFileManagerTest {
 	}
 	
 	@Test 
-	public void testPredicates() {
+	public void testPredicates() throws QueueFileException {
 		QueueFileManager qfm = new CopyingQueueFileManager(buildConfig());
 		assertTrue(!qfm.isQueuedFile(sourceFiles[0]));
 		assertTrue(!qfm.isCopiedFile(sourceFiles[0]));

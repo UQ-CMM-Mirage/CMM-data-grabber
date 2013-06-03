@@ -1,64 +1,44 @@
 /*
-* Copyright 2012, CMM, University of Queensland.
+* Copyright 2012-2013, CMM, University of Queensland.
 *
-* This file is part of AclsLib.
+* This file is part of Paul.
 *
-* AclsLib is free software: you can redistribute it and/or modify
+* Paul is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation, either version 3 of the License, or
 * (at your option) any later version.
 *
-* AclsLib is distributed in the hope that it will be useful,
+* Paul is distributed in the hope that it will be useful,
 * but WITHOUT ANY WARRANTY; without even the implied warranty of
 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 * GNU General Public License for more details.
 *
 * You should have received a copy of the GNU General Public License
-* along with AclsLib. If not, see <http://www.gnu.org/licenses/>.
+* along with Paul. If not, see <http://www.gnu.org/licenses/>.
 */
 
 package au.edu.uq.cmm.paul.queue;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.Writer;
 
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import au.edu.uq.cmm.paul.PaulConfiguration;
-import au.edu.uq.cmm.paul.PaulException;
 
-public class CopyingQueueFileManager implements QueueFileManager {
-    private static final Logger LOG = LoggerFactory.getLogger(CopyingQueueFileManager.class);
-    private static final int RETRY = 10;
-
-    private final File archiveDirectory;
-    private final File captureDirectory;
+/**
+ * This queue file manager saves a private copy of each file to the queue area.
+ * 
+ * @author scrawley
+ *
+ */
+public class CopyingQueueFileManager extends AbstractQueueFileManager implements QueueFileManager {
+    static final Logger LOG = LoggerFactory.getLogger(CopyingQueueFileManager.class);
     
     public CopyingQueueFileManager(PaulConfiguration config) {
-        this.archiveDirectory = new File(config.getArchiveDirectory());
-        checkDirectory(this.archiveDirectory, "archive");
-        this.captureDirectory = new File(config.getCaptureDirectory());
-        checkDirectory(this.captureDirectory, "capture");
+        super(config, LOG);
     }
-    
-    private void checkDirectory(File dir, String tag) {
-    	File testFile = new File(dir, "test.txt");
-		try (OutputStream os = new FileOutputStream(testFile)) {
-			os.write("1 2 3\n".getBytes());
-		} catch (IOException ex) {
-			throw new PaulException("Problem creating file in " + 
-					tag + " directory", ex);
-		} finally {
-			testFile.delete();
-		}
-	}
 
 	@Override
     public File enqueueFile(File source, String suffix, boolean regrabbing) 
@@ -66,45 +46,7 @@ public class CopyingQueueFileManager implements QueueFileManager {
         // TODO - if the time taken to copy files is a problem, we could 
         // potentially improve this by using NIO or memory mapped files.
         File target = generateUniqueFile(suffix, regrabbing);
-        long size = source.length();
-        try (FileInputStream is = new FileInputStream(source);
-                FileOutputStream os = new FileOutputStream(target)) {
-            byte[] buffer = new byte[(int) Math.min(size, 8192)];
-            int nosRead;
-            long totalRead = 0;
-            while ((nosRead = is.read(buffer, 0, buffer.length)) > 0) {
-                os.write(buffer, 0, nosRead);
-                totalRead += nosRead;
-            }
-
-            // If these happen there is something wrong with our copying, locking
-            // and / or file settling heuristics.
-            if (totalRead != size) {
-                LOG.error("Copied file size discrepancy - initial file size was " + size +
-                        "bytes but we copied " + totalRead + " bytes");
-            } else if (size != source.length()) {
-                LOG.error("File size changed during copy - initial file size was " + size +
-                        "bytes and current size is " +  source.length());
-            }
-            LOG.info("Copied " + totalRead + " bytes from " + source + " to " + target);
-            return target;
-        } catch (IOException ex) {
-            throw new QueueFileException("Problem while copying file to queue", ex);
-        }
-    }
-    
-    @Override
-    public void enqueueFile(String contents, File target, boolean mayExist)
-            throws QueueFileException {
-        if (!mayExist && target.exists()) {
-            throw new QueueFileException("File " + target + " already exists");
-        }
-        try (Writer w = new FileWriter(target)) {
-            w.write(contents);
-            w.close();
-        } catch (IOException ex) {
-            throw new QueueFileException("Problem while saving to a queue file", ex);
-        }
+        return copyFile(source, target, "queue");
     }
 
     @Override
@@ -167,31 +109,5 @@ public class CopyingQueueFileManager implements QueueFileManager {
     public boolean isCopiedFile(File file) {
         return file.getParentFile().equals(captureDirectory) ||
                 file.getParentFile().equals(archiveDirectory);
-    }
-
-    @Override
-    public boolean isQueuedFile(File file) {
-        return file.getParentFile().equals(captureDirectory);
-    }
-
-    @Override
-    public boolean isArchivedFile(File file) {
-        return file.getParentFile().equals(archiveDirectory);
-    }
-    
-    @Override
-    public File generateUniqueFile(String suffix, boolean regrabbing) throws QueueFileException {
-        String template = regrabbing ? "regrabbed-%d-%d-%d%s" : "file-%d-%d-%d%s";
-        long threadId = Thread.currentThread().getId();
-        for (int i = 0; i < RETRY; i++) {
-            long now = System.currentTimeMillis();
-            String name = String.format(template, now, threadId, i, suffix);
-            File file = new File(captureDirectory, name);
-            if (!file.exists()) {
-                return file;
-            }
-        }
-        throw new QueueFileException(
-                RETRY + " attempts to generate a unique filename failed!");
     }
 }
