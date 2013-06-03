@@ -2,6 +2,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>au.edu.uq.cmm</groupId>
+	<artifactId>paul</artifactId>
 	<packaging>war</packaging>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>The Paul Maven Webapp</name>
@@ -136,7 +137,6 @@
 			</plugin>
 		</plugins>
 	</build>
-	<artifactId>paul</artifactId>
 	<description>
         The primary function of Paul is to grab data off(ski) a CMM 
         instrument's shared drive, and prepare and submit it for 
