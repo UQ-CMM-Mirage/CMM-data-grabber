@@ -62,6 +62,8 @@
 			<url-pattern>/users/*</url-pattern>
 			<url-pattern>/assignDatasets</url-pattern>
 			<url-pattern>/manageDatasets</url-pattern>
+			<url-pattern>/datasets/*</url-pattern>
+			<url-pattern>/versions</url-pattern>
 		</web-resource-collection>
 		<auth-constraint>
 			<role-name>ROLE_ADMIN</role-name>
@@ -74,6 +76,7 @@
 			<url-pattern>/loggedIn</url-pattern>
 			<url-pattern>/claimDatasets</url-pattern>
 			<url-pattern>/facilitySelect</url-pattern>
+			<url-pattern>/facilityLogout</url-pattern>
 		</web-resource-collection>
 		<auth-constraint>
 			<role-name>ROLE_USER</role-name>

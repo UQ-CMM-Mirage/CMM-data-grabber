@@ -19,6 +19,7 @@
 			<li><a href="facilitySelect?next=manageDatasets&slice=ALL&returnTo=/paul/admin">
 				Manage Dataset Queues</a></li>
 			<li><a href="users">Manage Users</a></li>
+			<li><a href="versions">Software Build / Version </a></li>
 		</ul>
 	</div>
 	<!-- /container -->
