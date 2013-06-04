@@ -62,7 +62,7 @@ public class PaulConfiguration implements GrabberConfiguration {
     private boolean holdDatasetsWithNoUser = true;
     private String primaryRepositoryUrl;
     private String aclsUrl;
-    private Strategy queueFileStrategy;
+    private Strategy queueFileStrategy = QueueFileManager.Strategy.COPY_FILES;
     private Long queueFileSizeThreshold;
     
     public PaulConfiguration() {
@@ -247,7 +247,9 @@ public class PaulConfiguration implements GrabberConfiguration {
 
     @Override
     public QueueFileManager.Strategy getQueueFileStrategy() {
-        return this.queueFileStrategy;
+        return this.queueFileStrategy == null ? 
+                QueueFileManager.Strategy.COPY_FILES :
+                    this.queueFileStrategy;
     }
     
     public void setQueueFileStrategy(Strategy queueFileStrategy) {
