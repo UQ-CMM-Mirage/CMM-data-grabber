@@ -101,6 +101,9 @@ public class QueueManager {
         case LINK_FILES:
             this.fileManager = new LinkingQueueFileManager(config);
             break;
+        case HYBRID:
+            this.fileManager = new LinkingQueueFileManager(config);
+            break;
         default:
             throw new AssertionError("Unknown queue file management strategy: " + 
                     config.getQueueFileStrategy());

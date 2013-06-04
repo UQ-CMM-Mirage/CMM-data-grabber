@@ -36,6 +36,15 @@ import org.slf4j.Logger;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.PaulException;
 
+/**
+ * Base class for the queue file manager classes.  Note that the vast majority
+ * of this behavior <i>needs</i> to be common to cope with the fact that the
+ * queue file management strategy can be reconfigured, and therefore the queue
+ * could contain any mix of copied or symlinked files.
+ * 
+ * @author scrawley
+ *
+ */
 public abstract class AbstractQueueFileManager implements QueueFileManager {
 
     protected static final int RETRY = 10;

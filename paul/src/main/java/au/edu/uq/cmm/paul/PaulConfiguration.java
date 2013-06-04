@@ -25,6 +25,8 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.NoResultException;
@@ -246,6 +248,7 @@ public class PaulConfiguration implements GrabberConfiguration {
     }
 
     @Override
+    @Enumerated(EnumType.STRING)
     public QueueFileManager.Strategy getQueueFileStrategy() {
         return this.queueFileStrategy == null ? 
                 QueueFileManager.Strategy.COPY_FILES :
