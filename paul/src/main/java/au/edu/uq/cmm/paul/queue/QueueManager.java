@@ -94,7 +94,17 @@ public class QueueManager {
     public QueueManager(PaulConfiguration config, EntityManagerFactory emf) {
         this.emf = emf;
         Objects.requireNonNull(config);
-        this.fileManager = new CopyingQueueFileManager(config);
+        switch (config.getQueueFileStrategy()) {
+        case COPY_FILES:
+            this.fileManager = new CopyingQueueFileManager(config);
+            break;
+        case LINK_FILES:
+            this.fileManager = new LinkingQueueFileManager(config);
+            break;
+        default:
+            throw new AssertionError("Unknown queue file management strategy: " + 
+                    config.getQueueFileStrategy());
+        }
     }
 
     public List<DatasetMetadata> getSnapshot(Slice slice, String facilityName, boolean fetchDatafiles) {

@@ -26,7 +26,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
 
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 
 import au.edu.uq.cmm.paul.PaulConfiguration;
@@ -45,7 +49,6 @@ public abstract class AbstractQueueFileManager implements QueueFileManager {
         checkDirectory(this.archiveDirectory, "archive");
         this.captureDirectory = new File(config.getCaptureDirectory());
         checkDirectory(this.captureDirectory, "capture");
-
     }
 
     private void checkDirectory(File dir, String tag) {
@@ -62,6 +65,8 @@ public abstract class AbstractQueueFileManager implements QueueFileManager {
 
     protected File copyFile(File source, File target, String area)
             throws QueueFileException {
+        // TODO - if the time taken to copy files is a problem, we could 
+        // potentially improve this by using NIO or memory mapped files.
         long size = source.length();
         try (FileInputStream is = new FileInputStream(source);
                 FileOutputStream os = new FileOutputStream(target)) {
@@ -90,7 +95,7 @@ public abstract class AbstractQueueFileManager implements QueueFileManager {
     }
 
     @Override
-    public void enqueueFile(String contents, File target, boolean mayExist)
+    public final void enqueueFile(String contents, File target, boolean mayExist)
             throws QueueFileException {
         if (!mayExist && target.exists()) {
             throw new QueueFileException("File " + target + " already exists");
@@ -104,30 +109,112 @@ public abstract class AbstractQueueFileManager implements QueueFileManager {
     }
 
     @Override
-    public boolean isQueuedFile(File file) {
+    public final boolean isQueuedFile(File file) {
         return file.getParentFile().equals(captureDirectory);
     }
 
     @Override
-    public boolean isArchivedFile(File file) {
+    public final boolean isArchivedFile(File file) {
         return file.getParentFile().equals(archiveDirectory);
     }
 
     @Override
-    public File generateUniqueFile(String suffix, boolean regrabbing)
+    public final File generateUniqueFile(String suffix, boolean regrabbing)
             throws QueueFileException {
-                String template = regrabbing ? "regrabbed-%d-%d-%d%s" : "file-%d-%d-%d%s";
-                long threadId = Thread.currentThread().getId();
-                for (int i = 0; i < RETRY; i++) {
-                    long now = System.currentTimeMillis();
-                    String name = String.format(template, now, threadId, i, suffix);
-                    File file = new File(captureDirectory, name);
-                    if (!file.exists()) {
-                        return file;
-                    }
-                }
-                throw new QueueFileException(
-                        RETRY + " attempts to generate a unique filename failed!");
+        String template = regrabbing ? "regrabbed-%d-%d-%d%s" : "file-%d-%d-%d%s";
+        long threadId = Thread.currentThread().getId();
+        for (int i = 0; i < RETRY; i++) {
+            long now = System.currentTimeMillis();
+            String name = String.format(template, now, threadId, i, suffix);
+            File file = new File(captureDirectory, name);
+            if (!file.exists()) {
+                return file;
             }
+        }
+        throw new QueueFileException(
+                RETRY + " attempts to generate a unique filename failed!");
+    }
+
+    @Override
+    public final File archiveFile(File file) throws QueueFileException {
+        if (!Files.exists(file.toPath(), LinkOption.NOFOLLOW_LINKS)) {
+            throw new QueueFileException("File or symlink " + file + " no longer exists");
+        }
+        if (!Files.exists(file.toPath())) {
+            throw new QueueFileException("Symlink target for " + file + " no longer exists");
+        }
+        if (!isQueuedFile(file)) {
+            throw new QueueFileException("File or symlink" + file + " is not in the queue");
+        }
+        File dest = new File(archiveDirectory, file.getName());
+        if (dest.exists()) {
+            throw new QueueFileException("Archived file " + dest + " already exists");
+        }
+    
+        if (Files.isSymbolicLink(file.toPath())) {
+            dest = copyFile(file, dest, "archive");
+            try {
+                Files.delete(file.toPath());
+            } catch (IOException ex) {
+                throw new QueueFileException("Could not remove symlink " + file);
+            }
+        } else {
+            if (!file.renameTo(dest)) {
+                throw new QueueFileException("File " + file + " could not be renamed to " + dest);
+            }
+        }
+        log.info("File " + file + " archived as " + dest);
+        return dest;
+    }
+
+    @Override
+    public void removeFile(File file) throws QueueFileException {
+        if (!Files.exists(file.toPath(), LinkOption.NOFOLLOW_LINKS)) {
+            throw new QueueFileException("File or symlink " + file + " no longer exists");
+        }
+        if (!isQueuedFile(file)) {
+            throw new QueueFileException("File or symlink " + file + " is not in the queue");
+        }
+        try {
+            Files.delete(file.toPath());
+            log.info("File " + file + " deleted from queue area");
+        } catch (IOException ex) {
+            throw new QueueFileException("File or symlink " + file + " could not be deleted from queue area", ex);
+        }
+    }
+
+    @Override
+    public final boolean isCopiedFile(File file) throws QueueFileException {
+        Path target = file.toPath();
+        if (Files.isSymbolicLink(file.toPath())) {
+            return false;
+        } else if (!Files.exists(target)) {
+            log.info("File " + file + " does not exist");
+            return false;
+        } else {
+            return target.getParent().toFile().equals(captureDirectory) ||
+                    target.getParent().toFile().equals(archiveDirectory);
+        }
+    }
+
+    @Override
+    public final File renameGrabbedDatafile(File file) throws QueueFileException {
+        String extension = FilenameUtils.getExtension(file.toString());
+        if (!extension.isEmpty()) {
+            extension = "." + extension;
+        }
+        for (int i = 0; i < RETRY; i++) {
+            File newFile = generateUniqueFile(extension, false);
+            if (!file.renameTo(newFile)) {
+                if (!Files.exists(newFile.toPath(), LinkOption.NOFOLLOW_LINKS)) {
+                    throw new QueueFileException(
+                            "Unable to rename file or symlink " + file + " to " + newFile);
+                }
+            } else {
+                return newFile;
+            }
+        }
+        throw new QueueFileException(RETRY + " attempts to rename file / symlink failed!");
+    }
 
 }

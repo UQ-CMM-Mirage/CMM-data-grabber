@@ -30,34 +30,42 @@ import org.slf4j.LoggerFactory;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 
 /**
- * This queue file manager uses symbolic links where possible for files in the queue.
+ * This queue file manager copies or uses symbolic links depending on the file size.
  * 
  * @author scrawley
  */
-public class LinkingQueueFileManager extends AbstractQueueFileManager implements QueueFileManager {
+public class HybridQueueFileManager extends AbstractQueueFileManager implements QueueFileManager {
     
-    static final Logger LOG = LoggerFactory.getLogger(LinkingQueueFileManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HybridQueueFileManager.class);
     
-    public LinkingQueueFileManager(PaulConfiguration config) {
+    private final long fileSizeThreshold;
+    
+    public HybridQueueFileManager(PaulConfiguration config) {
         super(config, LOG);
+        fileSizeThreshold = config.getQueueFileSizeThreshold();
     }
 
 	/**
 	 * {@inheritDoc}
 	 * 
-	 * This implementation enqueues a file by creating a symbolic link to it.
+	 * This implementation enqueues a file by either copying it or creating a symbolic link to it,
+	 * depending on the file size.
 	 */
     @Override
     public File enqueueFile(File source, String suffix, boolean regrabbing) 
                 throws QueueFileException, InterruptedException {
         File target = generateUniqueFile(suffix, regrabbing);
         try {
-            Files.createSymbolicLink(target.toPath(), source.toPath(),
-                    new FileAttribute<?>[0]);
-            LOG.info("Symlinked " + source + " as " + target);
-            return target;
+            if (Files.size(source.toPath()) < fileSizeThreshold) {
+                return copyFile(source, target, "queue");
+            } else {
+                Files.createSymbolicLink(target.toPath(), source.toPath(),
+                        new FileAttribute<?>[0]);
+                LOG.info("Symlinked " + source + " as " + target);
+                return target;
+            }
         } catch (IOException ex) {
-            throw new QueueFileException("Problem while copying file to queue", ex);
+            throw new QueueFileException("Problem while enqueing file " + source, ex);
         }
     }
 }

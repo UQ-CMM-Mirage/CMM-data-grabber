@@ -111,6 +111,16 @@
 				</tr>
 				<tr>
 					<td></td>
+					<td>Queue file management strategy</td>
+					<td>${config.queueFileStrategy}</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>Queue file size threshold (for HYBRID strategy)</td>
+					<td>${config.queueFileSizeThreshold}</td>
+				</tr>
+				<tr>
+					<td></td>
 					<td>Expire by deleting</td>
 					<td>${config.expireByDeleting}</td>
 				</tr>

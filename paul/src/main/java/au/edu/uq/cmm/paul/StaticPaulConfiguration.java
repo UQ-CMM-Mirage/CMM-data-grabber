@@ -25,6 +25,7 @@ import java.net.URISyntaxException;
 
 import au.edu.uq.cmm.aclslib.config.ConfigurationException;
 import au.edu.uq.cmm.aclslib.config.JsonConfigLoader;
+import au.edu.uq.cmm.paul.queue.QueueFileManager;
 
 /**
  * This class represents the configuration details of an ACLS proxy backed by a
@@ -50,6 +51,8 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
     private boolean holdDatasetsWithNoUser = true;
     private String primaryRepositoryUrl;
     private String aclsUrl;
+    private QueueFileManager.Strategy queueFileStrategy = QueueFileManager.Strategy.COPY_FILES;
+    private long queueFileSizeThreshold;
 
     @Override
     public String getCaptureDirectory() {
@@ -195,6 +198,24 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
         this.holdDatasetsWithNoUser = holdDatasetsWithNoUser;
     }
 
+    @Override
+    public QueueFileManager.Strategy getQueueFileStrategy() {
+        return queueFileStrategy;
+    }
+
+    public void setQueueFileStrategy(QueueFileManager.Strategy queueFileStrategy) {
+        this.queueFileStrategy = queueFileStrategy;
+    }
+
+    @Override
+    public Long getQueueFileSizeThreshold() {
+        return queueFileSizeThreshold;
+    }
+
+    public void setQueueFileSizeThreshold(Long queueFileSizeThreshold) {
+        this.queueFileSizeThreshold = queueFileSizeThreshold;
+    }
+
     /**
      * Load the configuration from a file.
      * 
@@ -249,6 +270,7 @@ public class StaticPaulConfiguration implements GrabberConfiguration {
                 + ", expireByDeleting=" + expireByDeleting
                 + ", holdDatasetsWithNoUser=" + holdDatasetsWithNoUser
                 + ", primaryRepositoryUrl=" + primaryRepositoryUrl
-                + ", aclsUrl=" + aclsUrl + "]";
+                + ", aclsUrl=" + aclsUrl + ", queueFileStrategy="
+                + queueFileStrategy + "]";
     }
 }
