@@ -56,16 +56,19 @@ public class HybridQueueFileManager extends AbstractQueueFileManager implements 
                 throws QueueFileException, InterruptedException {
         File target = generateUniqueFile(suffix, regrabbing);
         try {
-            if (Files.size(source.toPath()) < fileSizeThreshold) {
-                return copyFile(source, target, "queue");
+            long size = Files.size(source.toPath());
+            LOG.debug("File size of " + source + " is " + size);
+            if (size < fileSizeThreshold) {
+                target = copyFile(source, target, "queue");
+                LOG.debug("Copied " + source + " as " + target);
             } else {
                 Files.createSymbolicLink(target.toPath(), source.toPath(),
                         new FileAttribute<?>[0]);
-                LOG.info("Symlinked " + source + " as " + target);
-                return target;
+                LOG.debug("Symlinked " + source + " as " + target);
             }
         } catch (IOException ex) {
             throw new QueueFileException("Problem while enqueing file " + source, ex);
         }
+        return target;
     }
 }
