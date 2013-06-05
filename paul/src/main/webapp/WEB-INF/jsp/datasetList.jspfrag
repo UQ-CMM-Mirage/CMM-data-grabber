@@ -23,6 +23,7 @@
 						<ul>
 							<li>File id: ${datafile.id}</li>
 							<li>Captured filename: ${datafile.capturedFilePathname}</li>
+							<li>Captured file status: ${datafile.fileStatus}</li>
 							<li>File modified: 
 								<fmt:formatDate value="${datafile.fileWriteTimestamp}" 
 										type="both" dateStyle="medium"/></li>

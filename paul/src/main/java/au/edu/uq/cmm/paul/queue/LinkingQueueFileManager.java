@@ -1,5 +1,5 @@
 /*
-* Copyright 2012-2013, CMM, University of Queensland.
+* Copyright 2013, CMM, University of Queensland.
 *
 * This file is part of Paul.
 *
@@ -20,6 +20,9 @@
 package au.edu.uq.cmm.paul.queue;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.attribute.FileAttribute;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,22 +30,34 @@ import org.slf4j.LoggerFactory;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 
 /**
- * This queue file manager saves a private copy of each file to the queue area.
+ * This queue file manager uses symbolic links where possible for files in the queue.
  * 
  * @author scrawley
- *
  */
-public class CopyingQueueFileManager extends AbstractQueueFileManager implements QueueFileManager {
-    private static final Logger LOG = LoggerFactory.getLogger(CopyingQueueFileManager.class);
+public class LinkingQueueFileManager extends AbstractQueueFileManager implements QueueFileManager {
     
-    public CopyingQueueFileManager(PaulConfiguration config) {
+    static final Logger LOG = LoggerFactory.getLogger(LinkingQueueFileManager.class);
+    
+    public LinkingQueueFileManager(PaulConfiguration config) {
         super(config, LOG);
     }
 
-	@Override
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * This implementation enqueues a file by creating a symbolic link to it.
+	 */
+    @Override
     public File enqueueFile(File source, String suffix, boolean regrabbing) 
                 throws QueueFileException, InterruptedException {
         File target = generateUniqueFile(suffix, regrabbing);
-        return copyFile(source, target, "queue");
+        try {
+            Files.createSymbolicLink(target.toPath(), source.toPath(),
+                    new FileAttribute<?>[0]);
+            LOG.debug("Symlinked " + source + " as " + target);
+            return target;
+        } catch (IOException ex) {
+            throw new QueueFileException("Problem while copying file to queue", ex);
+        }
     }
 }

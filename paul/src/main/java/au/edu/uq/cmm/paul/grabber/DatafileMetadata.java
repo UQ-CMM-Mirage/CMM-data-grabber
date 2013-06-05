@@ -1,5 +1,5 @@
 /*
-* Copyright 2012, CMM, University of Queensland.
+* Copyright 2012-2013, CMM, University of Queensland.
 *
 * This file is part of Paul.
 *
@@ -22,6 +22,7 @@ package au.edu.uq.cmm.paul.grabber;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
+import java.util.Objects;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -29,6 +30,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
@@ -36,6 +38,7 @@ import org.hibernate.annotations.GenericGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import au.edu.uq.cmm.paul.queue.QueueFileManager;
 
 
 /**
@@ -59,6 +62,7 @@ public class DatafileMetadata {
     private Long id;
     private long fileSize;
     private String datafileHash;
+    private QueueFileManager.FileStatus fileStatus = QueueFileManager.FileStatus.UNKNOWN;
     
     public DatafileMetadata() {
         super();
@@ -182,5 +186,15 @@ public class DatafileMetadata {
             LOG.debug("Problem reading datafile", ex);
             return null;
         } 
+    }
+
+    @JsonIgnore
+    @Transient
+    public QueueFileManager.FileStatus getFileStatus() {
+        return fileStatus;
+    }
+
+    public void setFileStatus(QueueFileManager.FileStatus fileStatus) {
+        this.fileStatus = Objects.requireNonNull(fileStatus);
     }
 }
