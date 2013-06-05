@@ -118,16 +118,6 @@ public abstract class AbstractQueueFileManager implements QueueFileManager {
     }
 
     @Override
-    public final boolean isQueuedFile(File file) {
-        return file.getParentFile().equals(captureDirectory);
-    }
-
-    @Override
-    public final boolean isArchivedFile(File file) {
-        return file.getParentFile().equals(archiveDirectory);
-    }
-
-    @Override
     public final File generateUniqueFile(String suffix, boolean regrabbing)
             throws QueueFileException {
         String template = regrabbing ? "regrabbed-%d-%d-%d%s" : "file-%d-%d-%d%s";
@@ -146,15 +136,18 @@ public abstract class AbstractQueueFileManager implements QueueFileManager {
 
     @Override
     public final File archiveFile(File file) throws QueueFileException {
-        if (!Files.exists(file.toPath(), LinkOption.NOFOLLOW_LINKS)) {
+        switch (getFileStatus(file)) {
+        case NON_EXISTENT:
             throw new QueueFileException("File or symlink " + file + " no longer exists");
-        }
-        if (!Files.exists(file.toPath())) {
+        case CAPTURED_FILE:
+        case CAPTURED_SYMLINK: 
+            break;
+        case BROKEN_CAPTURED_SYMLINK:
             throw new QueueFileException("Symlink target for " + file + " no longer exists");
+        default:
+            throw new QueueFileException("File or symlink " + file + " is not in the queue");
         }
-        if (!isQueuedFile(file)) {
-            throw new QueueFileException("File or symlink" + file + " is not in the queue");
-        }
+        
         File dest = new File(archiveDirectory, file.getName());
         if (dest.exists()) {
             throw new QueueFileException("Archived file " + dest + " already exists");
@@ -178,12 +171,17 @@ public abstract class AbstractQueueFileManager implements QueueFileManager {
 
     @Override
     public void removeFile(File file) throws QueueFileException {
-        if (!Files.exists(file.toPath(), LinkOption.NOFOLLOW_LINKS)) {
+        switch (getFileStatus(file)) {
+        case NON_EXISTENT:
             throw new QueueFileException("File or symlink " + file + " no longer exists");
-        }
-        if (!isQueuedFile(file)) {
+        case CAPTURED_FILE:
+        case CAPTURED_SYMLINK: 
+        case BROKEN_CAPTURED_SYMLINK:
+            break;
+        default:
             throw new QueueFileException("File or symlink " + file + " is not in the queue");
         }
+        
         try {
             Files.delete(file.toPath());
             log.info("File " + file + " deleted from queue area");
@@ -191,18 +189,39 @@ public abstract class AbstractQueueFileManager implements QueueFileManager {
             throw new QueueFileException("File or symlink " + file + " could not be deleted from queue area", ex);
         }
     }
-
+    
     @Override
-    public final boolean isCopiedFile(File file) throws QueueFileException {
-        Path target = file.toPath();
-        if (Files.isSymbolicLink(file.toPath())) {
-            return false;
-        } else if (!Files.exists(target)) {
-            log.info("File " + file + " does not exist");
-            return false;
+    public FileStatus getFileStatus(File file) {
+        Path path = file.toPath();
+        File parent = path.getParent().toFile();
+        if (Files.exists(path)) {
+            if (parent.equals(captureDirectory)) {
+                if (Files.isSymbolicLink(path)) {
+                    return FileStatus.CAPTURED_SYMLINK;
+                } else {
+                    return FileStatus.CAPTURED_FILE;
+                }
+            } else if (parent.equals(archiveDirectory)) {
+                if (Files.isSymbolicLink(path)) {
+                    return FileStatus.ARCHIVED_SYMLINK;
+                } else {
+                    return FileStatus.ARCHIVED_FILE;
+                }
+            } else {
+                return FileStatus.NOT_OURS;
+            }
         } else {
-            return target.getParent().toFile().equals(captureDirectory) ||
-                    target.getParent().toFile().equals(archiveDirectory);
+            if (Files.exists(path, LinkOption.NOFOLLOW_LINKS)) {
+                if (parent.equals(captureDirectory)) {
+                    return FileStatus.BROKEN_CAPTURED_SYMLINK;
+                } else if (parent.equals(archiveDirectory)) {
+                    return FileStatus.BROKEN_ARCHIVED_SYMLINK;
+                } else {
+                    return FileStatus.NOT_OURS;
+                }
+            } else {
+                return FileStatus.NON_EXISTENT;
+            }
         }
     }
 

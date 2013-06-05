@@ -23,6 +23,12 @@ import java.io.File;
 
 public interface QueueFileManager {
     
+    /**
+     * The strategy used for capturing files
+     * 
+     * @author scrawley
+     *
+     */
     public enum Strategy {
         /** Data files should be copied into the queue area */
         COPY_FILES, 
@@ -35,6 +41,67 @@ public interface QueueFileManager {
          * they meet certain criteria.
          */
         HYBRID
+    }
+    
+    /**
+     * A status for a file from the QFM perspective.
+     * 
+     * @author scrawley
+     *
+     */
+    public enum FileStatus {
+        /**
+         * This means we haven't attempted to determine the status.
+         */
+        UNKNOWN,
+        
+        /**
+         * There is noting with this filename in the file system 
+         */
+        NON_EXISTENT,
+        
+        /**
+         * Something might exist, but we got an exception that indicates that
+         * we can't access it.  (Most likely a permissions issue)
+         */
+        INACCESSIBLE,
+        
+        /**
+         * The file is not in our capture or archive areas
+         */
+        NOT_OURS,
+        
+        /**
+         * The file is an actual file in the capture area
+         */
+        CAPTURED_FILE,
+        
+        /**
+         * The file is a symlink file in the capture area
+         */
+        CAPTURED_SYMLINK,
+        
+        /**
+         * The file is a symlink file in the capture area, and the link target 
+         * cannot be resolved; e.g. it has been deleted. 
+         */
+        BROKEN_CAPTURED_SYMLINK,
+        
+        /**
+         * The file is an actual file in the archive area
+         */
+        ARCHIVED_FILE,
+        
+        /**
+         * The file is a symlink file in the archive area
+         */
+        ARCHIVED_SYMLINK,
+        
+        /**
+         * The file is a symlink file in the archive area, and the link target 
+         * cannot be resolved; e.g. it has been deleted. 
+         */
+        BROKEN_ARCHIVED_SYMLINK,
     }
 
     /**
@@ -83,30 +150,14 @@ public interface QueueFileManager {
      */
     void removeFile(File file) 
             throws QueueFileException, InterruptedException;
-    
+
     /**
-     * Test if this is a queue or archive entry, and if there is actually a copy
-     * of the file in the queue / archive.
+     * Get the queue file status for the file.
      * 
      * @param file the pathname to test
-     * @return true if this is a copied file.
-     * @throws QueueFileException
+     * @return the file status
      */
-    boolean isCopiedFile(File file) throws QueueFileException;
-    
-    /**
-     * Test if the pathname is in the queue
-     * @param file the pathname to test
-     * @return true is this a queue entry
-     */
-    boolean isQueuedFile(File file);
-    
-    /**
-     * Test if the pathname is in the archive area
-     * @param file the pathname to test
-     * @return true is this an archive entry
-     */
-    boolean isArchivedFile(File file);
+    FileStatus getFileStatus(File file);
 
     /**
      * Generate a unique pathname for a queue entry.
@@ -131,4 +182,5 @@ public interface QueueFileManager {
      */
     File renameGrabbedDatafile(File file) 
             throws QueueFileException, InterruptedException;
+
 }

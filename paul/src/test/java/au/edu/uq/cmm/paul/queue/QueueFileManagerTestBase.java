@@ -1,5 +1,9 @@
 package au.edu.uq.cmm.paul.queue;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -12,10 +16,12 @@ import java.nio.file.attribute.BasicFileAttributes;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Test;
 
 import au.edu.uq.cmm.paul.PaulConfiguration;
+import au.edu.uq.cmm.paul.PaulException;
 
-public class QueueFileManagerTestBase {
+public abstract class QueueFileManagerTestBase {
 
     protected static Path archiveDir;
     protected static Path captureDir;
@@ -72,5 +78,64 @@ public class QueueFileManagerTestBase {
     	config.setArchiveDirectory(archiveDir.toString());
     	return config;
     }
+
+    @Test
+    public final void testFileStatus() throws QueueFileException {
+    	QueueFileManager qfm = instantiate();
+    	assertEquals(QueueFileManager.FileStatus.NOT_OURS, qfm.getFileStatus(sourceFiles[0]));
+    }
+
+    @Test
+    public final void testEnqueueText() throws QueueFileException,
+    InterruptedException {
+        QueueFileManager qfm = instantiate();
+        File file = qfm.generateUniqueFile("foop", false);
+        qfm.enqueueFile("content\n", file, false);
+        assertEquals(QueueFileManager.FileStatus.CAPTURED_FILE, qfm.getFileStatus(file));
+        assertEquals(8L, file.length());
+        try {
+            qfm.enqueueFile("content\n", file, false);
+            fail("no exception thrown");
+        } catch (QueueFileException ex) {
+            /**/
+        }
+        try {
+            qfm.enqueueFile("content\n", file, true);
+        } catch (QueueFileException ex) {
+            fail("exception thrown");
+        }
+    }
+    
+    public final QueueFileManager instantiate() {
+        return instantiate(buildConfig());
+    }
+
+    public abstract QueueFileManager instantiate(PaulConfiguration config);
+
+    @Test
+    public final void instantiateTest() {
+        PaulConfiguration config = buildConfig();
+    	instantiate(config);
+    	try {
+    		config.setArchiveDirectory("/fubar");
+    		instantiate(config);
+    		fail("Missing directory not diagnosed");
+    	} catch (PaulException ex) {
+    		assertTrue(ex.getMessage().contains("archive"));
+    	} finally {
+    		config.setArchiveDirectory(archiveDir.toString());
+    	}
+    	try {
+    		config.setCaptureDirectory("/fubar");
+    		instantiate(config);
+    		fail("Missing directory not diagnosed");
+    	} catch (PaulException ex) {
+    		assertTrue(ex.getMessage().contains("capture"));
+    	} finally {
+    		config.setArchiveDirectory(captureDir.toString());
+    	}
+    }
+    
+    
 
 }

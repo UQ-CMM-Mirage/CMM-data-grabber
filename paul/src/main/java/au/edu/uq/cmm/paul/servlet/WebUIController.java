@@ -27,9 +27,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
-import java.nio.file.SimpleFileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -75,9 +75,9 @@ import au.edu.uq.cmm.aclslib.proxy.AclsInUseException;
 import au.edu.uq.cmm.aclslib.service.Service.State;
 import au.edu.uq.cmm.eccles.EcclesProxyConfiguration;
 import au.edu.uq.cmm.eccles.FacilitySession;
-import au.edu.uq.cmm.eccles.UserDetailsManager;
 import au.edu.uq.cmm.eccles.UserDetails;
 import au.edu.uq.cmm.eccles.UserDetailsException;
+import au.edu.uq.cmm.eccles.UserDetailsManager;
 import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.grabber.Analyser;
@@ -86,6 +86,7 @@ import au.edu.uq.cmm.paul.grabber.DatasetGrabber;
 import au.edu.uq.cmm.paul.grabber.DatasetMetadata;
 import au.edu.uq.cmm.paul.queue.AtomFeed;
 import au.edu.uq.cmm.paul.queue.QueueFileException;
+import au.edu.uq.cmm.paul.queue.QueueFileManager;
 import au.edu.uq.cmm.paul.queue.QueueManager;
 import au.edu.uq.cmm.paul.queue.QueueManager.DateRange;
 import au.edu.uq.cmm.paul.queue.QueueManager.Removal;
@@ -902,6 +903,10 @@ public class WebUIController implements ServletContextAware {
             throws IOException {
         DatasetMetadata metadata = findDataset(entry, response);
         if (metadata != null) {
+            QueueFileManager qfm = getQueueManager().getFileManager();
+            for (DatafileMetadata df : metadata.getDatafiles()) {
+                df.setFileStatus(qfm.getFileStatus(new File(df.getCapturedFilePathname())));
+            }
             model.addAttribute("entry", metadata);
             model.addAttribute("returnTo", inferReturnTo(request));
             return "dataset";
