@@ -19,6 +19,8 @@
 
 package au.edu.uq.cmm.paul;
 
+import au.edu.uq.cmm.paul.queue.QueueFileManager;
+
 
 /**
  * The combined configuration property API for ACLSProxy and the data grabber.
@@ -123,5 +125,17 @@ public interface GrabberConfiguration {
      * Get the URL for the local ACLS booking system
      */
     String getAclsUrl();
+    
+    /**
+     * Returns the queue file management strategy.  This determines whether
+     * files are copied or symlinked into the queue.
+     */
+    QueueFileManager.Strategy getQueueFileStrategy();
+    
+    /**
+     * If the queue file strategy is HYBRID, files larger than this size (in bytes)
+     * will be symlinked.
+     */
+    Long getQueueFileSizeThreshold();
     
 }

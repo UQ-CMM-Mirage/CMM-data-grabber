@@ -29,13 +29,14 @@ import org.junit.Test;
 
 import au.edu.uq.cmm.paul.PaulConfiguration;
 
-public class CopyingQueueFileManagerTest extends QueueFileManagerTestBase {
+public class LinkingQueueFileManagerTest extends QueueFileManagerTestBase {
 
 	@Test 
 	public void testEnqueueFile() throws QueueFileException, InterruptedException {
 		QueueFileManager qfm = instantiate();
 		File enqueued = qfm.enqueueFile(sourceFiles[0], ".txt", false);
-		assertEquals(QueueFileManager.FileStatus.CAPTURED_FILE, qfm.getFileStatus(enqueued));
+		assertEquals(QueueFileManager.FileStatus.CAPTURED_SYMLINK, qfm.getFileStatus(enqueued));
+		assertTrue(enqueued.exists());
 		assertEquals(13L, enqueued.length());
 		assertTrue(enqueued.toString().contains("/file-"));
 		assertTrue(!enqueued.toString().contains("/regrabbed-"));
@@ -47,12 +48,14 @@ public class CopyingQueueFileManagerTest extends QueueFileManagerTestBase {
 	@Test 
 	public void testArchiveFile() throws QueueFileException, InterruptedException {
 		QueueFileManager qfm = instantiate();
-        assertEquals(QueueFileManager.FileStatus.NOT_OURS, qfm.getFileStatus(sourceFiles[1]));
+		assertEquals(QueueFileManager.FileStatus.NOT_OURS, qfm.getFileStatus(sourceFiles[1]));
+		
 		File enqueued = qfm.enqueueFile(sourceFiles[1], ".txt", false);
-        assertEquals(QueueFileManager.FileStatus.CAPTURED_FILE, qfm.getFileStatus(enqueued));
-		File archived = qfm.archiveFile(enqueued);
-		assertEquals(QueueFileManager.FileStatus.ARCHIVED_FILE, qfm.getFileStatus(archived));
-		assertTrue(archived.exists());
+		assertEquals(QueueFileManager.FileStatus.CAPTURED_SYMLINK, qfm.getFileStatus(enqueued));
+
+        File archived = qfm.archiveFile(enqueued);
+        assertEquals(QueueFileManager.FileStatus.ARCHIVED_FILE, qfm.getFileStatus(archived));
+		assertEquals(13L, archived.length());
 		assertEquals(QueueFileManager.FileStatus.NON_EXISTENT, qfm.getFileStatus(enqueued));
 	}
 
@@ -60,8 +63,8 @@ public class CopyingQueueFileManagerTest extends QueueFileManagerTestBase {
 	public void testRemoveFile() throws QueueFileException, InterruptedException {
 		QueueFileManager qfm = instantiate();
 		File enqueued = qfm.enqueueFile(sourceFiles[2], ".txt", false);
-        assertEquals(QueueFileManager.FileStatus.CAPTURED_FILE, qfm.getFileStatus(enqueued));
-		qfm.removeFile(enqueued);
+        assertEquals(QueueFileManager.FileStatus.CAPTURED_SYMLINK, qfm.getFileStatus(enqueued));
+        qfm.removeFile(enqueued);
         assertEquals(QueueFileManager.FileStatus.NON_EXISTENT, qfm.getFileStatus(enqueued));
 		
 		try {
@@ -80,7 +83,6 @@ public class CopyingQueueFileManagerTest extends QueueFileManagerTestBase {
 
     @Override
     public QueueFileManager instantiate(PaulConfiguration config) {
-        return new CopyingQueueFileManager(config);
+        return new LinkingQueueFileManager(config);
     }
-
 }
