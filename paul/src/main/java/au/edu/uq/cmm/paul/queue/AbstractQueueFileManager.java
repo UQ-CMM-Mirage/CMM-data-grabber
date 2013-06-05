@@ -96,7 +96,7 @@ public abstract class AbstractQueueFileManager implements QueueFileManager {
                 log.error("File size changed during copy - initial file size was " + size +
                         "bytes and current size is " +  source.length());
             }
-            log.info("Copied " + totalRead + " bytes from " + source + " to " + target);
+            log.debug("Copied " + totalRead + " bytes from " + source + " to " + target);
             return target;
         } catch (IOException ex) {
             throw new QueueFileException("Problem while copying file to " + area + " area", ex);

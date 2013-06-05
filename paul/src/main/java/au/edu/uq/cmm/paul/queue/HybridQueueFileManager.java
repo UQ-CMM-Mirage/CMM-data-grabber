@@ -60,7 +60,6 @@ public class HybridQueueFileManager extends AbstractQueueFileManager implements 
             LOG.debug("File size of " + source + " is " + size);
             if (size < fileSizeThreshold) {
                 target = copyFile(source, target, "queue");
-                LOG.debug("Copied " + source + " as " + target);
             } else {
                 Files.createSymbolicLink(target.toPath(), source.toPath(),
                         new FileAttribute<?>[0]);
