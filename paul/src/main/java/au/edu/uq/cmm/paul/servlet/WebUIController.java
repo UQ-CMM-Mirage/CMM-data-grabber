@@ -903,10 +903,7 @@ public class WebUIController implements ServletContextAware {
             throws IOException {
         DatasetMetadata metadata = findDataset(entry, response);
         if (metadata != null) {
-            QueueFileManager qfm = getQueueManager().getFileManager();
-            for (DatafileMetadata df : metadata.getDatafiles()) {
-                df.setFileStatus(qfm.getFileStatus(new File(df.getCapturedFilePathname())));
-            }
+            addFileStatuses(metadata);
             model.addAttribute("entry", metadata);
             model.addAttribute("returnTo", inferReturnTo(request));
             return "dataset";
@@ -915,6 +912,13 @@ public class WebUIController implements ServletContextAware {
         }
     }
     
+    private void addFileStatuses(DatasetMetadata metadata) {
+        QueueFileManager qfm = getQueueManager().getFileManager();
+        for (DatafileMetadata df : metadata.getDatafiles()) {
+            df.setFileStatus(qfm.getFileStatus(new File(df.getCapturedFilePathname())));
+        }
+    }
+
     @RequestMapping(value="/datasets/{entry:.+}", params={"regrab"},
             method=RequestMethod.POST)
     public String regrabPrepare(@PathVariable String entry, Model model, 
@@ -925,6 +929,8 @@ public class WebUIController implements ServletContextAware {
             DatasetMetadata grabbedMetadata = new DatasetGrabber(services, dataset).getCandidateDataset();
             model.addAttribute("returnTo", inferReturnTo(request));
             if (grabbedMetadata != null) {
+                addFileStatuses(dataset);
+                addFileStatuses(grabbedMetadata);
                 grabbedMetadata.updateDatasetHash();
                 dataset.updateDatasetHash();
                 model.addAttribute("oldEntry", dataset);
