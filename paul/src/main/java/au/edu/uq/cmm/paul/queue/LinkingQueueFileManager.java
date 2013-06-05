@@ -54,7 +54,7 @@ public class LinkingQueueFileManager extends AbstractQueueFileManager implements
         try {
             Files.createSymbolicLink(target.toPath(), source.toPath(),
                     new FileAttribute<?>[0]);
-            LOG.info("Symlinked " + source + " as " + target);
+            LOG.debug("Symlinked " + source + " as " + target);
             return target;
         } catch (IOException ex) {
             throw new QueueFileException("Problem while copying file to queue", ex);
