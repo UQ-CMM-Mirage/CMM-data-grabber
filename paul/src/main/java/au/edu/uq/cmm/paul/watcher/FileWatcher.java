@@ -126,7 +126,7 @@ public class FileWatcher extends MonitoredThreadServiceBase {
         } catch (IOException ex) {
             throw new PaulException("Unexpected IO error", ex);
         } catch (InterruptedException ex) {
-            LOG.debug("Interrupted ... we're done");
+            LOG.info("Interrupted ... we're done");
         } finally {
             stopWatcher();
         }
