@@ -109,8 +109,23 @@ public class Paul extends ServiceBase implements Lifecycle {
         this.queueExpirer = new QueueExpirer(this);
         this.control = PaulControl.load(entityManagerFactory);
         this.atomFeed = new AtomFeed(control);
+        setupDefaultUncaughtExceptionHandler();
     }
     
+    private void setupDefaultUncaughtExceptionHandler() {
+        if (Thread.getDefaultUncaughtExceptionHandler() == null) {
+            LOG.info("Setting the uncaught exception handler");
+        } else {
+            LOG.info("Changing the uncaught exception handler");
+        }
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                LOG.error("Thread " + t.getName() + " died with an uncaught exception", e);
+            }
+        });
+    }
+
     @Override
     protected void doShutdown() throws InterruptedException {
         LOG.info("Shutdown started");
