@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.channels.FileLock;
+import java.nio.channels.FileLockInterruptionException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -184,7 +185,7 @@ class WorkEntry implements Runnable {
 
     @Override
     public void run() {
-        LOG.debug("Processing workEntry for " + baseFile);
+        LOG.info("Processing workEntry for " + baseFile);
         try {
             synchronized (this) {
                 if (grabberThread == null) {
@@ -254,6 +255,9 @@ class WorkEntry implements Runnable {
                 } else {
                     doGrabFile(file, is, regrabbing);
                 }
+            } catch (FileLockInterruptionException ex) {
+                LOG.debug("Lock interrupted", ex);
+                throw new InterruptedException("Interrupted in grabFiles()");
             } catch (IOException ex) {
                 LOG.error("Unexpected IO Error", ex);
             }
