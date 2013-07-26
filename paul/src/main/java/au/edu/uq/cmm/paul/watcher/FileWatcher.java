@@ -1,5 +1,5 @@
 /*
-* Copyright 2012, CMM, University of Queensland.
+* Copyright 2012-2013, CMM, University of Queensland.
 *
 * This file is part of Paul.
 *
@@ -271,18 +271,28 @@ public class FileWatcher extends MonitoredThreadServiceBase {
         status.setMessage("");
     }
 
-    private void addKeys(Facility facility, File local, WatcherEntry parent) 
-            throws IOException {
+    private void addKeys(Facility facility, File local, WatcherEntry parent) throws IOException {
         // If a directory is created while we are recursively adding
         // watcher keys, we may possibly miss it.  However, I think 
         // that we should get an event for the creation ... which would
         // allow us to add the key in the event processing code.
         Path dir = Paths.get(local.toURI());
-        WatchKey key = dir.register(watcher, 
-                StandardWatchEventKinds.ENTRY_CREATE, 
-                StandardWatchEventKinds.ENTRY_MODIFY, 
-                StandardWatchEventKinds.ENTRY_DELETE, 
-                StandardWatchEventKinds.OVERFLOW);
+        WatchKey key = null;
+        try {
+            key = dir.register(watcher, 
+                    StandardWatchEventKinds.ENTRY_CREATE, 
+                    StandardWatchEventKinds.ENTRY_MODIFY, 
+                    StandardWatchEventKinds.ENTRY_DELETE, 
+                    StandardWatchEventKinds.OVERFLOW);
+        } catch (IOException ex) {
+            if (parent != null) {
+                LOG.warn("Subdirectory " + local + " for facility " + 
+                        facility.getFacilityName() + " is not readable: ignoring it", ex);
+                return;
+            } else {
+                throw ex;
+            }
+        }
         LOG.debug("Added directory watcher for " + local + 
                 " for facility " + facility.getFacilityName());
         WatcherEntry entry = new WatcherEntry(key, parent, dir, facility);
