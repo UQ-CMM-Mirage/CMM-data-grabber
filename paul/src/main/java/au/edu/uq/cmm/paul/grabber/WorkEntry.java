@@ -259,7 +259,12 @@ class WorkEntry implements Runnable {
                 LOG.debug("Lock interrupted", ex);
                 throw new InterruptedException("Interrupted in grabFiles()");
             } catch (IOException ex) {
-                LOG.error("Unexpected IO Error", ex);
+                // This is probably "mostly harmless"; e.g. a tempfile that disappears, or a file
+                // or directory with bad permissions.
+                LOG.info("Unexpected IO Error: " + ex);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Cause of previous exception", ex);
+                }
             }
         }
         try {
@@ -476,6 +481,10 @@ class WorkEntry implements Runnable {
             Date now, SessionDetails session, File metadataFile) {
         List<DatafileMetadata> list = new ArrayList<DatafileMetadata>(files.size());
         for (GrabbedFile g : files.values()) {
+            if (g.getCopiedFile() == null) {
+                LOG.info("Leaving out file " + g.getFile() + " which wasn't previously enqueued");
+                continue;
+            }
             String mimeType = (g.getTemplate() == null) ? 
                     "application/octet-stream" : g.getTemplate().getMimeType();
             DatafileMetadata d = new DatafileMetadata(
