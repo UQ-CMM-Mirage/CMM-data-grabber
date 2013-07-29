@@ -188,7 +188,8 @@ public class FacilityStatusManager {
             if (status.getGrabberLWMTimestamp() == null || status.getGrabberHWMTimestamp() == null) {
                 doUpdateIntertidalTimestamps(hwm, hwm, status);
             } else if (hwm.before(status.getGrabberHWMTimestamp())) {
-                throw new PaulException("inconsistent timestamps");
+                throw new PaulException("inconsistent timestamps: " + hwm + 
+                        " < " + status.getGrabberHWMTimestamp());
             } else {
                 doUpdateIntertidalTimestamps(status.getGrabberLWMTimestamp(), hwm, status);
             }
@@ -198,7 +199,7 @@ public class FacilityStatusManager {
     private void doUpdateIntertidalTimestamps(Date lwm, Date hwm,
             FacilityStatus status) {
         if (lwm.after(hwm)) {
-            throw new PaulException("inconsistent timestamps");
+            throw new PaulException("inconsistent timestamps: " + lwm + " > " + hwm);
         }
         synchronized (status) {
             status.setGrabberLWMTimestamp(lwm);
