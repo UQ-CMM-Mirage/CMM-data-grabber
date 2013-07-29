@@ -128,16 +128,16 @@ public class Analyser extends AbstractFileGrabber {
         emf = services.getEntityManagerFactory();
     }
     
-    public Analyser analyse(Date lwmTimestamp, Date hwmTimestamp, DateRange range, 
+    public Analyser analyse(Date lwmTimestamp, Date hwmTimestamp, DateRange queueRange, 
             boolean checkHashes) {
         this.lwm = lwmTimestamp;
         this.hwm = hwmTimestamp;
-        if (range == null) {
+        if (queueRange == null) {
             this.qStart = null;
             this.qEnd = null;
         } else {
-            this.qStart = range.getFromDate();
-            this.qEnd = range.getToDate();
+            this.qStart = queueRange.getFromDate();
+            this.qEnd = queueRange.getToDate();
         }
         this.checkHashes = checkHashes;
         LOG.info("Analysing queues and folders for " + getFacility().getFacilityName());
@@ -155,26 +155,26 @@ public class Analyser extends AbstractFileGrabber {
             afterHWM = null;
             intertidal = null;
         } else {
-            final long lwm = lwmTimestamp.getTime();
+            final long lwmTime = lwmTimestamp.getTime();
             beforeLWM = gatherStats(grouped, new Predicate() {
                 public boolean evaluate(Object metadata) {
-                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() < lwm;
+                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() < lwmTime;
                 }
             });
-            final long hwm = hwmTimestamp.getTime();
+            final long hwmTime = hwmTimestamp.getTime();
             afterHWM = gatherStats(grouped, new Predicate() {
                 public boolean evaluate(Object metadata) {
-                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() > hwm;
+                    return ((DatasetMetadata) metadata).getLastFileTimestamp().getTime() > hwmTime;
                 }
             });
             intertidal = gatherStats(grouped, new Predicate() {
                 public boolean evaluate(Object metadata) {
-                    long ts = ((DatasetMetadata) metadata).getLastFileTimestamp().getTime();
-                    return ts >= lwm && ts <= hwm;
+                    long time = ((DatasetMetadata) metadata).getLastFileTimestamp().getTime();
+                    return time >= lwmTime && time <= hwmTime;
                 }
             });
         }
-        if (range == null) {
+        if (queueRange == null) {
             afterQEnd = null;
             beforeQStart = null;
             inQueue = null;

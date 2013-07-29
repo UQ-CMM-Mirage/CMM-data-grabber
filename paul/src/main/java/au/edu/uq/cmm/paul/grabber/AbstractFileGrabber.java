@@ -79,8 +79,14 @@ public abstract class AbstractFileGrabber implements FileWatcherEventListener {
     }
 
     public final synchronized int analyseTree(File directory, long after, long before) {
+        File[] list = directory.listFiles();
+        if (list == null) {
+            LOG.debug("Cannot get a file list for '" + directory + 
+                    "': permissions problem?");
+            return 0;
+        }
         int count = 0;
-        for (File member : directory.listFiles()) {
+        for (File member : list) {
             long lastModified;
             if (member.isDirectory()) {
                 count += analyseTree(member, after, before);
