@@ -33,6 +33,7 @@ import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
 
 import org.apache.log4j.Logger;
+import org.easymock.EasyMock;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -41,10 +42,14 @@ import au.edu.uq.cmm.aclslib.config.ConfigurationException;
 import au.edu.uq.cmm.eccles.FacilitySession;
 import au.edu.uq.cmm.eccles.StaticEcclesProxyConfiguration;
 import au.edu.uq.cmm.paul.GrabberFacilityConfig;
+import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.StaticPaulConfiguration;
 import au.edu.uq.cmm.paul.StaticPaulFacilities;
 import au.edu.uq.cmm.paul.StaticPaulFacility;
 import au.edu.uq.cmm.paul.status.Facility;
+import au.edu.uq.cmm.paul.status.FacilityStatusManager;
+import au.edu.uq.cmm.paul.watcher.DummyUncPathnameMapper;
+import au.edu.uq.cmm.paul.watcher.UncPathnameMapper;
 
 public class ConfigurationManagerTest {
     private static EntityManagerFactory EMF;
@@ -99,7 +104,7 @@ public class ConfigurationManagerTest {
 					"facilityName", "fred", "localHostId", "",
 					"address", "127.0.0.1", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "",
-					"fileSettlingTime", "1000", "folderName", "/foo",
+					"fileSettlingTime", "1000", "folderName", "//foo/bar",
 					"accessName", "", "facilityDescription", "",
                     "fileArrivalMode", "DIRECT");
 			assertEquals("{}", cm.buildFacility(f, params, em).toString());
@@ -118,7 +123,7 @@ public class ConfigurationManagerTest {
 					"facilityName", "fred", "localHostId", "",
 					"address", "127.0.0.1", "accessPassword", "",
 					"lastTemplate", "x", "driveName", "",
-					"fileSettlingTime", "1000", "folderName", "/foo",
+					"fileSettlingTime", "1000", "folderName", "//foo/bar",
 					"accessName", "", "facilityDescription", "",
 					"fileArrivalMode", "DIRECT");
 			assertEquals(
@@ -139,7 +144,7 @@ public class ConfigurationManagerTest {
 					"facilityName", "fred", "localHostId", "",
 					"address", "127.0.0.1", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "",
-					"fileSettlingTime", "zzz", "folderName", "/foo",
+					"fileSettlingTime", "zzz", "folderName", "//foo/bar",
 					"accessName", "", "facilityDescription", "",
                     "fileArrivalMode", "DIRECT");
 			assertEquals(
@@ -160,7 +165,7 @@ public class ConfigurationManagerTest {
 					"facilityName", "", "localHostId", "",
 					"address", "127.0.0.1", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "",
-					"fileSettlingTime", "1000", "folderName", "/foo",
+					"fileSettlingTime", "1000", "folderName", "//foo/bar",
 					"accessName", "", "facilityDescription", "",
                     "fileArrivalMode", "DIRECT");
 			assertEquals(
@@ -181,7 +186,7 @@ public class ConfigurationManagerTest {
 					"facilityName", "fred", "localHostId", "",
 					"address", "", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "",
-					"fileSettlingTime", "1000", "folderName", "/foo",
+					"fileSettlingTime", "1000", "folderName", "//foo/bar",
 					"accessName", "", "facilityDescription", "",
                     "fileArrivalMode", "DIRECT");
 			assertEquals(
@@ -223,7 +228,7 @@ public class ConfigurationManagerTest {
 					"facilityName", "fred", "localHostId", "1234",
 					"address", "", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "9",
-					"fileSettlingTime", "1000", "folderName", "/foo",
+					"fileSettlingTime", "1000", "folderName", "//foo/bar",
 					"accessName", "", "facilityDescription", "",
                     "fileArrivalMode", "DIRECT");
 			assertEquals(
@@ -244,7 +249,7 @@ public class ConfigurationManagerTest {
 					"facilityName", "fred", "localHostId", "1234",
 					"address", "", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "ZZ",
-					"fileSettlingTime", "1000", "folderName", "/foo",
+					"fileSettlingTime", "1000", "folderName", "//foo/bar",
 					"accessName", "", "facilityDescription", "",
                     "fileArrivalMode", "DIRECT");
 			assertEquals(
@@ -265,7 +270,7 @@ public class ConfigurationManagerTest {
 					"facilityName", "fred", "localHostId", "1234",
 					"address", "", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "Z",
-					"fileSettlingTime", "-11000", "folderName", "/foo",
+					"fileSettlingTime", "-11000", "folderName", "//foo/bar",
 					"accessName", "", "facilityDescription", "",
                     "fileArrivalMode", "DIRECT");
 			assertEquals(
@@ -286,7 +291,7 @@ public class ConfigurationManagerTest {
 					"facilityName", "fred", "localHostId", "1234",
 					"address", "1.2.3.5.6", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "Z",
-					"fileSettlingTime", "1000", "folderName", "/foo",
+					"fileSettlingTime", "1000", "folderName", "//foo/bar",
 					"accessName", "", "facilityDescription", "",
                     "fileArrivalMode", "DIRECT");
 			assertEquals(
@@ -307,7 +312,7 @@ public class ConfigurationManagerTest {
 					"facilityName", "fred", "localHostId", "1234",
 					"address", "wurzle.example.com", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "Z",
-					"fileSettlingTime", "1000", "folderName", "/foo",
+					"fileSettlingTime", "1000", "folderName", "//foo/bar",
 					"accessName", "", "facilityDescription", "",
                     "fileArrivalMode", "DIRECT");
 			assertEquals(
@@ -329,7 +334,7 @@ public class ConfigurationManagerTest {
 					"facilityName", "fred", "localHostId", "1234",
 					"address", "127.0.0.1", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "Z",
-					"fileSettlingTime", "1000", "folderName", "/foo",
+					"fileSettlingTime", "1000", "folderName", "//foo/bar",
 					"accessName", "", "facilityDescription", "",
                     "fileArrivalMode", "DIRECT");
 			vr = cm.createFacility(params);
@@ -338,7 +343,7 @@ public class ConfigurationManagerTest {
 					"facilityName", "bert", "localHostId", "1234",
 					"address", "127.0.0.2", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "Z",
-					"fileSettlingTime", "1000", "folderName", "/foo",
+					"fileSettlingTime", "1000", "folderName", "//foo/baz",
 					"accessName", "", "facilityDescription", "",
                     "fileArrivalMode", "DIRECT");
 			assertEquals(
@@ -363,7 +368,7 @@ public class ConfigurationManagerTest {
 					"facilityName", "fred", "localHostId", "1234",
 					"address", "127.0.0.1", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "Z",
-					"fileSettlingTime", "1000", "folderName", "/foo",
+					"fileSettlingTime", "1000", "folderName", "//foo/bar",
 					"accessName", "", "facilityDescription", "",
                     "fileArrivalMode", "DIRECT");
 			vr = cm.createFacility(params);
@@ -372,7 +377,7 @@ public class ConfigurationManagerTest {
 					"facilityName", "bert", "localHostId", "1235",
 					"address", "127.0.0.1", "accessPassword", "",
 					"lastTemplate", "0", "driveName", "Z",
-					"fileSettlingTime", "1000", "folderName", "/foo",
+					"fileSettlingTime", "1000", "folderName", "//foo/baz",
 					"accessName", "", "facilityDescription", "",
                     "fileArrivalMode", "DIRECT");
 			assertEquals(
@@ -388,8 +393,78 @@ public class ConfigurationManagerTest {
 		}
 	}
 
+	@Test
+	public void testBuildFacility14() throws ConfigurationException {
+		Facility f = new Facility();
+		ConfigurationManager cm = buildConfigurationManager();
+		EntityManager em = EMF.createEntityManager();
+		ValidationResult<Facility> vr = null;
+		try {
+			Map<?, ?> params = buildParamMap(
+					"facilityName", "fred", "localHostId", "1234",
+					"address", "127.0.0.2", "accessPassword", "",
+					"lastTemplate", "0", "driveName", "Z",
+					"fileSettlingTime", "1000", "folderName", "//foo/bar",
+					"accessName", "", "facilityDescription", "",
+                    "fileArrivalMode", "DIRECT");
+			vr = cm.createFacility(params);
+			assertTrue(vr.getDiags().isEmpty());
+			params = buildParamMap(
+					"facilityName", "bert", "localHostId", "1235",
+					"address", "127.0.0.1", "accessPassword", "",
+					"lastTemplate", "0", "driveName", "Z",
+					"fileSettlingTime", "1000", "folderName", "//foo/bar",
+					"accessName", "", "facilityDescription", "",
+                    "fileArrivalMode", "DIRECT");
+			assertEquals(
+					"{folderName=this Samba share is already used " +
+					"for Facility 'fred'}",
+					cm.buildFacility(f, params, em).toString());
+		} finally {
+			if (vr.isValid()) {
+				cm.deleteFacility(vr.getTarget().getFacilityName());
+			}
+			emClose(em);
+		}
+	}
+
+	@Test
+	public void testBuildFacility15() throws ConfigurationException {
+		Facility f = new Facility();
+		ConfigurationManager cm = buildConfigurationManager();
+		EntityManager em = EMF.createEntityManager();
+		ValidationResult<Facility> vr = null;
+		try {
+			Map<?, ?> params = buildParamMap(
+					"facilityName", "fred", "localHostId", "1234",
+					"address", "127.0.0.2", "accessPassword", "",
+					"lastTemplate", "0", "driveName", "Z",
+					"fileSettlingTime", "1000", "folderName", "//foo/bar",
+					"accessName", "", "facilityDescription", "",
+                    "fileArrivalMode", "DIRECT");
+			vr = cm.createFacility(params);
+			assertTrue(vr.getDiags().isEmpty());
+			params = buildParamMap(
+					"facilityName", "bert", "localHostId", "1235",
+					"address", "127.0.0.1", "accessPassword", "",
+					"lastTemplate", "0", "driveName", "Z",
+					"fileSettlingTime", "1000", "folderName", "//you/bar",
+					"accessName", "", "facilityDescription", "",
+                    "fileArrivalMode", "DIRECT");
+			assertEquals(
+					"{folderName=the directory tree for this Samba share " +
+					"overlaps with the directory tree for Facility 'fred'}",
+					cm.buildFacility(f, params, em).toString());
+		} finally {
+			if (vr.isValid()) {
+				cm.deleteFacility(vr.getTarget().getFacilityName());
+			}
+			emClose(em);
+		}
+	}
+
     @Test
-    public void testBuildFacility14() throws ConfigurationException {
+    public void testBuildFacility16() throws ConfigurationException {
         Facility f = new Facility();
         ConfigurationManager cm = buildConfigurationManager();
         EntityManager em = EMF.createEntityManager();
@@ -398,7 +473,7 @@ public class ConfigurationManagerTest {
                     "facilityName", "fred", "localHostId", "",
                     "address", "127.0.0.1", "accessPassword", "",
                     "lastTemplate", "0", "driveName", "",
-                    "fileSettlingTime", "1000", "folderName", "/foo",
+                    "fileSettlingTime", "1000", "folderName", "//foo/bar",
                     "accessName", "", "facilityDescription", "",
                     "fileArrivalMode", "CHEESE");
             assertEquals(
@@ -410,8 +485,12 @@ public class ConfigurationManagerTest {
     }
 	
 	private ConfigurationManager buildConfigurationManager() throws ConfigurationException {
-	    return new ConfigurationManager(
-                EMF, buildStaticConfig(), buildStaticProxyConfig(),
+		Paul paul = EasyMock.createMock(Paul.class);
+		UncPathnameMapper mapper = new DummyUncPathnameMapper("/");
+		EasyMock.expect(paul.getUncNameMapper()).andReturn(mapper).anyTimes();
+        EasyMock.replay(paul);
+		return new ConfigurationManager(
+                paul, EMF, buildStaticConfig(), buildStaticProxyConfig(),
                 buildStaticFacilities());
     }
 

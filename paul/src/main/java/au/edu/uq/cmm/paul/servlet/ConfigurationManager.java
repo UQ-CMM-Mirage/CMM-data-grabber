@@ -388,11 +388,18 @@ public class ConfigurationManager {
                     "this isn't the name of a configured Samba share");
             return;
         }
-        TypedQuery<Object[]> query = em.createQuery(
-                "select f.facilityName, f.folderName from Facility f " +
-                        "where f.id != :id", 
-                        Object[].class);
-        query.setParameter("id", id.longValue());
+        TypedQuery<Object[]> query;
+        if (id == null) {
+        	query = em.createQuery(
+        			"select f.facilityName, f.folderName from Facility f ", 
+					Object[].class);
+        } else {
+        	query = em.createQuery(
+        			"select f.facilityName, f.folderName from Facility f " +
+        					"where f.id != :id", 
+        					Object[].class);
+        	query.setParameter("id", id.longValue());
+        }
         for (Object[] res : query.getResultList()) {
             if (folderName.equalsIgnoreCase((String) res[1])) {
                 addDiag(diags, "folderName", 
