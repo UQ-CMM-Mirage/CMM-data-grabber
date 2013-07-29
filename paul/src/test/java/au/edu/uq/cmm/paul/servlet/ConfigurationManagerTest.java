@@ -47,7 +47,6 @@ import au.edu.uq.cmm.paul.StaticPaulConfiguration;
 import au.edu.uq.cmm.paul.StaticPaulFacilities;
 import au.edu.uq.cmm.paul.StaticPaulFacility;
 import au.edu.uq.cmm.paul.status.Facility;
-import au.edu.uq.cmm.paul.status.FacilityStatusManager;
 import au.edu.uq.cmm.paul.watcher.DummyUncPathnameMapper;
 import au.edu.uq.cmm.paul.watcher.UncPathnameMapper;
 
