@@ -148,7 +148,7 @@ public class EcclesUserDetailsManager implements UserDetailsManager {
             query.setParameter("userName", userName);
             UserDetails userDetails = query.getSingleResult();
             LOG.debug("Refreshing cached user details for " + userName);
-            String digest = createDigest(loginDetails.getPassword(), userDetails.getSeed());
+            String digest = createDigest(loginDetails.getPassword().toLowerCase(), userDetails.getSeed());
             userDetails.setAccounts(new HashSet<String>(loginDetails.getAccounts()));
             userDetails.setDigest(digest);
             userDetails.setOrgName(loginDetails.getOrgName());
@@ -160,7 +160,7 @@ public class EcclesUserDetailsManager implements UserDetailsManager {
         } catch (NoResultException ex) {
             LOG.debug("Caching user details for " + userName);
             long seed = random.nextLong();
-            String digest = createDigest(loginDetails.getPassword(), seed);
+            String digest = createDigest(loginDetails.getPassword().toLowerCase(), seed);
             UserDetails newDetails = new UserDetails(
                     userName, email, loginDetails, seed, digest);
             em.persist(newDetails);
@@ -199,10 +199,16 @@ public class EcclesUserDetailsManager implements UserDetailsManager {
                 }
             }
         	LOG.debug("Doing the password check for " + userName);
-            String myDigest = createDigest(password, userDetails.getSeed());
-            LOG.debug("Comparing " + myDigest + " with " + savedDigest);
-            return (myDigest.equals(savedDigest)) ?
-            		buildDetails(userDetails, facility) : null;
+        	// (Backwards compatibility hack.  Passwords are case-insensitive (ACLS ... sigh)
+        	// but we used to treat them as case-sensitive when we cached them ...)
+        	for (String p : new String[]{password.toLowerCase(), password}) {
+        	    String myDigest = createDigest(p, userDetails.getSeed());
+        	    LOG.debug("Comparing " + myDigest + " with " + savedDigest);
+        	    if (myDigest.equals(savedDigest)) {
+            		return buildDetails(userDetails, facility);
+        	    }
+        	}
+        	return null;
         } catch (UserDetailsException ex) {
         	LOG.debug("Unknown user " + userName);
             return null;
