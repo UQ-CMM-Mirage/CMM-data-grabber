@@ -125,14 +125,15 @@ public class EcclesUserDetailsManager implements UserDetailsManager {
 		EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
-            Query query = em.createQuery(
-                    "delete from UserDetails u where u.userName = :userName");
+            TypedQuery<UserDetails> query = em.createQuery(
+                    "from UserDetails u where u.userName = :userName",
+                    UserDetails.class);
             query.setParameter("userName", userName);
-            int deleted = query.executeUpdate();
-            if (deleted == 0) {
-            	throw new UserDetailsException("User '" + userName + "' not found");
-            }
+            UserDetails userDetails = query.getSingleResult();
+            em.remove(userDetails);
             em.getTransaction().commit();
+        } catch (NoResultException ex) {
+            throw new UserDetailsException("User '" + userName + "' not found");
         } finally {
             emClose(em);
         }
