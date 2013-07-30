@@ -19,6 +19,7 @@
 
 package au.edu.uq.cmm.paul.servlet;
 
+import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.BatchUpdateException;
@@ -40,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import au.edu.uq.cmm.eccles.EcclesProxyConfiguration;
 import au.edu.uq.cmm.eccles.StaticEcclesProxyConfiguration;
 import au.edu.uq.cmm.paul.GrabberFacilityConfig;
+import au.edu.uq.cmm.paul.Paul;
 import au.edu.uq.cmm.paul.PaulConfiguration;
 import au.edu.uq.cmm.paul.PaulFacilityMapper;
 import au.edu.uq.cmm.paul.StaticPaulConfiguration;
@@ -47,6 +49,7 @@ import au.edu.uq.cmm.paul.StaticPaulFacilities;
 import au.edu.uq.cmm.paul.StaticPaulFacility;
 import au.edu.uq.cmm.paul.status.DatafileTemplate;
 import au.edu.uq.cmm.paul.status.Facility;
+import au.edu.uq.cmm.paul.watcher.UncPathnameMapper;
 
 public class ConfigurationManager {
     private static class Configs{
@@ -86,9 +89,10 @@ public class ConfigurationManager {
     private StaticEcclesProxyConfiguration staticProxyConfig;
     private EntityManagerFactory entityManagerFactory;
     private StaticPaulFacilities staticFacilities;
+    private UncPathnameMapper uncNameMapper;
 
     
-    public ConfigurationManager(EntityManagerFactory entityManagerFactory,
+    public ConfigurationManager(Paul services, EntityManagerFactory entityManagerFactory,
             StaticPaulConfiguration staticConfig, 
             StaticEcclesProxyConfiguration staticProxyConfig, 
             StaticPaulFacilities staticFacilities) {
@@ -101,6 +105,7 @@ public class ConfigurationManager {
             activeConfigs = doResetConfigurations(activeConfigs.facilityCount == 0);
         }
         latestConfigs = new Configs(activeConfigs);
+        uncNameMapper = Objects.requireNonNull(services.getUncNameMapper());
     }
 
     public PaulConfiguration getActiveConfig() {
@@ -287,7 +292,9 @@ public class ConfigurationManager {
         res.setFacilityDescription(getStringOrNull(params, "facilityDescription", diags));
         res.setAccessName(getStringOrNull(params, "accessName", diags));
         res.setAccessPassword(getStringOrNull(params, "accessPassword", diags));
-        res.setFolderName(getNonEmptyString(params, "folderName", diags));
+        String folderName = getNonEmptyString(params, "folderName", diags);
+        res.setFolderName(folderName);
+        checkFoldername(folderName, res.getId(), diags, em);
         res.setDriveName(getStringOrNull(params, "driveName", diags));
         if (res.getDriveName() != null && !res.getDriveName().matches("[A-Z]")) {
             addDiag(diags, "driveName", 
@@ -368,6 +375,47 @@ public class ConfigurationManager {
         res.setAddress(address);
         res.setLocalHostId(localHostId);
         return diags;
+    }
+
+    private void checkFoldername(String folderName, Long id, 
+            Map<String, String> diags, EntityManager em) {
+        if (folderName == null) {
+            return;
+        }
+        File local = this.uncNameMapper.mapUncPathname(folderName);
+        if (local == null) {
+            addDiag(diags, "folderName", 
+                    "this isn't the name of a configured Samba share");
+            return;
+        }
+        TypedQuery<Object[]> query;
+        if (id == null) {
+        	query = em.createQuery(
+        			"select f.facilityName, f.folderName from Facility f ", 
+					Object[].class);
+        } else {
+        	query = em.createQuery(
+        			"select f.facilityName, f.folderName from Facility f " +
+        					"where f.id != :id", 
+        					Object[].class);
+        	query.setParameter("id", id.longValue());
+        }
+        for (Object[] res : query.getResultList()) {
+            if (folderName.equalsIgnoreCase((String) res[1])) {
+                addDiag(diags, "folderName", 
+                        "this Samba share is already used for Facility '" +
+                        res[0] + "'");
+                return;
+            }
+            File local2 = this.uncNameMapper.mapUncPathname((String) res[1]);
+            if (local.toString().startsWith(local2.toString()) ||
+                     local2.toString().startsWith(local.toString())) {
+                addDiag(diags, "folderName", 
+                        "the directory tree for this Samba share overlaps with " +
+                        "the directory tree for Facility '" + res[0] + "'");
+                return;
+            }
+        }
     }
 
     private void checkAddressability(String address, String localHostId, Long id,
