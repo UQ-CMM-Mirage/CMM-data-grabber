@@ -11,6 +11,8 @@
 		<class>au.edu.uq.cmm.paul.PaulConfiguration</class>
 		<class>au.edu.uq.cmm.paul.status.Facility</class>
 		<class>au.edu.uq.cmm.paul.status.DatafileTemplate</class>
+		<class>au.edu.uq.cmm.paul.grabber.DatasetMetadata</class>
+		<class>au.edu.uq.cmm.paul.grabber.DatafileMetadata</class>
 		<properties>
 		    <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
 			<property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver" />

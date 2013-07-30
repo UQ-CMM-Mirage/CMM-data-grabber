@@ -88,7 +88,8 @@ public class Paul extends ServiceBase implements Lifecycle {
             UncPathnameMapper uncNameMapper)
     throws IOException {
         this.entityManagerFactory = entityManagerFactory;
-        this.configManager = new ConfigurationManager(
+        this.uncNameMapper = uncNameMapper;
+        this.configManager = new ConfigurationManager(this,
                 entityManagerFactory, staticConfig, staticProxyConfig, staticFacilities);
         this.facilityMapper = new PaulFacilityMapper(entityManagerFactory);
         ProxyConfiguration proxyConfig = configManager.getActiveProxyConfig();
@@ -103,7 +104,6 @@ public class Paul extends ServiceBase implements Lifecycle {
         this.userDetailsManager = new EcclesUserDetailsManager(entityManagerFactory, 
                 proxyConfig.getFallbackMode());
         this.statusManager = new FacilityStatusManager(this);
-        this.uncNameMapper = uncNameMapper;
         this.fileWatcher = new FileWatcher(this);
         this.queueManager = new QueueManager(this);
         this.queueExpirer = new QueueExpirer(this);
